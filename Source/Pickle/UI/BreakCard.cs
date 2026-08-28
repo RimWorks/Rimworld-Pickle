@@ -50,7 +50,7 @@ public class BreakCard : Window {
 
     Text.Font = GameFont.Medium;
     GUI.color = RunnerStatusColors.FailedText;
-    Widgets.Label(new Rect(inRect.x, y, inRect.width, TitleHeight), "✗ Step failed — run paused");
+    Widgets.Label(new Rect(inRect.x, y, inRect.width, TitleHeight), "✗ Step failed, run paused");
     GUI.color = Color.white;
     Text.Font = GameFont.Small;
     y += TitleHeight + Gap;
@@ -74,7 +74,7 @@ public class BreakCard : Window {
 
     Text.Font = GameFont.Tiny;
     GUI.color = RunnerStatusColors.Muted;
-    Widgets.Label(new Rect(inRect.x, y, inRect.width, HintHeight), "game is paused with the failing state live — inspect anything, then choose:");
+    Widgets.Label(new Rect(inRect.x, y, inRect.width, HintHeight), "game is paused with the failing state live. inspect anything, then choose:");
     GUI.color = Color.white;
     Text.Font = GameFont.Small;
     y += HintHeight + Gap;

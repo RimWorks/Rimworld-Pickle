@@ -48,7 +48,7 @@ public class RunPill : Window {
     RunnerStatusColors.DrawDot(new Vector2(inRect.x + 6f, y + (TitleRowHeight / 2f)), dotColor, 8f);
 
     string scenarioName = session?.CurrentScenarioName ?? string.Empty;
-    string title = paused ? $"Paused — {scenarioName}" : $"Running — {scenarioName}";
+    string title = paused ? $"Paused: {scenarioName}" : $"Running: {scenarioName}";
     GUI.color = paused ? RunnerStatusColors.FailedText : Color.white;
     Widgets.Label(new Rect(inRect.x + 18f, y, inRect.width - 18f, TitleRowHeight), title);
     GUI.color = Color.white;

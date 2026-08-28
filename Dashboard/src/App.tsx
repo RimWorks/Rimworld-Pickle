@@ -116,7 +116,7 @@ function statusDotClass(snap: Snapshot | null, paused: boolean, running: boolean
 
 function headline(snap: Snapshot | null, paused: boolean, running: boolean): string {
   if (!snap) return "Waiting for the game";
-  if (paused) return `Paused \u2014 ${snap.scenario}`;
+  if (paused) return `Paused: ${snap.scenario}`;
   if (running) return snap.scenario || "Running";
   return "Idle";
 }
