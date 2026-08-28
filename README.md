@@ -47,6 +47,21 @@ Pickle prefers Concord when both are active, and logs which one it used.
 
 Open the runner from the debug actions menu.
 
+### Writing steps in C#
+
+Feature files alone need no build. To write your own step definitions, reference the
+[`CryptikLemur.Pickle.Ref`](https://www.nuget.org/packages/CryptikLemur.Pickle.Ref)
+package from a steps project:
+
+```xml
+<PackageReference Include="CryptikLemur.Pickle.Ref" Version="1.*"
+                  ExcludeAssets="runtime" PrivateAssets="all" />
+```
+
+The package holds a compile-time reference assembly only. `ExcludeAssets="runtime"`
+keeps it out of your output, because the Pickle mod supplies the real `Pickle.dll` at
+run time. See the [authoring guide](https://github.com/cryptiklemur/Rimworld-Pickle/blob/main/Docs/authoring.md).
+
 ## Documentation
 
 | Guide | Covers |
