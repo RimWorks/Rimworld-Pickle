@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Pickle.Patches.Harmony</AssemblyName>
+    <RootNamespace>Pickle.Patches.Harmony</RootNamespace>
+    <OutDir>$(MSBuildProjectDirectory)\..\..\Harmony\Assemblies\</OutDir>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Lib.Harmony" Version="2.3.*" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Private=false everywhere: the core assemblies ship once, in the root
+         Assemblies folder. A second copy here would load the same types twice. -->
+    <ProjectReference Include="..\Pickle\Pickle.csproj" Private="false" />
+    <ProjectReference Include="..\Pickle.Core\Pickle.Core.csproj" Private="false" />
+  </ItemGroup>
+</Project>

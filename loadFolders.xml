@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<loadFolders>
+  <v1.6>
+    <li>/</li>
+    <!-- Only the backend whose library is present gets loaded, so the other one's
+         missing assembly never has to resolve. When both are active both register
+         and PatchBackends picks Concord. -->
+    <li IfModActive="brrainz.harmony">Harmony</li>
+    <li IfModActive="concordlib.concord">Concord</li>
+  </v1.6>
+</loadFolders>

@@ -1,0 +1,388 @@
+root = true
+
+[*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+file_header_template = unset
+
+[*.{xml,xml.template}]
+max_line_length = off
+
+[*.{props,targets,csproj,slnx}]
+indent_size = 2
+
+[*.{json,yml,yaml}]
+indent_size = 2
+
+[*.cs]
+indent_size = 2
+xmldoc_indent_style = space
+xmldoc_indent_size = 2
+xmldoc_keep_user_linebreaks = true
+xmldoc_linebreaks_inside_tags_for_multiline_elements = true
+xmldoc_linebreaks_inside_tags_for_elements_with_child_elements = true
+xmldoc_wrap_text = true
+xmldoc_indent_child_elements = OneIndent
+indent_text = OneIndent
+resharper_indent_text = OneIndent
+xmldoc_indent_text = OneIndent
+resharper_xmldoc_indent_text = OneIndent
+xmldoc_max_blank_lines_between_tags = 1
+xmldoc_linebreak_before_multiline_elements = true
+xmldoc_linebreak_before_singleline_elements = false
+max_line_length = 140
+resharper_max_line_length = 140
+resharper_wrap_long_lines = true
+
+# Namespaces
+csharp_style_namespace_declarations = file_scoped:error
+
+# Braces — K&R: opening brace on the same line, no new line before it
+csharp_new_line_before_open_brace = none
+csharp_new_line_before_else = false
+csharp_new_line_before_catch = false
+csharp_new_line_before_finally = false
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+csharp_indent_braces = false
+csharp_prefer_braces = true:warning
+
+# var — never; always explicit types
+csharp_style_var_for_built_in_types = false:error
+csharp_style_var_when_type_is_apparent = false:error
+csharp_style_var_elsewhere = false:error
+
+# Collection expressions + modern syntax
+dotnet_style_prefer_collection_expression = true:warning
+csharp_style_prefer_index_operator = true:suggestion
+csharp_style_prefer_range_operator = true:suggestion
+csharp_style_expression_bodied_methods = false:silent
+csharp_style_expression_bodied_constructors = false:silent
+csharp_style_expression_bodied_operators = false:silent
+csharp_style_expression_bodied_properties = true:silent
+csharp_style_expression_bodied_accessors = true:silent
+csharp_style_expression_bodied_lambdas = true:silent
+
+# Early returns / pattern matching
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_prefer_null_check_over_type_check = true:suggestion
+
+# this. — never qualify (StyleCop SA1101 disabled below)
+dotnet_style_qualification_for_field = false:warning
+dotnet_style_qualification_for_property = false:warning
+dotnet_style_qualification_for_method = false:warning
+dotnet_style_qualification_for_event = false:warning
+
+# Usings — outside the namespace, System first, sorted
+csharp_using_directive_placement = outside_namespace:error
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# Modifiers
+dotnet_style_require_accessibility_modifiers = always:error
+csharp_preferred_modifier_order = public, private, protected, internal, file, static, extern, new, virtual, abstract, sealed, override, readonly, unsafe, required, volatile, async:warning
+dotnet_style_readonly_field = true:warning
+
+# Expression preferences
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_prefer_auto_properties = true:warning
+dotnet_style_prefer_conditional_expression_over_assignment = true:silent
+dotnet_style_prefer_conditional_expression_over_return = true:silent
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+csharp_style_throw_expression = true:suggestion
+csharp_style_conditional_delegate_call = true:suggestion
+csharp_prefer_simple_default_expression = true:suggestion
+csharp_style_deconstructed_variable_declaration = true:suggestion
+
+# Spacing / wrapping
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_statements = false
+
+# Naming — interfaces start with I, types/members PascalCase, fields camelCase, constants PascalCase
+dotnet_naming_rule.interfaces_start_with_i.severity = warning
+dotnet_naming_rule.interfaces_start_with_i.symbols = interface_symbol
+dotnet_naming_rule.interfaces_start_with_i.style = i_prefix_style
+dotnet_naming_symbols.interface_symbol.applicable_kinds = interface
+dotnet_naming_symbols.interface_symbol.applicable_accessibilities = *
+dotnet_naming_style.i_prefix_style.required_prefix = I
+dotnet_naming_style.i_prefix_style.capitalization = pascal_case
+
+dotnet_naming_rule.types_pascal.severity = warning
+dotnet_naming_rule.types_pascal.symbols = type_symbol
+dotnet_naming_rule.types_pascal.style = pascal_style
+dotnet_naming_symbols.type_symbol.applicable_kinds = class, struct, enum, delegate
+dotnet_naming_symbols.type_symbol.applicable_accessibilities = *
+dotnet_naming_style.pascal_style.capitalization = pascal_case
+
+dotnet_naming_rule.members_pascal.severity = warning
+dotnet_naming_rule.members_pascal.symbols = member_symbol
+dotnet_naming_rule.members_pascal.style = pascal_style
+dotnet_naming_symbols.member_symbol.applicable_kinds = method, event
+dotnet_naming_symbols.member_symbol.applicable_accessibilities = *
+
+dotnet_naming_rule.constants_pascal.severity = warning
+dotnet_naming_rule.constants_pascal.symbols = constant_symbol
+dotnet_naming_rule.constants_pascal.style = pascal_style
+dotnet_naming_symbols.constant_symbol.applicable_kinds = field
+dotnet_naming_symbols.constant_symbol.required_modifiers = const
+
+dotnet_naming_rule.private_fields_camel.severity = warning
+dotnet_naming_rule.private_fields_camel.symbols = private_field_symbol
+dotnet_naming_rule.private_fields_camel.style = camel_style
+dotnet_naming_symbols.private_field_symbol.applicable_kinds = field
+dotnet_naming_symbols.private_field_symbol.applicable_accessibilities = private, internal
+dotnet_naming_style.camel_style.capitalization = camel_case
+
+# StyleCop.Analyzers — strict (SA* surface as errors via TreatWarningsAsErrors),
+# with the rules that fight the house style turned off.
+
+# Layout / readability — on as errors
+# NOTE: SA1500/SA1501/SA1505 enforce Allman braces and are INCOMPATIBLE with our
+# K&R style (csharp_new_line_before_open_brace = none). They are disabled below.
+dotnet_diagnostic.SA1507.severity = error
+dotnet_diagnostic.SA1508.severity = error
+dotnet_diagnostic.SA1516.severity = error
+dotnet_diagnostic.SA1518.severity = error
+
+# Member ordering — on as errors
+dotnet_diagnostic.SA1201.severity = error
+
+# Ordering / spacing — on as errors
+dotnet_diagnostic.SA1208.severity = error
+dotnet_diagnostic.SA1210.severity = error
+dotnet_diagnostic.SA1028.severity = error
+dotnet_diagnostic.SA1027.severity = error
+
+# Documentation — required on public API
+dotnet_diagnostic.SA1600.severity = error
+dotnet_diagnostic.SA1601.severity = error
+dotnet_diagnostic.SA1602.severity = error
+dotnet_diagnostic.SA1611.severity = error
+dotnet_diagnostic.SA1615.severity = error
+dotnet_diagnostic.SA1618.severity = error
+
+# DISABLED: rules that conflict with the house style
+dotnet_diagnostic.SA0001.severity = none # XML comment analysis disabled — noise when GenerateDocumentationFile is off (app mods)
+dotnet_diagnostic.SA1623.severity = none # Property documentation doesnt need to start with Gets
+dotnet_diagnostic.SA1633.severity = none # file header — banned
+dotnet_diagnostic.SA1634.severity = none # header copyright family — file headers are banned
+dotnet_diagnostic.SA1635.severity = none
+dotnet_diagnostic.SA1636.severity = none
+dotnet_diagnostic.SA1640.severity = none
+dotnet_diagnostic.SA1641.severity = none
+dotnet_diagnostic.SA1101.severity = none # this. prefix — banned
+dotnet_diagnostic.SA1200.severity = none # usings inside namespace — we use outside
+dotnet_diagnostic.SA1309.severity = none # underscore field prefix
+dotnet_diagnostic.SA1313.severity = none # underscore param prefix — Harmony __instance/__result/___field are mandated by name
+dotnet_diagnostic.SA1413.severity = none # trailing comma in multiline initializers
+dotnet_diagnostic.SA1503.severity = none # braces on single-line — csharp_prefer_braces handles
+dotnet_diagnostic.SA1500.severity = none # multi-line braces must not share line — enforces Allman, conflicts with K&R
+dotnet_diagnostic.SA1501.severity = none # statement on single line — pairs with K&R one-liners
+dotnet_diagnostic.SA1505.severity = none # opening brace not followed by blank line — Allman-oriented
+dotnet_diagnostic.SA1502.severity = none # element on single line — keep terse one-liners (record DUs, empty bodies)
+dotnet_diagnostic.SA1513.severity = none # blank line after closing brace — false-positives on '} = new()' property initializers
+dotnet_diagnostic.SA1128.severity = none # ctor initializer on own line — short ': base(x)' may stay inline
+dotnet_diagnostic.SA1642.severity = none # ctor doc boilerplate "Initializes a new instance of" — keep terse hand docs
+dotnet_diagnostic.SA1116.severity = none # split params over lines — formatter/DotSettings owns wrapping
+dotnet_diagnostic.SA1117.severity = none # params same-line-or-each-own-line — conflicts with CHOP_IF_LONG wrapping
+dotnet_diagnostic.SA1118.severity = none # param must not span multiple lines — multi-line tuple/lambda args are fine
+dotnet_diagnostic.SA1404.severity = none # SuppressMessage justification
+dotnet_diagnostic.SA1649.severity = none # filename matches type — generic siblings use <Name>T.cs
+
+# LINQ is deliberately absent from the runtime assemblies: Where/Select/Any allocate an iterator
+# and, unless the lambda is static, a closure per call, and the composition path runs for every
+# patched method. S3267 asks for exactly the rewrite that reintroduces it, so removing a LINQ call
+# here raises a fresh S3267 on the loop that replaced it. Off repo-wide rather than dismissed
+# case by case. The analyzer and generator still use LINQ; they run at build time, not in a
+# patched process.
+dotnet_diagnostic.S3267.severity = none # loop should use Where — explicit loops are the rule on these paths
+dotnet_diagnostic.SA1402.severity = none # one type per file — cohesive enums/records/contracts may group
+
+# Tests, benchmarks, and probe/test mods relax the opinionated layout/ordering/doc/field rules.
+# Each tree gets its own section: Roslyn's editorconfig matcher does NOT expand a `{a,b}` brace
+# group in a section header, AND a leading `**/` will NOT match zero preceding segments. The
+# reliable form is a root-anchored glob per pattern plus the project-dir forms. DO NOT collapse
+# these back into one `{a,b}` glob — it silently matches nothing and the bench/test build goes red.
+
+[tests/**/*.cs]
+dotnet_diagnostic.SA0001.severity = none
+dotnet_diagnostic.SA1600.severity = none
+dotnet_diagnostic.SA1601.severity = none
+dotnet_diagnostic.SA1602.severity = none
+dotnet_diagnostic.SA1611.severity = none
+dotnet_diagnostic.SA1615.severity = none
+dotnet_diagnostic.SA1618.severity = none
+dotnet_diagnostic.SA1201.severity = none
+dotnet_diagnostic.SA1202.severity = none
+dotnet_diagnostic.SA1203.severity = none
+dotnet_diagnostic.SA1204.severity = none
+dotnet_diagnostic.SA1307.severity = none
+dotnet_diagnostic.SA1401.severity = none
+dotnet_diagnostic.SA1134.severity = none
+dotnet_diagnostic.SA1516.severity = none
+dotnet_diagnostic.SA1402.severity = none
+dotnet_diagnostic.SA1649.severity = none
+dotnet_diagnostic.CA1822.severity = none # can be marked static — a patch target must stay an instance method
+dotnet_diagnostic.CA2211.severity = none # non-constant static field — observation counters are asserted on, so public + mutable is the point
+dotnet_diagnostic.CA1859.severity = none # use the concrete type — a perf hint with nothing to gain in a fixture
+dotnet_diagnostic.CA2208.severity = none # argument exception needs paramName — fixtures throw bare exceptions purely to shape an IL exception region
+dotnet_diagnostic.CA2219.severity = none # do not throw from finally — a throw inside finally is itself an IL shape under test
+dotnet_diagnostic.CA1861.severity = none # hoist constant array args — one-off assertion and setup arrays read better inline
+
+[bench/**/*.cs]
+dotnet_diagnostic.SA0001.severity = none
+dotnet_diagnostic.SA1600.severity = none
+dotnet_diagnostic.SA1601.severity = none
+dotnet_diagnostic.SA1602.severity = none
+dotnet_diagnostic.SA1611.severity = none
+dotnet_diagnostic.SA1615.severity = none
+dotnet_diagnostic.SA1618.severity = none
+dotnet_diagnostic.SA1201.severity = none
+dotnet_diagnostic.SA1202.severity = none
+dotnet_diagnostic.SA1203.severity = none
+dotnet_diagnostic.SA1204.severity = none
+dotnet_diagnostic.SA1307.severity = none
+dotnet_diagnostic.SA1401.severity = none
+dotnet_diagnostic.SA1134.severity = none
+dotnet_diagnostic.SA1516.severity = none
+dotnet_diagnostic.SA1402.severity = none
+dotnet_diagnostic.SA1649.severity = none
+dotnet_diagnostic.CA1822.severity = none # can be marked static — a patch target must stay an instance method
+dotnet_diagnostic.CA2211.severity = none # non-constant static field — observation counters are asserted on, so public + mutable is the point
+dotnet_diagnostic.CA1859.severity = none # use the concrete type — a perf hint with nothing to gain in a fixture
+dotnet_diagnostic.CA2208.severity = none # argument exception needs paramName — fixtures throw bare exceptions purely to shape an IL exception region
+dotnet_diagnostic.CA2219.severity = none # do not throw from finally — a throw inside finally is itself an IL shape under test
+dotnet_diagnostic.CA1861.severity = none # hoist constant array args — one-off assertion and setup arrays read better inline
+
+[**/*.Tests/**/*.cs]
+dotnet_diagnostic.SA0001.severity = none
+dotnet_diagnostic.SA1600.severity = none
+dotnet_diagnostic.SA1601.severity = none
+dotnet_diagnostic.SA1602.severity = none
+dotnet_diagnostic.SA1611.severity = none
+dotnet_diagnostic.SA1615.severity = none
+dotnet_diagnostic.SA1618.severity = none
+dotnet_diagnostic.SA1201.severity = none
+dotnet_diagnostic.SA1202.severity = none
+dotnet_diagnostic.SA1203.severity = none
+dotnet_diagnostic.SA1204.severity = none
+dotnet_diagnostic.SA1307.severity = none
+dotnet_diagnostic.SA1401.severity = none
+dotnet_diagnostic.SA1134.severity = none
+dotnet_diagnostic.SA1516.severity = none
+dotnet_diagnostic.SA1402.severity = none
+dotnet_diagnostic.SA1649.severity = none
+dotnet_diagnostic.CA1822.severity = none # can be marked static — a patch target must stay an instance method
+dotnet_diagnostic.CA2211.severity = none # non-constant static field — observation counters are asserted on, so public + mutable is the point
+dotnet_diagnostic.CA1859.severity = none # use the concrete type — a perf hint with nothing to gain in a fixture
+dotnet_diagnostic.CA2208.severity = none # argument exception needs paramName — fixtures throw bare exceptions purely to shape an IL exception region
+dotnet_diagnostic.CA2219.severity = none # do not throw from finally — a throw inside finally is itself an IL shape under test
+dotnet_diagnostic.CA1861.severity = none # hoist constant array args — one-off assertion and setup arrays read better inline
+
+[**/*.Test/**/*.cs]
+dotnet_diagnostic.SA0001.severity = none
+dotnet_diagnostic.SA1600.severity = none
+dotnet_diagnostic.SA1601.severity = none
+dotnet_diagnostic.SA1602.severity = none
+dotnet_diagnostic.SA1611.severity = none
+dotnet_diagnostic.SA1615.severity = none
+dotnet_diagnostic.SA1618.severity = none
+dotnet_diagnostic.SA1201.severity = none
+dotnet_diagnostic.SA1202.severity = none
+dotnet_diagnostic.SA1203.severity = none
+dotnet_diagnostic.SA1204.severity = none
+dotnet_diagnostic.SA1307.severity = none
+dotnet_diagnostic.SA1401.severity = none
+dotnet_diagnostic.SA1134.severity = none
+dotnet_diagnostic.SA1516.severity = none
+dotnet_diagnostic.SA1402.severity = none
+dotnet_diagnostic.SA1649.severity = none
+dotnet_diagnostic.CA1822.severity = none # can be marked static — a patch target must stay an instance method
+dotnet_diagnostic.CA2211.severity = none # non-constant static field — observation counters are asserted on, so public + mutable is the point
+dotnet_diagnostic.CA1859.severity = none # use the concrete type — a perf hint with nothing to gain in a fixture
+dotnet_diagnostic.CA2208.severity = none # argument exception needs paramName — fixtures throw bare exceptions purely to shape an IL exception region
+dotnet_diagnostic.CA2219.severity = none # do not throw from finally — a throw inside finally is itself an IL shape under test
+dotnet_diagnostic.CA1861.severity = none # hoist constant array args — one-off assertion and setup arrays read better inline
+
+[**/Tests/**/*.cs]
+dotnet_diagnostic.SA0001.severity = none
+dotnet_diagnostic.SA1600.severity = none
+dotnet_diagnostic.SA1601.severity = none
+dotnet_diagnostic.SA1602.severity = none
+dotnet_diagnostic.SA1611.severity = none
+dotnet_diagnostic.SA1615.severity = none
+dotnet_diagnostic.SA1618.severity = none
+dotnet_diagnostic.SA1201.severity = none
+dotnet_diagnostic.SA1202.severity = none
+dotnet_diagnostic.SA1203.severity = none
+dotnet_diagnostic.SA1204.severity = none
+dotnet_diagnostic.SA1307.severity = none
+dotnet_diagnostic.SA1401.severity = none
+dotnet_diagnostic.SA1134.severity = none
+dotnet_diagnostic.SA1516.severity = none
+dotnet_diagnostic.SA1402.severity = none
+dotnet_diagnostic.SA1649.severity = none
+dotnet_diagnostic.CA1822.severity = none # can be marked static — a patch target must stay an instance method
+dotnet_diagnostic.CA2211.severity = none # non-constant static field — observation counters are asserted on, so public + mutable is the point
+dotnet_diagnostic.CA1859.severity = none # use the concrete type — a perf hint with nothing to gain in a fixture
+dotnet_diagnostic.CA2208.severity = none # argument exception needs paramName — fixtures throw bare exceptions purely to shape an IL exception region
+dotnet_diagnostic.CA2219.severity = none # do not throw from finally — a throw inside finally is itself an IL shape under test
+dotnet_diagnostic.CA1861.severity = none # hoist constant array args — one-off assertion and setup arrays read better inline
+
+[**/*.TestMod/**/*.cs]
+dotnet_diagnostic.SA0001.severity = none
+dotnet_diagnostic.SA1600.severity = none
+dotnet_diagnostic.SA1601.severity = none
+dotnet_diagnostic.SA1602.severity = none
+dotnet_diagnostic.SA1611.severity = none
+dotnet_diagnostic.SA1615.severity = none
+dotnet_diagnostic.SA1618.severity = none
+dotnet_diagnostic.SA1201.severity = none
+dotnet_diagnostic.SA1202.severity = none
+dotnet_diagnostic.SA1203.severity = none
+dotnet_diagnostic.SA1204.severity = none
+dotnet_diagnostic.SA1307.severity = none
+dotnet_diagnostic.SA1401.severity = none
+dotnet_diagnostic.SA1134.severity = none
+dotnet_diagnostic.SA1516.severity = none
+dotnet_diagnostic.SA1402.severity = none
+dotnet_diagnostic.SA1649.severity = none
+dotnet_diagnostic.CA1822.severity = none # can be marked static — a patch target must stay an instance method
+dotnet_diagnostic.CA2211.severity = none # non-constant static field — observation counters are asserted on, so public + mutable is the point
+dotnet_diagnostic.CA1859.severity = none # use the concrete type — a perf hint with nothing to gain in a fixture
+dotnet_diagnostic.CA2208.severity = none # argument exception needs paramName — fixtures throw bare exceptions purely to shape an IL exception region
+dotnet_diagnostic.CA2219.severity = none # do not throw from finally — a throw inside finally is itself an IL shape under test
+dotnet_diagnostic.CA1861.severity = none # hoist constant array args — one-off assertion and setup arrays read better inline
+
+# DefOf classes: the engine's DefOfHelper.RebindAllDefOfs reflects over PUBLIC STATIC fields and
+# matches each field's NAME to a def's TYD `name` (which carries underscores, e.g. Mod_Thing).
+# So DefOf fields must be public and may contain underscores — the field-naming rules can't apply.
+[**/*DefOf.cs]
+dotnet_diagnostic.SA1401.severity = none # field must be private — DefOf fields are reflection-bound, must be public
+dotnet_diagnostic.SA1307.severity = none # field must begin uppercase — name must byte-match the def name
+dotnet_diagnostic.SA1310.severity = none # field must not contain underscore — def names use underscores
+dotnet_diagnostic.SA1311.severity = none # static readonly field naming — same reason
+dotnet_diagnostic.SA1600.severity = none # documented elements — DefOf fields are self-describing
+
+# Def DEFINITION classes (a Def subclass, file named *Def.cs): the TYD/XML def loader binds
+# instance fields by their PUBLIC camelCase name via reflection. Public consumers also read these
+# fields directly (channelDef.defaultLevel). So they must stay public + camelCase.
+[**/*Def.cs]
+dotnet_diagnostic.SA1401.severity = none # field must be private — def fields are loader-bound, public API
+dotnet_diagnostic.SA1307.severity = none # field must begin uppercase — TYD key binds by camelCase name
+dotnet_diagnostic.SA1310.severity = none # field must not contain underscore — some def fields use them
+

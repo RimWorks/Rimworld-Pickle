@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Pickle</AssemblyName>
+    <RootNamespace>Pickle</RootNamespace>
+    <OutDir>$(MSBuildProjectDirectory)\..\..\Assemblies\</OutDir>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Gherkin" Version="42.0.*" />
+    <PackageReference Include="Cucumber.CucumberExpressions" Version="20.1.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Pickle.Core\Pickle.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Built by `npm run build` in Dashboard/ and not committed. Conditional so a
+         fresh checkout still builds; Dashboard.cs serves a "run npm run build"
+         placeholder when the bundle is absent. -->
+    <EmbeddedResource Include="..\..\Dashboard\dist\index.html" LogicalName="Pickle.Dashboard.html" Condition="Exists('..\..\Dashboard\dist\index.html')" />
+    <EmbeddedResource Include="..\..\Dashboard\dist\report.html" LogicalName="Pickle.ReportTemplate.html" Condition="Exists('..\..\Dashboard\dist\report.html')" />
+  </ItemGroup>
+</Project>

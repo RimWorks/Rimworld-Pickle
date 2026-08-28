@@ -1,0 +1,45 @@
+# Running tests
+
+There are three ways to run a suite: the in-game runner, a browser, or unattended.
+
+## The in-game runner
+
+Open the runner from the debug actions menu. It has two panes. The tree on the left
+lists every mod, feature, and scenario. Each row has a checkbox and a status dot. The pane on
+the right shows the selected scenario's steps, timings, and failure evidence.
+
+| Control | Effect |
+| --- | --- |
+| Run selected | Run the checked scenarios |
+| Rerun failed | Run only the scenarios that failed last time |
+| Watch / Fast | Watch runs at normal speed. Fast skips the waiting |
+| Break on failure | Pause the game on a failed step, with the broken state intact |
+| Save fixture | Save the running game into a mod's `Pickle/Fixtures/` |
+
+Break on failure is the reason to run in game. The game pauses on the failing step, so
+you can inspect the colony that produced the failure.
+
+## A browser
+
+Start RimWorld with `-pickle-http`, then open `http://localhost:27750`.
+
+The dashboard shows the same tree, the current step, and live counts. You can start and
+stop runs from it. Use `-pickle-http-port=N` to serve on another port.
+
+The dashboard reads its state over HTTP, so reloading a save does not disturb it. That
+makes it the only way to watch a headless run.
+
+The endpoints it calls are not a stable interface yet. Read them from the network tab if
+you want to drive Pickle from your own tooling, but expect them to change.
+
+## Unattended
+
+Start RimWorld with `-pickle-run`. Pickle runs every scenario, writes reports, and
+exits with a code your CI can read. See [autorun and CI](autorun.md).
+
+## Determinism
+
+Pickle seeds RimWorld's random number generator before each scenario. The same seed
+produces the same raid and the same weather.
+
+Every run logs its seed. Pass it back with `-pickle-seed` to reproduce a failure.

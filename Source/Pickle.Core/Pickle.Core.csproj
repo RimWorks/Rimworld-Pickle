@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Pickle.Core</AssemblyName>
+    <RootNamespace>Pickle.Core</RootNamespace>
+    <TargetFrameworks>net472;net9.0</TargetFrameworks>
+    <TargetFramework></TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.*" PrivateAssets="all" />
+    <PackageReference Include="Gherkin" Version="42.0.*" />
+    <PackageReference Include="Cucumber.CucumberExpressions" Version="20.1.*" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/Source/">
+    <Project Path="Source/Pickle.Core/Pickle.Core.csproj" />
+    <Project Path="Source/Pickle/Pickle.csproj" />
+    <Project Path="Source/Pickle.Vanilla/Pickle.Vanilla.csproj" />
+    <Project Path="Source/Pickle.Tests/Pickle.Tests.csproj" />
+    <Project Path="Source/Pickle.Patches.Harmony/Pickle.Patches.Harmony.csproj" />
+    <Project Path="Source/Pickle.Patches.Concord/Pickle.Patches.Concord.csproj" />
+    <Project Path="Source/Pickle.Ref/Pickle.Ref.csproj" />
+  </Folder>
+</Solution>

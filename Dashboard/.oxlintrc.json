@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "options": {
+    "typeAware": true
+  },
+  "extends": [
+    "./node_modules/@rikalabs/oxlint-standards/presets/strict-web.json"
+  ],
+  "jsPlugins": [
+    "@rikalabs/oxlint-standards/plugin"
+  ],
+  "ignorePatterns": [
+    "dist"
+  ],
+  "rules": {
+    "nextjs/no-img-element": "off"
+  }
+}

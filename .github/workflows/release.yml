@@ -1,0 +1,66 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  # NuGet trusted publishing exchanges this token for a short-lived API key.
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: semantic-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Install release dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Get a NuGet API key by trusted publishing
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: aequasi
+
+      - name: Set up SteamCMD
+        uses: buildalon/setup-steamcmd@6766d78d7196d611bfa37c0dcad876d7b16a27ad # v1
+
+      - name: Restore Steam config
+        env:
+          STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
+        run: |
+          mkdir -p "$STEAM_DIR/config"
+          printf '%s' "$STEAM_CONFIG_VDF_B64" | base64 -d > "$STEAM_DIR/config/config.vdf"
+          echo "STEAM_CONFIG_VDF=$STEAM_DIR/config/config.vdf" >> "$GITHUB_ENV"
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_CONFIG_VDF: ${{ env.STEAM_CONFIG_VDF }}
+          STEAMCMD_PATH: ${{ env.STEAM_CMD }}/steamcmd.sh
+        run: ./node_modules/.bin/semantic-release

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <packageId>cryptiklemur.pickle</packageId>
+  <name>Pickle</name>
+  <author>cryptiklemur</author>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <description>In-game BDD testing for RimWorld mods. Runs Gherkin scenarios inside a live session: they click the real UI, wait on real game state, and assert against the running simulation. Needs Harmony or Concord.</description>
+  <loadAfter>
+    <li>brrainz.harmony</li>
+    <li>concordlib.concord</li>
+  </loadAfter>
+</ModMetaData>
