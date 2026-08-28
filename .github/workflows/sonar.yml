@@ -1,0 +1,63 @@
+name: sonar
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: build and analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Sonar needs full history to blame lines and scope new code.
+          fetch-depth: 0
+
+      - name: Setup JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: 17
+          distribution: zulu
+
+      - name: Cache Sonar packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Cache Sonar scanner
+        id: cache-sonar-scanner
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/scanner
+          key: ${{ runner.os }}-sonar-scanner
+          restore-keys: ${{ runner.os }}-sonar-scanner
+
+      - name: Install Sonar scanner
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        run: dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}/scanner
+
+      - name: Build and analyze
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          ${{ runner.temp }}/scanner/dotnet-sonarscanner begin \
+            /k:"cryptiklemur_Rimworld-Pickle" \
+            /o:"cryptiklemur" \
+            /d:sonar.token="$SONAR_TOKEN" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.exclusions="Dashboard/dist/**,Dashboard/node_modules/**,Styles/**,artifacts/**,**/bin/**,**/obj/**" \
+            /d:sonar.coverage.exclusions="Source/Pickle/**,Source/Pickle.Vanilla/**,Source/Pickle.Patches.*/**,Source/Pickle.Ref/**,Dashboard/**" \
+            /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/**/coverage.opencover.xml"
+          dotnet build Pickle.slnx -c Release
+          dotnet test Pickle.slnx -c Release --no-build \
+            --collect:"XPlat Code Coverage;Format=opencover" \
+            --results-directory artifacts/coverage
+          ${{ runner.temp }}/scanner/dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
