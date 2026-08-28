@@ -11,14 +11,6 @@ namespace Pickle.Tests;
 public class HtmlReportWriterTests {
   private const string Template = "<html><script id=\"pickle-report\">__PICKLE_REPORT_JSON__</script></html>";
 
-  private static JsonElement Payload(
-      List<ScenarioResult> results,
-      string exitReason = "failed",
-      System.Func<string, byte[]?>? readBytes = null) {
-    string json = HtmlReportWriter.BuildPayload(results, exitReason, readBytes);
-    return JsonDocument.Parse(json.Replace("<\\/", "</")).RootElement;
-  }
-
   [Fact]
   public void Write_replaces_the_placeholder() {
     string html = HtmlReportWriter.Write(ReportWriterTestData.BuildTwoFeatureRun(), "failed", Template);
@@ -116,5 +108,13 @@ public class HtmlReportWriterTests {
     }
 
     return count;
+  }
+
+  private static JsonElement Payload(
+      List<ScenarioResult> results,
+      string exitReason = "failed",
+      System.Func<string, byte[]?>? readBytes = null) {
+    string json = HtmlReportWriter.BuildPayload(results, exitReason, readBytes);
+    return JsonDocument.Parse(json.Replace("<\\/", "</")).RootElement;
   }
 }

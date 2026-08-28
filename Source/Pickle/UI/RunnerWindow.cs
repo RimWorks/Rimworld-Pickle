@@ -44,8 +44,6 @@ public class RunnerWindow : Window {
   private RunPill? activePill;
   private bool restoreWindowAfterRun;
   private (string SourcePath, int ScenarioIndex)? selected;
-  private Vector2 treeScroll;
-  private Vector2 detailScroll;
 
   public RunnerWindow() {
     optionalTitle = "Pickle test runner";
@@ -72,15 +70,9 @@ public class RunnerWindow : Window {
 
   internal IReadOnlyList<(DiscoveredSuite Suite, FeaturePlan Plan)> ParsedFeatures => parsedFeatures;
 
-  internal Vector2 TreeScroll {
-    get => treeScroll;
-    set => treeScroll = value;
-  }
+  internal Vector2 TreeScroll { get; set; }
 
-  internal Vector2 DetailScroll {
-    get => detailScroll;
-    set => detailScroll = value;
-  }
+  internal Vector2 DetailScroll { get; set; }
 
   internal bool HasAnyScenarioSelected {
     get {
@@ -132,30 +124,6 @@ public class RunnerWindow : Window {
 
   internal int FailedResultsCount => results.Values.Count(r => r.Outcome == ScenarioOutcome.Failed);
 
-  // Reparsing keeps results, so a reload does not blank mods it never ran. A feature
-  // whose scenario order changed can show a stale row until the next full run.
-  private void DiscoverAndParseFeatures() {
-    DiscoveredSuites = SuiteScanner.DiscoverSuites();
-    parsedFeatures.Clear();
-
-    foreach (DiscoveredSuite suite in DiscoveredSuites) {
-      foreach (string featureFile in suite.FeatureFiles) {
-        try {
-          string featureText = File.ReadAllText(featureFile);
-          StringReader reader = new StringReader(featureText);
-          Parser parser = new Parser();
-          GherkinDocument gherkinDoc = parser.Parse(reader);
-          FeaturePlan plan = GherkinAdapter.Adapt(gherkinDoc, featureFile);
-          parsedFeatures.Add((suite, plan));
-        } catch (Exception ex) {
-          Log.Error($"pickle: failed to parse {Path.GetFileName(featureFile)}: {ex.Message}");
-        }
-      }
-    }
-
-    PublishSnapshot();
-  }
-
   /// <inheritdoc/>
   public override void DoWindowContents(Rect inRect) {
     float y = inRect.y;
@@ -196,30 +164,6 @@ public class RunnerWindow : Window {
     y += bodyHeight;
     Rect statusRect = new Rect(inRect.x, y, inRect.width, StatusRowHeight);
     DrawStatusRow(statusRect);
-  }
-
-  private void DrawStatusRow(Rect rect) {
-    Widgets.DrawLineHorizontal(rect.x, rect.y, rect.width, Widgets.SeparatorLineColor);
-
-    int passed = results.Values.Count(r => r.Outcome == ScenarioOutcome.Passed);
-    int failed = FailedResultsCount;
-    int notRun = TotalScenarioCount - results.Count;
-
-    Text.Font = GameFont.Tiny;
-    Text.Anchor = TextAnchor.MiddleLeft;
-    Widgets.Label(new Rect(rect.x + 2f, rect.y, 260f, rect.height), $"{passed} passed · {failed} failed · {notRun} not run");
-
-    string modeText = PickleRunMode.Current == PickleRunMode.Mode.Watch ? "watch mode" : "fast mode";
-    string lastRunText = LastRunAt.HasValue ? $"last run {LastRunAt.Value:HH:mm:ss} · {modeText}" : modeText;
-    GUI.color = RunnerStatusColors.Muted;
-    Widgets.Label(new Rect(rect.x + 270f, rect.y, 260f, rect.height), lastRunText);
-    GUI.color = Color.white;
-
-    Text.Anchor = TextAnchor.MiddleRight;
-    Widgets.Label(new Rect(rect.xMax - 300f, rect.y, 296f, rect.height), "junit + messages written to pickle-reports/");
-
-    Text.Anchor = TextAnchor.UpperLeft;
-    Text.Font = GameFont.Small;
   }
 
   internal bool TryGetResult(string sourcePath, int scenarioIndex, out ScenarioResult result) {
@@ -307,6 +251,105 @@ public class RunnerWindow : Window {
     _ = RunAsync((sourcePath, index) => failedKeys.Contains((sourcePath, index)));
   }
 
+  private static List<int> SelectedPositions(
+      string sourcePath, int featureStartIndex, int scenarioCount, Func<string, int, bool>? isScenarioSelected) {
+    List<int> positions = [];
+    for (int i = 0; i < scenarioCount; i++) {
+      if (isScenarioSelected == null || isScenarioSelected(sourcePath, featureStartIndex + i)) {
+        positions.Add(i);
+      }
+    }
+
+    return positions;
+  }
+
+  // RunFeature's filter sees no index, so this rebuilds one from call order. It is called
+  // once per scenario in plan order, so position lines up.
+  private static Func<ScenarioPlan, bool>? BuildScenarioFilter(
+      string sourcePath, int featureStartIndex, Func<string, int, bool>? isScenarioSelected) {
+    if (isScenarioSelected == null) {
+      return null;
+    }
+
+    int position = 0;
+    return _ => {
+      bool included = isScenarioSelected(sourcePath, featureStartIndex + position);
+      position++;
+      return included;
+    };
+  }
+
+  private static Assembly? FindVanillaAssembly() {
+    Type? vanillaType = Type.GetType("Pickle.Vanilla.VanillaSteps, Pickle.Vanilla");
+    if (vanillaType != null) {
+      return vanillaType.Assembly;
+    }
+
+    return AppDomain.CurrentDomain.GetAssemblies()
+        .FirstOrDefault(a => a.GetName().Name == "Pickle.Vanilla");
+  }
+
+  private static void AddStepsDlls(List<Assembly> assemblies, DiscoveredSuite suite) {
+    foreach (string stepsDll in suite.StepsDlls) {
+      try {
+        Assembly loadedAsm = Assembly.LoadFrom(stepsDll);
+        if (!assemblies.Contains(loadedAsm)) {
+          assemblies.Add(loadedAsm);
+        }
+      } catch (Exception ex) {
+        Log.Error($"pickle: failed to load steps dll {stepsDll}: {ex.Message}");
+      }
+    }
+  }
+
+  // Reparsing keeps results, so a reload does not blank mods it never ran. A feature
+  // whose scenario order changed can show a stale row until the next full run.
+  private void DiscoverAndParseFeatures() {
+    DiscoveredSuites = SuiteScanner.DiscoverSuites();
+    parsedFeatures.Clear();
+
+    foreach (DiscoveredSuite suite in DiscoveredSuites) {
+      foreach (string featureFile in suite.FeatureFiles) {
+        try {
+          string featureText = File.ReadAllText(featureFile);
+          StringReader reader = new StringReader(featureText);
+          Parser parser = new Parser();
+          GherkinDocument gherkinDoc = parser.Parse(reader);
+          FeaturePlan plan = GherkinAdapter.Adapt(gherkinDoc, featureFile);
+          parsedFeatures.Add((suite, plan));
+        } catch (Exception ex) {
+          Log.Error($"pickle: failed to parse {Path.GetFileName(featureFile)}: {ex.Message}");
+        }
+      }
+    }
+
+    PublishSnapshot();
+  }
+
+  private void DrawStatusRow(Rect rect) {
+    Widgets.DrawLineHorizontal(rect.x, rect.y, rect.width, Widgets.SeparatorLineColor);
+
+    int passed = results.Values.Count(r => r.Outcome == ScenarioOutcome.Passed);
+    int failed = FailedResultsCount;
+    int notRun = TotalScenarioCount - results.Count;
+
+    Text.Font = GameFont.Tiny;
+    Text.Anchor = TextAnchor.MiddleLeft;
+    Widgets.Label(new Rect(rect.x + 2f, rect.y, 260f, rect.height), $"{passed} passed · {failed} failed · {notRun} not run");
+
+    string modeText = PickleRunMode.Current == PickleRunMode.Mode.Watch ? "watch mode" : "fast mode";
+    string lastRunText = LastRunAt.HasValue ? $"last run {LastRunAt.Value:HH:mm:ss} · {modeText}" : modeText;
+    GUI.color = RunnerStatusColors.Muted;
+    Widgets.Label(new Rect(rect.x + 270f, rect.y, 260f, rect.height), lastRunText);
+    GUI.color = Color.white;
+
+    Text.Anchor = TextAnchor.MiddleRight;
+    Widgets.Label(new Rect(rect.xMax - 300f, rect.y, 296f, rect.height), "junit + messages written to pickle-reports/");
+
+    Text.Anchor = TextAnchor.UpperLeft;
+    Text.Font = GameFont.Small;
+  }
+
   // Keyed by (sourcePath, global scenario index), same as RunnerTreeView and results.
   // Null runs everything; a feature with nothing selected is skipped outright.
   private async Task RunAsync(Func<string, int, bool>? isScenarioSelected) {
@@ -349,34 +392,18 @@ public class RunnerWindow : Window {
         int featureStartIndex = scenarioIndex;
         int scenarioCount = plan.Scenarios.Count;
 
-        List<int> selectedPositions = [];
-        for (int i = 0; i < scenarioCount; i++) {
-          if (isScenarioSelected == null || isScenarioSelected(sourcePath, featureStartIndex + i)) {
-            selectedPositions.Add(i);
-          }
-        }
-
+        List<int> selectedPositions = SelectedPositions(sourcePath, featureStartIndex, scenarioCount, isScenarioSelected);
         if (selectedPositions.Count == 0) {
           scenarioIndex += scenarioCount;
           continue;
         }
 
-        // RunFeature's filter sees no index, so this rebuilds one from call order. It is called
-        // once per scenario in plan order, so position lines up.
-        Func<ScenarioPlan, bool>? scenarioFilter = null;
-        if (isScenarioSelected != null) {
-          int position = 0;
-          scenarioFilter = _ => {
-            bool selected = isScenarioSelected(sourcePath, featureStartIndex + position);
-            position++;
-            return selected;
-          };
-        }
+        Func<ScenarioPlan, bool>? scenarioFilter = BuildScenarioFilter(sourcePath, featureStartIndex, isScenarioSelected);
 
         // Results land per scenario rather than per feature so the dashboard's
         // tree fills in live instead of a whole feature at a time.
         int completed = 0;
-        List<ScenarioResult> featureResults = await session.RunFeature(
+        await session.RunFeature(
             plan,
             suite.ModName,
             onScenarioCompleted: result => {
@@ -450,34 +477,15 @@ public class RunnerWindow : Window {
   }
 
   private List<Assembly> BuildAssemblyList() {
-    List<Assembly> assemblies =
-    [
-        typeof(RunnerWindow).Assembly,
-        ];
+    List<Assembly> assemblies = [typeof(RunnerWindow).Assembly];
 
-    Type? vanillaType = Type.GetType("Pickle.Vanilla.VanillaSteps, Pickle.Vanilla");
-    if (vanillaType != null) {
-      assemblies.Add(vanillaType.Assembly);
-    } else {
-      foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies()) {
-        if (a.GetName().Name == "Pickle.Vanilla") {
-          assemblies.Add(a);
-          break;
-        }
-      }
+    Assembly? vanilla = FindVanillaAssembly();
+    if (vanilla != null) {
+      assemblies.Add(vanilla);
     }
 
     foreach (DiscoveredSuite suite in DiscoveredSuites) {
-      foreach (string stepsDll in suite.StepsDlls) {
-        try {
-          Assembly loadedAsm = Assembly.LoadFrom(stepsDll);
-          if (!assemblies.Contains(loadedAsm)) {
-            assemblies.Add(loadedAsm);
-          }
-        } catch (Exception ex) {
-          Log.Error($"pickle: failed to load steps dll {stepsDll}: {ex.Message}");
-        }
-      }
+      AddStepsDlls(assemblies, suite);
     }
 
     return assemblies;

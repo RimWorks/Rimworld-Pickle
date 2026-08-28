@@ -2,7 +2,7 @@ import type { Snapshot } from "./types";
 
 export const post = (url: string) => fetch(url, { method: "POST" }).catch(() => {});
 
-export function Toolbar({ snap }: { snap: Snapshot }) {
+export function Toolbar({ snap }: Readonly<{ snap: Snapshot }>) {
   const running = snap.status === "running" || snap.status === "paused";
   const anySelected = snap.features.some((f) => f.scenarios.some((s) => s.selected));
   const anyFailed = snap.features.some((f) => f.scenarios.some((s) => s.outcome === "Failed"));

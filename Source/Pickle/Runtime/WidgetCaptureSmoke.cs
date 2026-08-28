@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Pickle.Input;
 using UnityEngine;
 using Verse;
@@ -8,10 +9,10 @@ namespace Pickle.Runtime;
 public static class WidgetCaptureSmoke {
   public static void Run() {
     PickleDriver.EnsureExists();
-    LongEventHandler.QueueLongEvent(RunSmoke, "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
+    LongEventHandler.QueueLongEvent(() => _ = RunSmoke(), "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
   }
 
-  private static async void RunSmoke() {
+  private static async Task RunSmoke() {
     try {
       PickleDriver driver = PickleDriver.Instance;
 

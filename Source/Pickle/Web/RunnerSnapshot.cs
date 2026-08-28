@@ -15,6 +15,9 @@ namespace Pickle.Web;
 /// and published as a finished string, so the listener never walks a mutating dictionary.
 /// </summary>
 public static class RunnerSnapshot {
+  private const string TrueLiteral = "true";
+  private const string FalseLiteral = "false";
+
   public static string Build(
       List<(DiscoveredSuite Suite, FeaturePlan Plan)> parsedFeatures,
       IReadOnlyDictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> results,
@@ -24,17 +27,17 @@ public static class RunnerSnapshot {
     StringBuilder json = new StringBuilder();
     json.Append('{');
 
-    string status = !isRunning ? "idle" : session?.IsPausedForBreak == true ? "paused" : "running";
+    string status = DescribeStatus(isRunning, session);
     json.Append("\"status\":").Append(Json.Quote(status)).Append(',');
     json.Append("\"feature\":").Append(Json.Quote(session?.CurrentFeatureName ?? string.Empty)).Append(',');
     json.Append("\"scenario\":").Append(Json.Quote(session?.CurrentScenarioName ?? string.Empty)).Append(',');
     json.Append("\"step\":").Append(Json.Quote(session?.CurrentStepDisplay ?? string.Empty)).Append(',');
     json.Append("\"passed\":").Append(session?.PassedCount ?? 0).Append(',');
     json.Append("\"failed\":").Append(session?.FailedCount ?? 0).Append(',');
-    json.Append("\"cancelRequested\":").Append(session?.CancelRequested == true ? "true" : "false").Append(',');
-    json.Append("\"watch\":").Append(PickleRunMode.Current == PickleRunMode.Mode.Watch ? "true" : "false").Append(',');
-    json.Append("\"breakOnFailure\":").Append(BreakOnFailureState.Enabled ? "true" : "false").Append(',');
-    json.Append("\"controllable\":").Append(isSelected != null ? "true" : "false").Append(',');
+    json.Append("\"cancelRequested\":").Append(session?.CancelRequested == true ? TrueLiteral : FalseLiteral).Append(',');
+    json.Append("\"watch\":").Append(PickleRunMode.Current == PickleRunMode.Mode.Watch ? TrueLiteral : FalseLiteral).Append(',');
+    json.Append("\"breakOnFailure\":").Append(BreakOnFailureState.Enabled ? TrueLiteral : FalseLiteral).Append(',');
+    json.Append("\"controllable\":").Append(isSelected != null ? TrueLiteral : FalseLiteral).Append(',');
 
     int scenarioIndex = 0;
     List<string> features = new List<string>();
@@ -109,7 +112,7 @@ public static class RunnerSnapshot {
     json.Append('{');
     json.Append("\"name\":").Append(Json.Quote(plan.Name)).Append(',');
     json.Append("\"index\":").Append(index).Append(',');
-    json.Append("\"selected\":").Append(selected ? "true" : "false").Append(',');
+    json.Append("\"selected\":").Append(selected ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"line\":").Append(plan.Line).Append(',');
     json.Append("\"tags\":").Append(Json.Array(plan.Tags.Select(Json.Quote))).Append(',');
     json.Append("\"outcome\":").Append(Json.Quote(outcome)).Append(',');
@@ -153,5 +156,13 @@ public static class RunnerSnapshot {
     json.Append("\"failureMessage\":null");
     json.Append('}');
     return json.ToString();
+  }
+
+  private static string DescribeStatus(bool isRunning, RunSession? session) {
+    if (!isRunning) {
+      return "idle";
+    }
+
+    return session?.IsPausedForBreak == true ? "paused" : "running";
   }
 }

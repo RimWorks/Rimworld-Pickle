@@ -7,21 +7,25 @@ using Xunit;
 namespace Pickle.Tests;
 
 public class RunOutcomesTests {
+  private static readonly string[] WipTags = ["@wip"];
+  private static readonly string[] SkipTags = ["@skip"];
+  private static readonly string[] PlainTags = ["@smoke", "@important"];
+
   [Fact]
   public void ShouldSkip_WithWipTag_ReturnsTrue() {
-    TagSet tags = new TagSet(new[] { "@wip" });
+    TagSet tags = new TagSet(WipTags);
     Assert.True(RunOutcomes.ShouldSkip(tags));
   }
 
   [Fact]
   public void ShouldSkip_WithSkipTag_ReturnsTrue() {
-    TagSet tags = new TagSet(new[] { "@skip" });
+    TagSet tags = new TagSet(SkipTags);
     Assert.True(RunOutcomes.ShouldSkip(tags));
   }
 
   [Fact]
   public void ShouldSkip_WithoutSkipTags_ReturnsFalse() {
-    TagSet tags = new TagSet(new[] { "@smoke", "@important" });
+    TagSet tags = new TagSet(PlainTags);
     Assert.False(RunOutcomes.ShouldSkip(tags));
   }
 

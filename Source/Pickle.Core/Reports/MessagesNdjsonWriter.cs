@@ -7,10 +7,13 @@ using Pickle.Core.Run;
 namespace Pickle.Core.Reports;
 
 public static class MessagesNdjsonWriter {
+  private const string MetaLine =
+      "{\"meta\":{\"protocolVersion\":\"22.0.0\",\"implementation\":{\"name\":\"Pickle\",\"version\":\"1.0.0\"}}}";
+
   private const string Timestamp = "{\"seconds\":0,\"nanos\":0}";
 
   public static string Write(IReadOnlyList<ScenarioResult> results, Func<string, byte[]?>? readAttachmentBytes = null) {
-    List<string> lines = new List<string> { BuildMeta() };
+    List<string> lines = new List<string> { MetaLine };
     int nextId = 1;
 
     Dictionary<string, string> pickleIdsByFeature = new Dictionary<string, string>();
@@ -69,10 +72,6 @@ public static class MessagesNdjsonWriter {
     }
 
     lines.Add(BuildTestCaseFinished(testCaseStartedId));
-  }
-
-  private static string BuildMeta() {
-    return "{\"meta\":{\"protocolVersion\":\"22.0.0\",\"implementation\":{\"name\":\"Pickle\",\"version\":\"1.0.0\"}}}";
   }
 
   private static string BuildSource(string featureName) {

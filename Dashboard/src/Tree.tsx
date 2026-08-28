@@ -9,14 +9,14 @@ export function Tree({
   controllable,
   readOnly = false,
   onSelect,
-}: {
+}: Readonly<{
   features: Feature[];
   selected: Selection | null;
   activeScenario: string | null;
   controllable: boolean;
   readOnly?: boolean;
   onSelect: (selection: Selection) => void;
-}) {
+}>) {
   if (features.length === 0) {
     return <p className="p-4 text-sm text-base-content/50">No features discovered.</p>;
   }

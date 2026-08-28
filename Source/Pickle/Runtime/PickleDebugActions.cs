@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using LudeonTK;
 using Pickle.Input;
 using Pickle.UI;
@@ -10,19 +11,19 @@ public static class PickleDebugActions {
   [DebugAction("Pickle", "pump smoke", allowedGameStates = AllowedGameStates.PlayingOnMap)]
   private static void PumpSmokeDebugAction() {
     PickleDriver.EnsureExists();
-    PumpSmoke.Run();
+    _ = PumpSmoke.Run();
   }
 
   [DebugAction("Pickle", "fixture smoke", allowedGameStates = AllowedGameStates.PlayingOnMap)]
   private static void FixtureSmokeDebugAction() {
     PickleDriver.EnsureExists();
-    FixtureSmoke.Run();
+    _ = FixtureSmoke.Run();
   }
 
   [DebugAction("Pickle", "run session smoke", allowedGameStates = AllowedGameStates.PlayingOnMap)]
   private static void RunSessionSmokeDebugAction() {
     PickleDriver.EnsureExists();
-    RunSessionSmoke.Run();
+    _ = RunSessionSmoke.Run();
   }
 
   [DebugAction("Pickle", "runner window", allowedGameStates = AllowedGameStates.PlayingOnMap)]
@@ -46,7 +47,7 @@ public static class PickleDebugActions {
   [DebugAction("Pickle", "tag click smoke", allowedGameStates = AllowedGameStates.PlayingOnMap)]
   private static void TagClickSmokeDebugAction() {
     PickleDriver.EnsureExists();
-    TagClickSmoke.Run();
+    _ = TagClickSmoke.Run();
   }
 
   [DebugAction("Pickle", "tag overlay", allowedGameStates = AllowedGameStates.PlayingOnMap)]
@@ -57,7 +58,7 @@ public static class PickleDebugActions {
   }
 
   [DebugAction("Pickle", "run suite", allowedGameStates = AllowedGameStates.PlayingOnMap)]
-  private static async void RunSuiteDebugAction() {
+  private static async Task RunSuiteDebugAction() {
     PickleDriver.EnsureExists();
     try {
       await SuiteRunner.Run();

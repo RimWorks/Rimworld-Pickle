@@ -12,11 +12,11 @@ public class PickleContext {
   private readonly List<(string Name, string Content)> attachments = [];
   private readonly Dictionary<Type, object> bag = new();
 
-  internal object? WaitScope { get; set; }
-
   public IReadOnlyList<AssertRecord> Asserts => asserts;
 
   public IReadOnlyList<(string Name, string Content)> Attachments => attachments;
+
+  internal object? WaitScope { get; set; }
 
   public void Assert(bool condition, string? label = null) {
     asserts.Add(new AssertRecord(condition, label));
@@ -34,6 +34,7 @@ public class PickleContext {
       try {
         await WaitUntil(condition, timeoutSeconds);
       } catch (TimeoutException) {
+        // swallowed so Assert below reports the real state, not "wait timed out"
       }
     }
 
@@ -119,6 +120,10 @@ public class PickleContext {
     await WaitFrames(2);
   }
 
+  public void Attach(string name, string content) {
+    attachments.Add((name, content));
+  }
+
   private static UnityEngine.KeyCode MapKeyName(string keyName) {
     return keyName.ToLowerInvariant() switch {
       "escape" => UnityEngine.KeyCode.Escape,
@@ -146,9 +151,5 @@ public class PickleContext {
       _ => throw new ArgumentException(
           $"Unknown key: {keyName}; supported keys: Escape, Return, Enter, Space, Tab, Delete, Backspace, A-Z, 0-9"),
     };
-  }
-
-  public void Attach(string name, string content) {
-    attachments.Add((name, content));
   }
 }

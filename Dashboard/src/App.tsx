@@ -102,19 +102,38 @@ export function App() {
   );
 }
 
+function subline(snap: Snapshot | null, running: boolean): string {
+  if (running && snap) return snap.step;
+  if (snap) return `${snap.features.length} features discovered`;
+  return "";
+}
+
+function statusDotClass(snap: Snapshot | null, paused: boolean, running: boolean): string {
+  if (!snap || paused) return "status-error";
+  if (running) return "status-success animate-bounce";
+  return "status-neutral";
+}
+
+function headline(snap: Snapshot | null, paused: boolean, running: boolean): string {
+  if (!snap) return "Waiting for the game";
+  if (paused) return `Paused \u2014 ${snap.scenario}`;
+  if (running) return snap.scenario || "Running";
+  return "Idle";
+}
+
 function Header({
   snap,
   aborting,
   onAbort,
   theme,
   onToggleTheme,
-}: {
+}: Readonly<{
   snap: Snapshot | null;
   aborting: boolean;
   onAbort: () => void;
   theme: string;
   onToggleTheme: () => void;
-}) {
+}>) {
   const running = snap?.status === "running" || snap?.status === "paused";
   const paused = snap?.status === "paused";
 
@@ -123,22 +142,14 @@ function Header({
       <div className="flex items-center gap-3 min-w-0">
         <Logo />
         <span
-          className={`status status-lg ${
-            !snap ? "status-error" : paused ? "status-error" : running ? "status-success animate-bounce" : "status-neutral"
-          }`}
+          className={`status status-lg ${statusDotClass(snap, paused, running)}`}
         />
         <div className="min-w-0">
           <div className="text-sm font-semibold truncate">
-            {!snap
-              ? "Waiting for the game"
-              : paused
-                ? `Paused — ${snap.scenario}`
-                : running
-                  ? snap.scenario || "Running"
-                  : "Idle"}
+            {headline(snap, paused, running)}
           </div>
           <div className="text-xs text-base-content/50 truncate font-mono">
-            {running ? snap.step : snap ? `${snap.features.length} features discovered` : ""}
+            {subline(snap, running)}
           </div>
         </div>
       </div>

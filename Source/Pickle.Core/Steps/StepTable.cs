@@ -7,6 +7,8 @@ using CucumberExpressions;
 namespace Pickle.Core.Steps;
 
 public class StepTable {
+  private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
+
   private readonly List<(StepDefinition Definition, Regex Pattern)> definitions = new();
   private readonly PickleParameterTypeRegistry registry;
 
@@ -44,34 +46,7 @@ public class StepTable {
     return new MatchedStep(matchedDef, args);
   }
 
-  private Regex CompilePattern(string pattern) {
-    if (pattern.StartsWith("^")) {
-      return new Regex(pattern, RegexOptions.Compiled);
-    }
-
-    try {
-      CucumberExpression expression = new CucumberExpression(pattern, registry);
-      Regex cucumberRegex = expression.Regex;
-      return new Regex(cucumberRegex.ToString(), RegexOptions.Compiled);
-    } catch (Exception ex) {
-      throw new ArgumentException($"Invalid step pattern: {pattern}", ex);
-    }
-  }
-
-  private List<object?> ExtractArgs(StepDefinition definition, Match match) {
-    List<object?> args = new();
-
-    for (int i = 1; i < match.Groups.Count && i <= definition.ParameterTypes.Count; i++) {
-      string capturedValue = match.Groups[i].Value;
-      Type paramType = definition.ParameterTypes[i - 1];
-      object? convertedValue = ConvertValue(capturedValue, paramType);
-      args.Add(convertedValue);
-    }
-
-    return args;
-  }
-
-  private object? ConvertValue(string value, Type targetType) {
+  private static object? ConvertValue(string value, Type targetType) {
     if (targetType == typeof(int)) {
       return int.Parse(value);
     } else if (targetType == typeof(float)) {
@@ -86,5 +61,32 @@ public class StepTable {
     }
 
     return value;
+  }
+
+  private static List<object?> ExtractArgs(StepDefinition definition, Match match) {
+    List<object?> args = new();
+
+    for (int i = 1; i < match.Groups.Count && i <= definition.ParameterTypes.Count; i++) {
+      string capturedValue = match.Groups[i].Value;
+      Type paramType = definition.ParameterTypes[i - 1];
+      object? convertedValue = ConvertValue(capturedValue, paramType);
+      args.Add(convertedValue);
+    }
+
+    return args;
+  }
+
+  private Regex CompilePattern(string pattern) {
+    if (pattern.StartsWith("^")) {
+      return new Regex(pattern, RegexOptions.Compiled, RegexTimeout);
+    }
+
+    try {
+      CucumberExpression expression = new CucumberExpression(pattern, registry);
+      Regex cucumberRegex = expression.Regex;
+      return new Regex(cucumberRegex.ToString(), RegexOptions.Compiled, RegexTimeout);
+    } catch (Exception ex) {
+      throw new ArgumentException($"Invalid step pattern: {pattern}", ex);
+    }
   }
 }

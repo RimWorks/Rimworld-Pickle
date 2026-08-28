@@ -94,7 +94,11 @@ public class SaveFixtureDialog : Window {
       Log.Error($"pickle: save fixture failed: {ex}");
       Messages.Message("Pickle: save fixture failed, see log", MessageTypeDefOf.RejectInput, false);
     } finally {
-      try { File.Delete(scratch); } catch { }
+      try {
+        File.Delete(scratch);
+      } catch {
+        // best effort cleanup; the save already succeeded or already logged its failure
+      }
     }
   }
 }

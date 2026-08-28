@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -14,8 +15,6 @@ namespace Pickle.UI;
 /// the ScenarioResult when one exists, otherwise from the parsed plan as pending.
 /// </summary>
 public static class RunnerDetailView {
-  private static readonly Regex FixtureStepPattern = new Regex("the save \"([^\"]+)\" is loaded");
-
   private const float HeaderHeight = 28f;
   private const float PathLineHeight = 20f;
   private const float StepRowHeight = 22f;
@@ -24,6 +23,10 @@ public static class RunnerDetailView {
   private const float AttachmentsLineHeight = 18f;
   private const float LogLineHeight = 16f;
   private const int MaxLogLines = 6;
+
+  private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
+
+  private static readonly Regex FixtureStepPattern = new Regex("the save \"([^\"]+)\" is loaded", RegexOptions.None, RegexTimeout);
 
   public static void Draw(Rect outRect, RunnerWindow window) {
     if (!window.TryGetSelectedScenario(out DiscoveredSuite suite, out FeaturePlan plan, out ScenarioPlan scenario, out int scenarioIndex)) {

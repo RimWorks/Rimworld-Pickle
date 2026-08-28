@@ -1,3 +1,4 @@
+using System;
 using System.Text.RegularExpressions;
 
 namespace Pickle.Autorun;
@@ -7,6 +8,8 @@ namespace Pickle.Autorun;
 /// small, flat, and known ahead of time.
 /// </summary>
 public sealed class PickleArgsConfig {
+  private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
+
   public string? Filter { get; private set; }
 
   public string? ReportDir { get; private set; }
@@ -31,17 +34,17 @@ public sealed class PickleArgsConfig {
   }
 
   private static string? ExtractString(string json, string key) {
-    Match match = Regex.Match(json, $"\"{key}\"\\s*:\\s*\"([^\"]*)\"");
+    Match match = Regex.Match(json, $"\"{key}\"\\s*:\\s*\"([^\"]*)\"", RegexOptions.None, RegexTimeout);
     return match.Success ? match.Groups[1].Value : null;
   }
 
   private static bool? ExtractBool(string json, string key) {
-    Match match = Regex.Match(json, $"\"{key}\"\\s*:\\s*(true|false)");
+    Match match = Regex.Match(json, $"\"{key}\"\\s*:\\s*(true|false)", RegexOptions.None, RegexTimeout);
     return match.Success ? bool.Parse(match.Groups[1].Value) : null;
   }
 
   private static int? ExtractInt(string json, string key) {
-    Match match = Regex.Match(json, $"\"{key}\"\\s*:\\s*(-?\\d+)");
+    Match match = Regex.Match(json, $"\"{key}\"\\s*:\\s*(-?\\d+)", RegexOptions.None, RegexTimeout);
     return match.Success ? int.Parse(match.Groups[1].Value) : null;
   }
 }

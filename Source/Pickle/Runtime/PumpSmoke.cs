@@ -5,7 +5,7 @@ using Verse;
 namespace Pickle.Runtime;
 
 public static class PumpSmoke {
-  public static async void Run() {
+  public static async Task Run() {
     PickleContext ctx = new PickleContext();
     try {
       await RunAsync(ctx);

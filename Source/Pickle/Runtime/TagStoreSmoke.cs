@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Pickle.Input;
 using Pickle.Patching;
 using UnityEngine;
@@ -8,7 +9,16 @@ using Verse;
 namespace Pickle.Runtime;
 
 internal static class TagStoreSmoke {
-  internal static async void Run() {
+  private const string OneTag = "pickle-smoke:one";
+  private const string DupTag = "pickle-smoke:dup";
+
+  public static void DrawTagsPrefix() {
+    PickleUI.Tag(OneTag, new Rect(10, 10, 50, 50));
+    PickleUI.Tag(DupTag, new Rect(70, 10, 50, 50));
+    PickleUI.Tag(DupTag, new Rect(130, 10, 50, 50));
+  }
+
+  internal static async Task Run() {
     try {
       PickleDriver bootDriver = PickleDriver.Instance;
       await bootDriver.WaitFrames(1);
@@ -22,8 +32,8 @@ internal static class TagStoreSmoke {
 
       PickleHooks.DuringUIRootOnGUI = null;
 
-      bool oneExists = TagStore.TryGet("pickle-smoke:one", out Rect oneRect, out bool oneDuplicate);
-      bool dupExists = TagStore.TryGet("pickle-smoke:dup", out Rect _, out bool dupDuplicate);
+      bool oneExists = TagStore.TryGet(OneTag, out Rect _, out bool oneDuplicate);
+      bool dupExists = TagStore.TryGet(DupTag, out Rect _, out bool dupDuplicate);
       bool unknownExists = TagStore.TryGet("pickle-smoke:unknown", out Rect _, out bool _);
 
       if (!oneExists) {
@@ -51,7 +61,7 @@ internal static class TagStoreSmoke {
         return;
       }
 
-      if (!TagStore.KnownTags.Any(t => t == "pickle-smoke:one") || !TagStore.KnownTags.Any(t => t == "pickle-smoke:dup")) {
+      if (!TagStore.KnownTags.Any(t => t == OneTag) || !TagStore.KnownTags.Any(t => t == DupTag)) {
         string knownTagsList = string.Join(", ", TagStore.KnownTags);
         Log.Error($"pickle: tag store smoke failed - KnownTags missing expected tags: {knownTagsList}");
         return;
@@ -69,11 +79,5 @@ internal static class TagStoreSmoke {
     } catch (Exception ex) {
       Log.Error($"pickle: tag store smoke failed with exception: {ex}");
     }
-  }
-
-  public static void DrawTagsPrefix() {
-    PickleUI.Tag("pickle-smoke:one", new Rect(10, 10, 50, 50));
-    PickleUI.Tag("pickle-smoke:dup", new Rect(70, 10, 50, 50));
-    PickleUI.Tag("pickle-smoke:dup", new Rect(130, 10, 50, 50));
   }
 }

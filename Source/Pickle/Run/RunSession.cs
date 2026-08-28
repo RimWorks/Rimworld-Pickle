@@ -21,24 +21,23 @@ using Verse;
 namespace Pickle.Run;
 
 public class RunSession {
-  private const float FixtureStepTimeoutSeconds = 180f;
-
   // Arbitrary fixed constant so a run with no -pickle-seed is still deterministic
   // run to run, matching what -pickle-seed=42 would produce.
   public const int DefaultSeed = 42;
 
-  private List<StepResult> currentStepResults = new();
+  private const float FixtureStepTimeoutSeconds = 180f;
 
   private readonly StepTable stepTable;
   private readonly PickleDriver driver;
   private readonly IReadOnlyList<DiscoveredSuite> suites;
   private readonly List<Type> stepsTypes;
   private readonly int runSeed;
+  private readonly Dictionary<Type, object> scenarioInstanceCache = new();
 
+  private List<StepResult> currentStepResults = new();
   private string? currentLoadedFixture;
   private string currentOwningMod = string.Empty;
   private TagSet currentScenarioTags = new TagSet(Array.Empty<string>());
-  private readonly Dictionary<Type, object> scenarioInstanceCache = new();
 
   public RunSession(
       StepTable stepTable,
@@ -122,7 +121,7 @@ public class RunSession {
         continue;
       }
 
-      ScenarioResult result = await RunScenario(scenario, plan.Name, owningModName, plan.SourcePath, scenarioIndex);
+      ScenarioResult result = await RunScenario(scenario, plan.Name, plan.SourcePath, scenarioIndex);
       results.Add(result);
       onScenarioCompleted?.Invoke(result);
 
@@ -146,7 +145,51 @@ public class RunSession {
     return results;
   }
 
-  private async Task<ScenarioResult> RunScenario(ScenarioPlan scenario, string featureName, string owningModName, string? sourcePath, int scenarioIndex) {
+  private static Task InvokeDelegateBinding(PickleContext ctx, Delegate @delegate, IReadOnlyList<object?> args) {
+    List<object?> allArgs = [ctx, .. args];
+    object? result = @delegate.DynamicInvoke([.. allArgs]);
+
+    if (result is Task task) {
+      return task;
+    }
+
+    return Task.CompletedTask;
+  }
+
+  private static List<(string Name, string Content)> BuildAttachmentsWithScreenshot(
+      PickleContext ctx, string? screenshotPath) {
+    List<(string Name, string Content)> attachmentsWithScreenshot = [.. ctx.Attachments];
+
+    if (screenshotPath is { Length: > 0 }) {
+      attachmentsWithScreenshot.Add(("screenshot", screenshotPath));
+    }
+
+    return attachmentsWithScreenshot;
+  }
+
+  // Undefined and ambiguous beat a plain failure, because a missing step definition is
+  // the more useful thing to report.
+  private static string BuildFailureMessage(List<StepResult> stepResults) {
+    string? message = RunOutcomes.BuildUndefinedMessage(stepResults);
+    if (!string.IsNullOrEmpty(message)) {
+      return message;
+    }
+
+    message = RunOutcomes.BuildAmbiguousMessage(stepResults);
+    if (!string.IsNullOrEmpty(message)) {
+      return message;
+    }
+
+    return stepResults.FirstOrDefault(s => s.Status == StepStatus.Failed)?.FailureMessage ?? "Scenario failed";
+  }
+
+  private static void SkipRemainingSteps(ScenarioPlan scenario, List<StepResult> stepResults) {
+    foreach (StepPlan remainingStep in scenario.Steps.Skip(stepResults.Count)) {
+      stepResults.Add(new StepResult(remainingStep.Keyword, remainingStep.Text, StepStatus.Skipped, 0));
+    }
+  }
+
+  private async Task<ScenarioResult> RunScenario(ScenarioPlan scenario, string featureName, string? sourcePath, int scenarioIndex) {
     Stopwatch scenarioTimer = Stopwatch.StartNew();
     Watchdog.BeginScenario(featureName, scenario.Name);
     PickleContext ctx = new PickleContext();
@@ -176,50 +219,14 @@ public class RunSession {
         stepResults.Add(stepResult);
         OnProgress?.Invoke();
 
-        if (stepResult.Status == StepStatus.Failed || stepResult.Status == StepStatus.Undefined || stepResult.Status == StepStatus.Ambiguous) {
-          if (stepResult.Status == StepStatus.Failed && BreakOnFailureState.Enabled && !AutorunState.IsAutorunning && OnBreak != null) {
-            IsPausedForBreak = true;
-            try {
-              await OnBreak((featureName, scenario.Name, sourcePath, scenarioIndex, stepResult));
-            } finally {
-              IsPausedForBreak = false;
-            }
-          }
-
-          foreach (StepPlan remainingStep in scenario.Steps.Skip(stepResults.Count)) {
-            stepResults.Add(new StepResult(remainingStep.Keyword, remainingStep.Text, StepStatus.Skipped, 0));
-          }
+        if (RunOutcomes.EndsScenario(stepResult.Status)) {
+          await MaybeBreakOnFailure(featureName, scenario.Name, sourcePath, scenarioIndex, stepResult);
+          SkipRemainingSteps(scenario, stepResults);
           break;
         }
 
         if (LogWatch.Armed && LogWatch.ErrorCount > 0 && !scenario.Tags.Contains("@allow-errors")) {
-          IReadOnlyList<string> errorLog = LogWatch.ErrorsSinceArmed;
-          string errorMsg = errorLog.Count > 0 ? errorLog[0] : "unknown error";
-          scenarioTimer.Stop();
-
-          int failingStepIndex = stepResults.Count + 1;
-          (string? screenshotPath, List<(string Source, string Content)> stateDumps) =
-              await CaptureEvidence(featureName, scenario.Name, failingStepIndex);
-
-          foreach (StepPlan remainingStep in scenario.Steps.Skip(stepResults.Count)) {
-            stepResults.Add(new StepResult(remainingStep.Keyword, remainingStep.Text, StepStatus.Skipped, 0));
-          }
-
-          await RunAfterHooks(ctx, scenario.Tags);
-
-          List<(string Name, string Content)> attachmentsWithScreenshot = BuildAttachmentsWithScreenshot(ctx, screenshotPath);
-
-          return new ScenarioResult(
-              scenario.Name,
-              featureName,
-              scenario.Tags,
-              ScenarioOutcome.Failed,
-              stepResults,
-              scenarioTimer.ElapsedMilliseconds,
-              $"Log.Error during scenario: {errorMsg}",
-              LogWatch.ErrorsSinceArmed,
-              attachmentsWithScreenshot,
-              stateDumps);
+          return await FailOnLoggedError(ctx, scenario, featureName, stepResults, scenarioTimer);
         }
       }
 
@@ -231,14 +238,7 @@ public class RunSession {
       string? failureMsg = null;
 
       if (outcome == ScenarioOutcome.Failed) {
-        failureMsg = RunOutcomes.BuildUndefinedMessage(stepResults);
-        if (string.IsNullOrEmpty(failureMsg)) {
-          failureMsg = RunOutcomes.BuildAmbiguousMessage(stepResults);
-        }
-        if (string.IsNullOrEmpty(failureMsg)) {
-          StepResult? failedStep = stepResults.FirstOrDefault(s => s.Status == StepStatus.Failed);
-          failureMsg = failedStep?.FailureMessage ?? "Scenario failed";
-        }
+        failureMsg = BuildFailureMessage(stepResults);
 
         int failingStepIndex = stepResults.FindIndex(s => s.Status == StepStatus.Failed) + 1;
         (string? screenshotPath, List<(string Source, string Content)> stateDumps) =
@@ -334,15 +334,7 @@ public class RunSession {
         StepDefinition definition = matchedStep.Definition;
         object? binding = definition.Binding;
 
-        float timeout = 5f;
-        string? timeoutTag = currentScenarioTags.FirstOrDefault(t => t.StartsWith("@timeout:"));
-        if (timeoutTag != null && float.TryParse(timeoutTag.Substring(9), out float parsedTimeout)) {
-          timeout = parsedTimeout;
-        }
-
-        if (definition.TimeoutSeconds.HasValue) {
-          timeout = definition.TimeoutSeconds.Value;
-        }
+        float timeout = ResolveStepTimeout(definition);
 
         object stepScope = new object();
         ctx.WaitScope = stepScope;
@@ -417,11 +409,9 @@ public class RunSession {
     Type declaringType = method.DeclaringType!;
     object? instance = null;
 
-    if (!method.IsStatic) {
-      if (!scenarioInstanceCache.TryGetValue(declaringType, out instance)) {
-        instance = Activator.CreateInstance(declaringType)!;
-        scenarioInstanceCache[declaringType] = instance;
-      }
+    if (!method.IsStatic && !scenarioInstanceCache.TryGetValue(declaringType, out instance)) {
+      instance = Activator.CreateInstance(declaringType)!;
+      scenarioInstanceCache[declaringType] = instance;
     }
 
     List<object?> allArgs = new() { ctx };
@@ -444,27 +434,14 @@ public class RunSession {
     return Task.CompletedTask;
   }
 
-  private Task InvokeDelegateBinding(PickleContext ctx, Delegate @delegate, IReadOnlyList<object?> args) {
-    List<object?> allArgs = [ctx, .. args];
-    object? result = @delegate.DynamicInvoke([.. allArgs]);
-
-    if (result is Task task) {
-      return task;
-    }
-
-    return Task.CompletedTask;
-  }
-
   private async Task RunBeforeHooks(PickleContext ctx, TagSet tags) {
     foreach (Type stepsType in stepsTypes) {
       MethodInfo[] methods = stepsType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
 
       foreach (MethodInfo method in methods) {
         BeforeScenarioAttribute? beforeAttr = method.GetCustomAttribute<BeforeScenarioAttribute>();
-        if (beforeAttr != null) {
-          if (beforeAttr.Tag == null || tags.Contains(beforeAttr.Tag)) {
-            await InvokeHook(ctx, stepsType, method);
-          }
+        if (beforeAttr != null && (beforeAttr.Tag == null || tags.Contains(beforeAttr.Tag))) {
+          await InvokeHook(ctx, stepsType, method);
         }
       }
     }
@@ -476,10 +453,8 @@ public class RunSession {
 
       foreach (MethodInfo method in methods) {
         AfterScenarioAttribute? afterAttr = method.GetCustomAttribute<AfterScenarioAttribute>();
-        if (afterAttr != null) {
-          if (afterAttr.Tag == null || tags.Contains(afterAttr.Tag)) {
-            await InvokeHook(ctx, stepsType, method);
-          }
+        if (afterAttr != null && (afterAttr.Tag == null || tags.Contains(afterAttr.Tag))) {
+          await InvokeHook(ctx, stepsType, method);
         }
       }
     }
@@ -488,11 +463,9 @@ public class RunSession {
   private async Task InvokeHook(PickleContext ctx, Type stepsType, MethodInfo method) {
     object? instance = null;
 
-    if (!method.IsStatic) {
-      if (!scenarioInstanceCache.TryGetValue(stepsType, out instance)) {
-        instance = Activator.CreateInstance(stepsType)!;
-        scenarioInstanceCache[stepsType] = instance;
-      }
+    if (!method.IsStatic && !scenarioInstanceCache.TryGetValue(stepsType, out instance)) {
+      instance = Activator.CreateInstance(stepsType)!;
+      scenarioInstanceCache[stepsType] = instance;
     }
 
     ParameterInfo[] parameters = method.GetParameters();
@@ -544,7 +517,7 @@ public class RunSession {
     LogWatch.Arm();
   }
 
-  private async Task<(string? screenshotPath, List<(string Source, string Content)> stateDumps)> CaptureEvidence(
+  private async Task<(string? ScreenshotPath, List<(string Source, string Content)> StateDumps)> CaptureEvidence(
       string featureName, string scenarioName, int stepIndex) {
     string? screenshotPath = null;
     List<(string Source, string Content)> stateDumps = [];
@@ -562,14 +535,69 @@ public class RunSession {
     return (screenshotPath, stateDumps);
   }
 
-  private List<(string Name, string Content)> BuildAttachmentsWithScreenshot(
-      PickleContext ctx, string? screenshotPath) {
-    List<(string Name, string Content)> attachmentsWithScreenshot = [.. ctx.Attachments];
-
-    if (screenshotPath is { Length: > 0 }) {
-      attachmentsWithScreenshot.Add(("screenshot", screenshotPath));
+  // The step attribute wins over an @timeout: tag, because a step that waits on the
+  // simulation knows how long it needs better than the scenario does.
+  private float ResolveStepTimeout(StepDefinition definition) {
+    if (definition.TimeoutSeconds.HasValue) {
+      return definition.TimeoutSeconds.Value;
     }
 
-    return attachmentsWithScreenshot;
+    string? timeoutTag = currentScenarioTags.FirstOrDefault(t => t.StartsWith("@timeout:"));
+    if (timeoutTag != null && float.TryParse(timeoutTag.Substring(9), out float parsedTimeout)) {
+      return parsedTimeout;
+    }
+
+    return 5f;
+  }
+
+  // An error logged mid-scenario ends it the same way a failed assertion does: capture
+  // evidence, mark the rest skipped, still run the after hooks.
+  private async Task<ScenarioResult> FailOnLoggedError(
+      PickleContext ctx,
+      ScenarioPlan scenario,
+      string featureName,
+      List<StepResult> stepResults,
+      Stopwatch scenarioTimer) {
+    IReadOnlyList<string> errorLog = LogWatch.ErrorsSinceArmed;
+    string errorMsg = errorLog.Count > 0 ? errorLog[0] : "unknown error";
+    scenarioTimer.Stop();
+
+    (string? screenshotPath, List<(string Source, string Content)> stateDumps) =
+        await CaptureEvidence(featureName, scenario.Name, stepResults.Count + 1);
+
+    foreach (StepPlan remainingStep in scenario.Steps.Skip(stepResults.Count)) {
+      stepResults.Add(new StepResult(remainingStep.Keyword, remainingStep.Text, StepStatus.Skipped, 0));
+    }
+
+    await RunAfterHooks(ctx, scenario.Tags);
+
+    return new ScenarioResult(
+        scenario.Name,
+        featureName,
+        scenario.Tags,
+        ScenarioOutcome.Failed,
+        stepResults,
+        scenarioTimer.ElapsedMilliseconds,
+        $"Log.Error during scenario: {errorMsg}",
+        LogWatch.ErrorsSinceArmed,
+        BuildAttachmentsWithScreenshot(ctx, screenshotPath),
+        stateDumps);
+  }
+
+  // Only a real failure pauses, and only when a human is watching. An autorun has
+  // nobody to resume it, so it would hang until the watchdog kills the process.
+  private async Task MaybeBreakOnFailure(
+      string featureName, string scenarioName, string? sourcePath, int scenarioIndex, StepResult stepResult) {
+    if (stepResult.Status != StepStatus.Failed || !BreakOnFailureState.Enabled ||
+        AutorunState.IsAutorunning || OnBreak == null) {
+      return;
+    }
+
+    IsPausedForBreak = true;
+    try {
+      await OnBreak((featureName, scenarioName, sourcePath, scenarioIndex, stepResult));
+    } finally {
+      IsPausedForBreak = false;
+    }
   }
 }

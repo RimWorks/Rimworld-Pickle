@@ -9,6 +9,8 @@ using Verse;
 namespace Pickle.Evidence;
 
 public static class ScreenshotCapture {
+  private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
+
   private static string? resolvedDir;
 
   // Autorun resolves one report root and calls this, so screenshots land in the same
@@ -38,6 +40,16 @@ public static class ScreenshotCapture {
     return resolvedDir;
   }
 
+  public static string BuildScreenshotPath(string featureName, string scenarioName, int stepIndex) {
+    string filename = $"{Sanitize(featureName)}--{Sanitize(scenarioName)}--step{stepIndex}.png";
+
+    return Path.Combine(ReportsDirectory(), filename);
+  }
+
+  public static PickleWait CaptureToFile(string filePath) {
+    return PickleDriver.Instance.CaptureScreenshot(filePath);
+  }
+
   private static bool TryCreate(string dir) {
     try {
       if (!Directory.Exists(dir)) {
@@ -50,17 +62,7 @@ public static class ScreenshotCapture {
     }
   }
 
-  public static string BuildScreenshotPath(string featureName, string scenarioName, int stepIndex) {
-    string filename = $"{Sanitize(featureName)}--{Sanitize(scenarioName)}--step{stepIndex}.png";
-
-    return Path.Combine(ReportsDirectory(), filename);
-  }
-
   private static string Sanitize(string name) {
-    return Regex.Replace(name, "[^A-Za-z0-9._-]", "-");
-  }
-
-  public static PickleWait CaptureToFile(string filePath) {
-    return PickleDriver.Instance.CaptureScreenshot(filePath);
+    return Regex.Replace(name, "[^A-Za-z0-9._-]", "-", RegexOptions.None, RegexTimeout);
   }
 }

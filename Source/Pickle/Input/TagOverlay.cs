@@ -19,7 +19,7 @@ internal static class TagOverlay {
     y += 30f;
 
     foreach (string tag in TagStore.KnownTags) {
-      bool hasDuplicate = TagStore.TryGet(tag, out Rect _, out bool duplicate);
+      _ = TagStore.TryGet(tag, out Rect _, out bool duplicate);
       string label = duplicate ? $"{tag} (DUPLICATE)" : tag;
       Widgets.Label(new Rect(x, y, 300f, 30f), label);
       y += 30f;

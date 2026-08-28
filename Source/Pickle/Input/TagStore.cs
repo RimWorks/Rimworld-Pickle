@@ -4,12 +4,6 @@ using Verse;
 
 namespace Pickle.Input;
 
-internal class TagEntry {
-  public Rect Rect;
-  public bool Duplicate;
-  public Rect DuplicateRect;
-}
-
 internal static class TagStore {
   private static readonly Dictionary<string, TagEntry> Store = [];
 
@@ -73,4 +67,12 @@ internal static class TagStore {
     duplicateRect = default;
     return false;
   }
+}
+
+internal class TagEntry {
+  public Rect Rect { get; set; }
+
+  public bool Duplicate { get; set; }
+
+  public Rect DuplicateRect { get; set; }
 }

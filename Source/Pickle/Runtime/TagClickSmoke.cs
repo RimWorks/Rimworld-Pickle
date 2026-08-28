@@ -1,11 +1,12 @@
 using System;
+using System.Threading.Tasks;
 using Pickle.Input;
 using Verse;
 
 namespace Pickle.Runtime;
 
 internal static class TagClickSmoke {
-  internal static async void Run() {
+  internal static async Task Run() {
     try {
       PickleDriver bootDriver = PickleDriver.Instance;
       await bootDriver.WaitFrames(1);

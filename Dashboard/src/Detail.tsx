@@ -1,7 +1,7 @@
 import type { Scenario, Snapshot } from "./types";
 import { formatMs, statusTone } from "./types";
 
-export function Detail({ scenario, live }: { scenario: Scenario | null; live: Snapshot | null }) {
+export function Detail({ scenario, live }: Readonly<{ scenario: Scenario | null; live: Snapshot | null }>) {
   if (!scenario) {
     return (
       <div className="h-full grid place-items-center text-sm text-base-content/40">
@@ -32,7 +32,7 @@ export function Detail({ scenario, live }: { scenario: Scenario | null; live: Sn
 
       <ol className="mt-5 flex flex-col gap-1">
         {scenario.steps.map((step, i) => (
-          <li key={i} className="rounded-box px-3 py-2 hover:bg-base-100">
+          <li key={`${i}-${step.keyword}-${step.text}`} className="rounded-box px-3 py-2 hover:bg-base-100">
             <div className="flex items-baseline gap-2">
               <span className={`font-mono text-xs w-14 shrink-0 ${statusTone[step.status]}`}>
                 {step.keyword}

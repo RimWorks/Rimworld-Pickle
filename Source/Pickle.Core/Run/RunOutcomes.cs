@@ -7,6 +7,11 @@ using Pickle.Core.Steps;
 namespace Pickle.Core.Run;
 
 public static class RunOutcomes {
+  // A step in any of these states stops the scenario; the rest are reported as skipped.
+  public static bool EndsScenario(StepStatus status) {
+    return status == StepStatus.Failed || status == StepStatus.Undefined || status == StepStatus.Ambiguous;
+  }
+
   public static bool ShouldSkip(TagSet tags, bool includeWip = false) {
     return (!includeWip && tags.Contains("@wip")) || tags.Contains("@skip");
   }

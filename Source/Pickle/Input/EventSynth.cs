@@ -76,11 +76,6 @@ public static class EventSynth {
     }
   }
 
-  private static void Arm(PendingKind kind, PendingAction action) {
-    pendingKind = kind;
-    pendingAction = action;
-  }
-
   public static bool TryTakeFailure(out Exception? failure) {
     failure = lastFailure;
     lastFailure = null;
@@ -103,7 +98,7 @@ public static class EventSynth {
     try {
       Event injected = action switch {
         PendingAction.Key => BuildKeyEvent(keyCode),
-        _ => throw new ArgumentOutOfRangeException(),
+        _ => throw new InvalidOperationException($"pickle: unsupported pending action {action}"),
       };
       Event.current = injected;
 
@@ -127,6 +122,11 @@ public static class EventSynth {
       reentrant = false;
       Event.current = original;
     }
+  }
+
+  private static void Arm(PendingKind kind, PendingAction action) {
+    pendingKind = kind;
+    pendingAction = action;
   }
 
   private static Event BuildKeyEvent(KeyCode keyCode) {

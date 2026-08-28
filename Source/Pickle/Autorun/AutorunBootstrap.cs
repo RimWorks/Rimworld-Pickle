@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Pickle.Core.Reports;
 using Pickle.Core.Run;
 using Pickle.Evidence;
@@ -34,10 +35,35 @@ public static class AutorunBootstrap {
     Watchdog.Start(args.ScenarioTimeoutSeconds, args.RunTimeoutMinutes, reportDir, Application.consoleLogPath);
 
     PickleDriver.EnsureExists();
-    LongEventHandler.QueueLongEvent(() => RunAutorun(args, reportDir), "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
+    LongEventHandler.QueueLongEvent(() => _ = RunAutorun(args, reportDir), "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
   }
 
-  private static async void RunAutorun(PickleArgs args, string reportDir) {
+  internal static void WriteReports(string reportDir, List<ScenarioResult> results, string exitReason, Action<string>? onError = null) {
+    try {
+      File.WriteAllText(Path.Combine(reportDir, "junit.xml"), JUnitReportWriter.Write(results));
+      File.WriteAllText(
+          Path.Combine(reportDir, "messages.ndjson"),
+          MessagesNdjsonWriter.Write(results, path => File.Exists(path) ? File.ReadAllBytes(path) : null));
+      File.WriteAllText(Path.Combine(reportDir, "summary.json"), SummaryJsonWriter.Write(results, exitReason));
+      File.WriteAllText(Path.Combine(reportDir, "summary.md"), SummaryMarkdownWriter.Write(results));
+      File.WriteAllText(
+          Path.Combine(reportDir, "report.html"),
+          HtmlReportWriter.Write(
+              results,
+              exitReason,
+              Web.Dashboard.ReportTemplate,
+              path => File.Exists(path) ? File.ReadAllBytes(path) : null));
+    } catch (Exception ex) {
+      string msg = $"pickle: failed writing reports: {ex.Message}";
+      if (onError != null) {
+        onError(msg);
+      } else {
+        Log.Error(msg);
+      }
+    }
+  }
+
+  private static async Task RunAutorun(PickleArgs args, string reportDir) {
     Log.Message($"pickle: autorun report dir = {reportDir}");
     Log.Message($"pickle: autorun seed = {args.Seed}");
 
@@ -90,30 +116,5 @@ public static class AutorunBootstrap {
 
     killer.Start();
     Application.Quit(exitCode);
-  }
-
-  internal static void WriteReports(string reportDir, List<ScenarioResult> results, string exitReason, Action<string>? onError = null) {
-    try {
-      File.WriteAllText(Path.Combine(reportDir, "junit.xml"), JUnitReportWriter.Write(results));
-      File.WriteAllText(
-          Path.Combine(reportDir, "messages.ndjson"),
-          MessagesNdjsonWriter.Write(results, path => File.Exists(path) ? File.ReadAllBytes(path) : null));
-      File.WriteAllText(Path.Combine(reportDir, "summary.json"), SummaryJsonWriter.Write(results, exitReason));
-      File.WriteAllText(Path.Combine(reportDir, "summary.md"), SummaryMarkdownWriter.Write(results));
-      File.WriteAllText(
-          Path.Combine(reportDir, "report.html"),
-          HtmlReportWriter.Write(
-              results,
-              exitReason,
-              Web.Dashboard.ReportTemplate,
-              path => File.Exists(path) ? File.ReadAllBytes(path) : null));
-    } catch (Exception ex) {
-      string msg = $"pickle: failed writing reports: {ex.Message}";
-      if (onError != null) {
-        onError(msg);
-      } else {
-        Log.Error(msg);
-      }
-    }
   }
 }

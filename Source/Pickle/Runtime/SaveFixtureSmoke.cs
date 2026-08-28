@@ -9,7 +9,7 @@ using Verse;
 namespace Pickle.Runtime;
 
 public static class SaveFixtureSmoke {
-  public static async void Run() {
+  public static async Task Run() {
     try {
       await RunAsync(PickleDriver.Instance);
       Log.Message("pickle: save fixture smoke passed");

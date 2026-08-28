@@ -12,7 +12,7 @@ using Verse;
 namespace Pickle;
 
 public static class FixtureSmoke {
-  public static async void Run() {
+  public static async Task Run() {
     PickleDriver driver = PickleDriver.Instance;
     try {
       await RunAsync(driver);
@@ -73,6 +73,7 @@ public static class FixtureSmoke {
           File.Delete(scratchPath);
         }
       } catch {
+        // best effort cleanup of a scratch file; a leftover does not fail the smoke
       }
     }
   }

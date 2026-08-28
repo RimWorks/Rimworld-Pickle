@@ -38,12 +38,6 @@ public class RunPill : Window {
   // way to land the pill top-right instead, matching the approved mock.
 
   /// <inheritdoc/>
-  protected override void SetInitialSizeAndPosition() {
-    Vector2 size = InitialSize;
-    windowRect = new Rect(Verse.UI.screenWidth - size.x - 14f, 14f, size.x, size.y);
-  }
-
-  /// <inheritdoc/>
   public override void DoWindowContents(Rect inRect) {
     RunSession? session = owner.ActiveSession;
     bool paused = session?.IsPausedForBreak ?? false;
@@ -53,7 +47,8 @@ public class RunPill : Window {
     Color dotColor = paused ? RunnerStatusColors.Failed : RunnerStatusColors.Passed;
     RunnerStatusColors.DrawDot(new Vector2(inRect.x + 6f, y + (TitleRowHeight / 2f)), dotColor, 8f);
 
-    string title = paused ? $"Paused — {session?.CurrentScenarioName}" : $"Running — {session?.CurrentScenarioName}";
+    string scenarioName = session?.CurrentScenarioName ?? string.Empty;
+    string title = paused ? $"Paused — {scenarioName}" : $"Running — {scenarioName}";
     GUI.color = paused ? RunnerStatusColors.FailedText : Color.white;
     Widgets.Label(new Rect(inRect.x + 18f, y, inRect.width - 18f, TitleRowHeight), title);
     GUI.color = Color.white;
@@ -100,5 +95,11 @@ public class RunPill : Window {
     GUI.color = Color.white;
     Text.Anchor = TextAnchor.UpperLeft;
     Text.Font = GameFont.Small;
+  }
+
+  /// <inheritdoc/>
+  protected override void SetInitialSizeAndPosition() {
+    Vector2 size = InitialSize;
+    windowRect = new Rect(Verse.UI.screenWidth - size.x - 14f, 14f, size.x, size.y);
   }
 }

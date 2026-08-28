@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using UnityEngine.SceneManagement;
 using Verse;
 
@@ -6,103 +7,90 @@ namespace Pickle.Runtime;
 
 [StaticConstructorOnStartup]
 public static class DevSmokeBootstrap {
+  private const string LoadingEvent = "LoadingLongEvent";
+
   static DevSmokeBootstrap() {
     string? marker = Environment.GetEnvironmentVariable("MARKER");
     if (marker == "pickle: pump smoke passed") {
       PickleDriver.EnsureExists();
-      LongEventHandler.QueueLongEvent(RunQuickTestSmoke, "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
+      LongEventHandler.QueueLongEvent(() => _ = RunQuickTestSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
     if (marker == "pickle: fixture smoke passed") {
       PickleDriver.EnsureExists();
-      LongEventHandler.QueueLongEvent(RunFixtureSmokeTest, "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
+      LongEventHandler.QueueLongEvent(() => _ = RunFixtureSmokeTest(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
     if (marker == "pickle: run session smoke passed") {
       PickleDriver.EnsureExists();
-      LongEventHandler.QueueLongEvent(RunRunSessionSmoke, "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
+      LongEventHandler.QueueLongEvent(() => _ = RunRunSessionSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
     if (marker == "pickle: runner window smoke passed") {
       PickleDriver.EnsureExists();
-      LongEventHandler.QueueLongEvent(RunRunnerWindowSmoke, "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
+      LongEventHandler.QueueLongEvent(() => _ = RunRunnerWindowSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
     if (marker == "pickle: event synth smoke passed") {
       PickleDriver.EnsureExists();
-      LongEventHandler.QueueLongEvent(RunEventSynthSmoke, "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
+      LongEventHandler.QueueLongEvent(() => _ = RunEventSynthSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
     if (marker == "pickle: widget capture smoke passed") {
       PickleDriver.EnsureExists();
-      LongEventHandler.QueueLongEvent(RunWidgetCaptureSmoke, "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
+      LongEventHandler.QueueLongEvent(() => _ = RunWidgetCaptureSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
     if (marker == "pickle: tag store smoke passed") {
       PickleDriver.EnsureExists();
-      LongEventHandler.QueueLongEvent(RunTagStoreSmoke, "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
+      LongEventHandler.QueueLongEvent(() => _ = RunTagStoreSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
     if (marker == "pickle: tag click smoke passed") {
       PickleDriver.EnsureExists();
-      LongEventHandler.QueueLongEvent(RunTagClickSmoke, "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
+      LongEventHandler.QueueLongEvent(() => _ = RunTagClickSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
     if (marker == "pickle: evidence smoke passed") {
       PickleDriver.EnsureExists();
-      LongEventHandler.QueueLongEvent(RunEvidenceSmoke, "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
+      LongEventHandler.QueueLongEvent(() => _ = RunEvidenceSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
     if (marker == "pickle: save fixture smoke passed") {
       PickleDriver.EnsureExists();
-      LongEventHandler.QueueLongEvent(RunSaveFixtureSmoke, "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
+      LongEventHandler.QueueLongEvent(() => _ = RunSaveFixtureSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
     if (marker == "pickle: suite passed") {
       PickleDriver.EnsureExists();
-      LongEventHandler.QueueLongEvent(RunSuite, "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
-      return;
+      LongEventHandler.QueueLongEvent(() => _ = RunSuite(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
     }
   }
 
-  private static async void RunSaveFixtureSmoke() {
+  private static async Task RunSaveFixtureSmoke() {
     try {
       SceneManager.LoadScene(GenScene.PlaySceneName);
       PickleDriver driver = PickleDriver.Instance;
       await driver.WaitUntil(() => Current.ProgramState == ProgramState.Playing, 180f);
       await driver.WaitTicks(5);
 
-      SaveFixtureSmoke.Run();
+      _ = SaveFixtureSmoke.Run();
     } catch (Exception ex) {
       Log.Error(ex.ToString());
     }
   }
 
-  private static async void RunQuickTestSmoke() {
-    try {
-      SceneManager.LoadScene(GenScene.PlaySceneName);
-
-      PickleDriver driver = PickleDriver.Instance;
-      await driver.WaitUntil(() => Current.ProgramState == ProgramState.Playing, 180f);
-      await driver.WaitTicks(5);
-
-      PumpSmoke.Run();
-    } catch (Exception ex) {
-      Log.Error(ex.ToString());
-    }
-  }
-
-  private static async void RunFixtureSmokeTest() {
+  private static async Task RunQuickTestSmoke() {
     try {
       SceneManager.LoadScene(GenScene.PlaySceneName);
 
@@ -110,13 +98,13 @@ public static class DevSmokeBootstrap {
       await driver.WaitUntil(() => Current.ProgramState == ProgramState.Playing, 180f);
       await driver.WaitTicks(5);
 
-      FixtureSmoke.Run();
+      _ = PumpSmoke.Run();
     } catch (Exception ex) {
       Log.Error(ex.ToString());
     }
   }
 
-  private static async void RunRunSessionSmoke() {
+  private static async Task RunFixtureSmokeTest() {
     try {
       SceneManager.LoadScene(GenScene.PlaySceneName);
 
@@ -124,13 +112,27 @@ public static class DevSmokeBootstrap {
       await driver.WaitUntil(() => Current.ProgramState == ProgramState.Playing, 180f);
       await driver.WaitTicks(5);
 
-      RunSessionSmoke.Run();
+      _ = FixtureSmoke.Run();
     } catch (Exception ex) {
       Log.Error(ex.ToString());
     }
   }
 
-  private static async void RunRunnerWindowSmoke() {
+  private static async Task RunRunSessionSmoke() {
+    try {
+      SceneManager.LoadScene(GenScene.PlaySceneName);
+
+      PickleDriver driver = PickleDriver.Instance;
+      await driver.WaitUntil(() => Current.ProgramState == ProgramState.Playing, 180f);
+      await driver.WaitTicks(5);
+
+      _ = RunSessionSmoke.Run();
+    } catch (Exception ex) {
+      Log.Error(ex.ToString());
+    }
+  }
+
+  private static async Task RunRunnerWindowSmoke() {
     try {
       SceneManager.LoadScene(GenScene.PlaySceneName);
 
@@ -144,7 +146,7 @@ public static class DevSmokeBootstrap {
     }
   }
 
-  private static async void RunEventSynthSmoke() {
+  private static async Task RunEventSynthSmoke() {
     try {
       SceneManager.LoadScene(GenScene.PlaySceneName);
 
@@ -158,7 +160,7 @@ public static class DevSmokeBootstrap {
     }
   }
 
-  private static async void RunWidgetCaptureSmoke() {
+  private static async Task RunWidgetCaptureSmoke() {
     try {
       SceneManager.LoadScene(GenScene.PlaySceneName);
 
@@ -172,7 +174,7 @@ public static class DevSmokeBootstrap {
     }
   }
 
-  private static async void RunTagStoreSmoke() {
+  private static async Task RunTagStoreSmoke() {
     try {
       SceneManager.LoadScene(GenScene.PlaySceneName);
 
@@ -180,13 +182,13 @@ public static class DevSmokeBootstrap {
       await driver.WaitUntil(() => Current.ProgramState == ProgramState.Playing, 180f);
       await driver.WaitTicks(5);
 
-      TagStoreSmoke.Run();
+      _ = TagStoreSmoke.Run();
     } catch (Exception ex) {
       Log.Error(ex.ToString());
     }
   }
 
-  private static async void RunTagClickSmoke() {
+  private static async Task RunTagClickSmoke() {
     try {
       SceneManager.LoadScene(GenScene.PlaySceneName);
 
@@ -194,13 +196,13 @@ public static class DevSmokeBootstrap {
       await driver.WaitUntil(() => Current.ProgramState == ProgramState.Playing, 180f);
       await driver.WaitTicks(5);
 
-      TagClickSmoke.Run();
+      _ = TagClickSmoke.Run();
     } catch (Exception ex) {
       Log.Error(ex.ToString());
     }
   }
 
-  private static async void RunEvidenceSmoke() {
+  private static async Task RunEvidenceSmoke() {
     try {
       SceneManager.LoadScene(GenScene.PlaySceneName);
 
@@ -208,13 +210,13 @@ public static class DevSmokeBootstrap {
       await driver.WaitUntil(() => Current.ProgramState == ProgramState.Playing, 180f);
       await driver.WaitTicks(5);
 
-      EvidenceSmoke.Run();
+      _ = EvidenceSmoke.Run();
     } catch (Exception ex) {
       Log.Error(ex.ToString());
     }
   }
 
-  private static async void RunSuite() {
+  private static async Task RunSuite() {
     try {
       SceneManager.LoadScene(GenScene.PlaySceneName);
 

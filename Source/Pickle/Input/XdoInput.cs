@@ -13,6 +13,8 @@ namespace Pickle.Input;
 public static class XdoInput {
   private const int TimeoutMs = 2000;
 
+  private static readonly string XdotoolPath = ResolveXdotool();
+
   private static bool? available;
   private static string? gameWindowId;
 
@@ -26,6 +28,19 @@ public static class XdoInput {
   public static void Click(Vector2 guiPoint, int button = 1) {
     Vector2 target = ToScreen(guiPoint);
     Run($"mousemove {WindowArg()} --sync {(int)target.x} {(int)target.y} click {button}");
+  }
+
+  // The one place GUI space becomes X11 screen space. Both are top-left, so this only
+  // applies UIScale; add an offset here if clicks land wrong.
+  public static Vector2 ToScreen(Vector2 guiPoint) {
+    float scale = Prefs.UIScale;
+    return new Vector2(guiPoint.x * scale, guiPoint.y * scale);
+  }
+
+  // Callers report this alongside the intended target when a click fails to land: it
+  // separates a coordinate mapping bug from a click that went to the right place.
+  public static string GetMouseLocation() {
+    return Capture("getmouselocation");
   }
 
   // Coordinates are relative to the game window, not the X screen. They match under
@@ -49,22 +64,9 @@ public static class XdoInput {
     return null;
   }
 
-  // The one place GUI space becomes X11 screen space. Both are top-left, so this only
-  // applies UIScale; add an offset here if clicks land wrong.
-  public static Vector2 ToScreen(Vector2 guiPoint) {
-    float scale = Prefs.UIScale;
-    return new Vector2(guiPoint.x * scale, guiPoint.y * scale);
-  }
-
-  // Callers report this alongside the intended target when a click fails to land: it
-  // separates a coordinate mapping bug from a click that went to the right place.
-  public static string GetMouseLocation() {
-    return Capture("getmouselocation");
-  }
-
   private static string Capture(string arguments) {
     try {
-      ProcessStartInfo startInfo = new ProcessStartInfo("xdotool", arguments) {
+      ProcessStartInfo startInfo = new ProcessStartInfo(XdotoolPath, arguments) {
         UseShellExecute = false,
         RedirectStandardOutput = true,
         RedirectStandardError = true,
@@ -85,23 +87,7 @@ public static class XdoInput {
   }
 
   private static bool Probe() {
-    try {
-      ProcessStartInfo startInfo = new ProcessStartInfo("which", "xdotool") {
-        UseShellExecute = false,
-        RedirectStandardOutput = true,
-        RedirectStandardError = true,
-        CreateNoWindow = true,
-      };
-
-      using Process? process = Process.Start(startInfo);
-      if (process == null) {
-        return false;
-      }
-
-      return process.WaitForExit(TimeoutMs) && process.ExitCode == 0;
-    } catch {
-      return false;
-    }
+    return XdotoolPath.Length > 0;
   }
 
   // Never touch startInfo.EnvironmentVariables. Leaving it alone is what makes the
@@ -112,7 +98,7 @@ public static class XdoInput {
           $"xdotool is not on PATH; the docker image needs xdotool installed for click injection. Command: xdotool {arguments}");
     }
 
-    ProcessStartInfo startInfo = new ProcessStartInfo("xdotool", arguments) {
+    ProcessStartInfo startInfo = new ProcessStartInfo(XdotoolPath, arguments) {
       UseShellExecute = false,
       RedirectStandardError = true,
       CreateNoWindow = true,
@@ -144,5 +130,23 @@ public static class XdoInput {
     if (stderr.Length > 0) {
       Log.Warning($"pickle: xdotool {arguments} succeeded but wrote to stderr: {stderr}");
     }
+  }
+
+  // Walks PATH itself rather than passing a bare name to the process launcher, so the
+  // binary Pickle drives input with is fixed at startup and cannot be shadowed later.
+  private static string ResolveXdotool() {
+    string search = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+    foreach (string dir in search.Split(System.IO.Path.PathSeparator)) {
+      if (dir.Length == 0) {
+        continue;
+      }
+
+      string candidate = System.IO.Path.Combine(dir, "xdotool");
+      if (System.IO.File.Exists(candidate)) {
+        return candidate;
+      }
+    }
+
+    return string.Empty;
   }
 }

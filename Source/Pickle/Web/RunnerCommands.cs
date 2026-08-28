@@ -8,14 +8,6 @@ namespace Pickle.Web;
 /// They touch the runner and RimWorld statics, which the listener thread must not.
 /// </summary>
 public static class RunnerCommands {
-  // DashboardSeed creates the driver on the main thread. Posting before that builds it
-  // from the listener thread, which captures the wrong main-thread id.
-  private static void Post(System.Action action) {
-    if (PickleDriver.Exists) {
-      PickleDriver.Post(action);
-    }
-  }
-
   public static void Run(string scope) {
     Post(() => {
       RunnerWindow runner = RunnerWindow.Instance;
@@ -73,5 +65,13 @@ public static class RunnerCommands {
   public static void SetBreakOnFailure(bool on) {
     BreakOnFailureState.Enabled = on;
     Post(() => RunnerWindow.Instance.PublishSnapshot());
+  }
+
+  // DashboardSeed creates the driver on the main thread. Posting before that builds it
+  // from the listener thread, which captures the wrong main-thread id.
+  private static void Post(System.Action action) {
+    if (PickleDriver.Exists) {
+      PickleDriver.Post(action);
+    }
   }
 }

@@ -26,7 +26,7 @@ public static class RunnerTreeView {
 
   public static void Draw(Rect outRect, RunnerWindow window) {
     Dictionary<FeaturePlan, int> startIndices = ComputeStartIndices(window);
-    float contentHeight = MeasureHeight(window, startIndices);
+    float contentHeight = MeasureHeight(window);
     Rect viewRect = new Rect(0f, 0f, outRect.width - 16f, contentHeight);
 
     Vector2 scroll = window.TreeScroll;
@@ -74,7 +74,7 @@ public static class RunnerTreeView {
     Widgets.EndScrollView();
   }
 
-  private static float MeasureHeight(RunnerWindow window, Dictionary<FeaturePlan, int> startIndices) {
+  private static float MeasureHeight(RunnerWindow window) {
     float height = 0f;
     foreach (IGrouping<string, (DiscoveredSuite Suite, FeaturePlan Plan)> group in window.ParsedFeatures.GroupBy(f => f.Suite.ModName)) {
       List<(DiscoveredSuite Suite, FeaturePlan Plan)> features = [.. group.Where(f => FeatureHasVisibleScenario(window, f.Suite, f.Plan))];
@@ -175,10 +175,10 @@ public static class RunnerTreeView {
     }
 
     float dotX = checkRect.xMax + 8f;
-    Color dotColor = failed > 0 ? RunnerStatusColors.Failed : ran > 0 ? RunnerStatusColors.Passed : RunnerStatusColors.Pending;
+    Color dotColor = RollupColor(failed, ran);
     RunnerStatusColors.DrawDot(new Vector2(dotX, rect.y + (rect.height / 2f)), dotColor);
 
-    string countText = failed > 0 ? $"{failed}/{total} failed" : ran > 0 ? $"{ran}/{total}" : "not run";
+    string countText = RollupCount(failed, ran, total);
 
     float labelX = dotX + 12f;
     Rect labelRect = new Rect(labelX, rect.y, rect.width - (labelX - rect.x) - 100f, rect.height);
@@ -286,5 +286,21 @@ public static class RunnerTreeView {
     }
 
     return anySelected ? MultiCheckboxState.On : MultiCheckboxState.Off;
+  }
+
+  private static Color RollupColor(int failed, int ran) {
+    if (failed > 0) {
+      return RunnerStatusColors.Failed;
+    }
+
+    return ran > 0 ? RunnerStatusColors.Passed : RunnerStatusColors.Pending;
+  }
+
+  private static string RollupCount(int failed, int ran, int total) {
+    if (failed > 0) {
+      return $"{failed}/{total} failed";
+    }
+
+    return ran > 0 ? $"{ran}/{total}" : "not run";
   }
 }

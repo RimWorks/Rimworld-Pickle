@@ -7,6 +7,8 @@ using System.Text.RegularExpressions;
 namespace Pickle.Core.Steps;
 
 public static class StepSkeletonGenerator {
+  private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
+
   public static string Generate(string stepText, StepKind kind = StepKind.When) {
     string expression = GenerateExpression(stepText);
     string methodName = GenerateMethodName(stepText);
@@ -42,19 +44,19 @@ public static class StepSkeletonGenerator {
   private static string GenerateExpression(string stepText) {
     string result = stepText;
 
-    result = Regex.Replace(result, "\"[^\"]*\"", "{string}");
-    result = Regex.Replace(result, "'[^']*'", "{string}");
+    result = Regex.Replace(result, "\"[^\"]*\"", "{string}", RegexOptions.None, RegexTimeout);
+    result = Regex.Replace(result, "'[^']*'", "{string}", RegexOptions.None, RegexTimeout);
 
-    result = Regex.Replace(result, @"\b-?\d+\.\d+\b", "{float}");
+    result = Regex.Replace(result, @"\b-?\d+\.\d+\b", "{float}", RegexOptions.None, RegexTimeout);
 
-    result = Regex.Replace(result, @"\b-?\d+\b", "{int}");
+    result = Regex.Replace(result, @"\b-?\d+\b", "{int}", RegexOptions.None, RegexTimeout);
 
     return result;
   }
 
   private static string GenerateMethodName(string stepText) {
-    string withoutQuotes = Regex.Replace(stepText, "[\"'].*?[\"']", string.Empty);
-    withoutQuotes = Regex.Replace(withoutQuotes, @"-?\d+\.?\d*", string.Empty);
+    string withoutQuotes = Regex.Replace(stepText, "[\"'].*?[\"']", string.Empty, RegexOptions.None, RegexTimeout);
+    withoutQuotes = Regex.Replace(withoutQuotes, @"-?\d+\.?\d*", string.Empty, RegexOptions.None, RegexTimeout);
 
     string[] words = withoutQuotes.Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
 
@@ -64,7 +66,7 @@ public static class StepSkeletonGenerator {
 
     StringBuilder sb = new StringBuilder();
     foreach (string word in words) {
-      string sanitized = Regex.Replace(word, "[^a-zA-Z0-9]", string.Empty);
+      string sanitized = Regex.Replace(word, "[^a-zA-Z0-9]", string.Empty, RegexOptions.None, RegexTimeout);
       if (sanitized.Length > 0) {
         sb.Append(char.ToUpperInvariant(sanitized[0]));
         if (sanitized.Length > 1) {
@@ -89,7 +91,7 @@ public static class StepSkeletonGenerator {
     List<string> parameters = new List<string>();
     int argIndex = 1;
 
-    MatchCollection matches = Regex.Matches(expression, @"\{(int|float|string)\}");
+    MatchCollection matches = Regex.Matches(expression, @"\{(int|float|string)\}", RegexOptions.None, RegexTimeout);
     foreach (Match match in matches) {
       string paramType = match.Groups[1].Value;
       parameters.Add($"{paramType}|arg{argIndex}");

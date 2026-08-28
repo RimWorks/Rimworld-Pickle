@@ -12,10 +12,12 @@ namespace Pickle.Web;
 /// listener thread only reads a published snapshot, never a live collection.
 /// </summary>
 public static class PickleHttpServer {
+  private const string JsonContentType = "application/json";
+  private const string OkBody = "{\"ok\":true}";
+
   private const int DefaultPort = 27750;
 
   private static HttpListener? listener;
-  private static Thread? worker;
   private static volatile bool running;
 
   // Built and published on the main thread; the listener thread only ever reads
@@ -52,7 +54,7 @@ public static class PickleHttpServer {
       listener.Start();
       running = true;
 
-      worker = new Thread(Serve) { IsBackground = true, Name = "pickle-http" };
+      Thread worker = new Thread(Serve) { IsBackground = true, Name = "pickle-http" };
       worker.Start();
 
       Log.Message($"pickle: dashboard on http://0.0.0.0:{port}/");
@@ -67,7 +69,9 @@ public static class PickleHttpServer {
     try {
       listener?.Stop();
       listener?.Close();
-    } catch { }
+    } catch {
+      // shutting down anyway, and a listener that is already dead throws here
+    }
     listener = null;
   }
 
@@ -86,7 +90,11 @@ public static class PickleHttpServer {
       } catch (Exception ex) {
         Log.Error($"pickle: dashboard request failed: {ex.Message}");
       } finally {
-        try { context.Response.Close(); } catch { }
+        try {
+          context.Response.Close();
+        } catch {
+          // the client can disconnect mid-response, which makes Close throw
+        }
       }
     }
   }
@@ -95,19 +103,19 @@ public static class PickleHttpServer {
     string path = context.Request.Url.AbsolutePath;
 
     if (path == "/state") {
-      Write(context, "application/json", snapshot);
+      Write(context, JsonContentType, snapshot);
       return;
     }
 
     if (path == "/abort") {
       RunnerCommands.Abort();
-      Write(context, "application/json", "{\"ok\":true}");
+      Write(context, JsonContentType, OkBody);
       return;
     }
 
     if (path == "/run") {
       RunnerCommands.Run(context.Request.QueryString["scope"] ?? "all");
-      Write(context, "application/json", "{\"ok\":true}");
+      Write(context, JsonContentType, OkBody);
       return;
     }
 
@@ -121,19 +129,19 @@ public static class PickleHttpServer {
         RunnerCommands.Select(context.Request.QueryString["path"] ?? string.Empty, index, on);
       }
 
-      Write(context, "application/json", "{\"ok\":true}");
+      Write(context, JsonContentType, OkBody);
       return;
     }
 
     if (path == "/mode") {
       RunnerCommands.SetMode(context.Request.QueryString["value"] ?? "watch");
-      Write(context, "application/json", "{\"ok\":true}");
+      Write(context, JsonContentType, OkBody);
       return;
     }
 
     if (path == "/break") {
       RunnerCommands.SetBreakOnFailure(context.Request.QueryString["on"] != "false");
-      Write(context, "application/json", "{\"ok\":true}");
+      Write(context, JsonContentType, OkBody);
       return;
     }
 

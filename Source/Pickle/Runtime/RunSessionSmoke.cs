@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Gherkin;
 using Gherkin.Ast;
 using Pickle.Core;
@@ -15,7 +16,7 @@ using Verse;
 namespace Pickle.Runtime;
 
 public static class RunSessionSmoke {
-  public static async void Run() {
+  public static async Task Run() {
     try {
       PickleDriver driver = PickleDriver.Instance;
       List<System.Reflection.Assembly> engineAssemblies = new() { typeof(SmokeSteps).Assembly };

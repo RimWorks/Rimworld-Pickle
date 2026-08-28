@@ -24,38 +24,29 @@ public static class GherkinAdapter {
   private static void ProcessFeatureChildren(IEnumerable<IHasLocation> children, TagSet featureTags, List<StepPlan> featureBackground, List<ScenarioPlan> scenarios) {
     foreach (IHasLocation child in children) {
       if (child is Background background) {
-        List<StepPlan> steps = ExtractSteps(background.Steps);
-        featureBackground.AddRange(steps);
+        featureBackground.AddRange(ExtractSteps(background.Steps));
       } else if (child is Scenario scenario) {
-        if (scenario.Examples.Any()) {
-          ExpandOutline(scenario, featureTags, featureBackground, scenarios);
-        } else {
-          TagSet scenarioTags = featureTags.With(ExtractTags(scenario.Tags));
-          List<StepPlan> steps = [.. featureBackground];
-          steps.AddRange(ExtractSteps(scenario.Steps));
-          scenarios.Add(new ScenarioPlan(scenario.Name, scenarioTags, steps, scenario.Location.Line));
-        }
+        AddScenario(scenario, featureTags, featureBackground, scenarios);
       } else if (child is Rule rule) {
+        // A rule is a feature-shaped scope: it inherits the tags and background, then
+        // layers its own on top. Recursing keeps the two paths from drifting apart.
         TagSet ruleTags = featureTags.With(ExtractTags(rule.Tags));
         List<StepPlan> ruleBackground = [.. featureBackground];
-
-        foreach (IHasLocation ruleChild in rule.Children) {
-          if (ruleChild is Background ruleBackgroundChild) {
-            List<StepPlan> steps = ExtractSteps(ruleBackgroundChild.Steps);
-            ruleBackground.AddRange(steps);
-          } else if (ruleChild is Scenario ruleScenario) {
-            if (ruleScenario.Examples.Any()) {
-              ExpandOutline(ruleScenario, ruleTags, ruleBackground, scenarios);
-            } else {
-              TagSet scenarioTags = ruleTags.With(ExtractTags(ruleScenario.Tags));
-              List<StepPlan> steps = [.. ruleBackground];
-              steps.AddRange(ExtractSteps(ruleScenario.Steps));
-              scenarios.Add(new ScenarioPlan(ruleScenario.Name, scenarioTags, steps, ruleScenario.Location.Line));
-            }
-          }
-        }
+        ProcessFeatureChildren(rule.Children, ruleTags, ruleBackground, scenarios);
       }
     }
+  }
+
+  private static void AddScenario(Scenario scenario, TagSet inheritedTags, List<StepPlan> background, List<ScenarioPlan> scenarios) {
+    if (scenario.Examples.Any()) {
+      ExpandOutline(scenario, inheritedTags, background, scenarios);
+      return;
+    }
+
+    TagSet scenarioTags = inheritedTags.With(ExtractTags(scenario.Tags));
+    List<StepPlan> steps = [.. background];
+    steps.AddRange(ExtractSteps(scenario.Steps));
+    scenarios.Add(new ScenarioPlan(scenario.Name, scenarioTags, steps, scenario.Location.Line));
   }
 
   private static void ExpandOutline(Scenario outline, TagSet inheritedTags, List<StepPlan> backgroundSteps, List<ScenarioPlan> scenarios) {

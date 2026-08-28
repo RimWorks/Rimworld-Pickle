@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Gherkin;
 using Gherkin.Ast;
 using Pickle.Core;
@@ -15,7 +16,7 @@ using Verse;
 namespace Pickle.Runtime;
 
 public static class EvidenceSmoke {
-  public static async void Run() {
+  public static async Task Run() {
     try {
       PickleDriver driver = PickleDriver.Instance;
       List<System.Reflection.Assembly> engineAssemblies = new() { typeof(EvidenceSteps).Assembly };
@@ -63,30 +64,30 @@ Feature: Evidence Capture Test
         return;
       }
 
-      (string Name, string Content)? noteAttachment = result.Attachments.FirstOrDefault(a => a.Name == "note");
-      if (noteAttachment == null) {
+      (string Name, string Content) noteAttachment = result.Attachments.FirstOrDefault(a => a.Name == "note");
+      if (noteAttachment.Name == null) {
         Log.Error("pickle: evidence smoke failed: 'note' attachment not found");
         return;
       }
 
-      if (noteAttachment.Value.Content != "attached-value") {
-        Log.Error($"pickle: evidence smoke failed: 'note' attachment has wrong value: {noteAttachment.Value.Content}");
+      if (noteAttachment.Content != "attached-value") {
+        Log.Error($"pickle: evidence smoke failed: 'note' attachment has wrong value: {noteAttachment.Content}");
         return;
       }
 
-      (string Source, string Content)? evidenceDump = result.StateDumps.FirstOrDefault(d => d.Content == "evidence-dump-ok");
-      if (evidenceDump == null) {
+      (string Source, string Content) evidenceDump = result.StateDumps.FirstOrDefault(d => d.Content == "evidence-dump-ok");
+      if (evidenceDump.Content == null) {
         Log.Error("pickle: evidence smoke failed: state dump with 'evidence-dump-ok' not found");
         return;
       }
 
-      (string Name, string Content)? screenshotAttachment = result.Attachments.FirstOrDefault(a => a.Name == "screenshot");
-      if (screenshotAttachment == null) {
+      (string Name, string Content) screenshotAttachment = result.Attachments.FirstOrDefault(a => a.Name == "screenshot");
+      if (screenshotAttachment.Name == null) {
         Log.Error("pickle: evidence smoke failed: screenshot attachment not found");
         return;
       }
 
-      string screenshotPath = screenshotAttachment.Value.Content;
+      string screenshotPath = screenshotAttachment.Content;
       if (!File.Exists(screenshotPath)) {
         Log.Error($"pickle: evidence smoke failed: screenshot file does not exist at {screenshotPath}");
         return;

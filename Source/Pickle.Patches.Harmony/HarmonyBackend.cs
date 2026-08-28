@@ -17,6 +17,27 @@ public class HarmonyBackend : IPatchBackend {
 
   public string Name => "Harmony";
 
+  public static void LogErrorPostfix(string text) {
+    PickleHooks.AfterLogError(text);
+  }
+
+  public static void UIRootOnGUIPrefix() {
+    PickleHooks.BeforeUIRootOnGUI();
+  }
+
+  public static void UIRootOnGUIPostfix() {
+    PickleHooks.AfterUIRootOnGUI();
+  }
+
+  public static void ButtonTextPostfix(Rect rect, string label) {
+    PickleHooks.AfterButtonText(rect, label);
+  }
+
+  // Harmony skips the original when a prefix returns false.
+  public static bool AddPrefix(Window window) {
+    return PickleHooks.ShouldAddWindow(window);
+  }
+
   public void Apply() {
     HarmonyLib.Harmony harmony = new HarmonyLib.Harmony("cryptiklemur.pickle");
 
@@ -38,27 +59,6 @@ public class HarmonyBackend : IPatchBackend {
     harmony.Patch(
         typeof(WindowStack).GetMethod(nameof(WindowStack.Add)),
         prefix: Handler(nameof(AddPrefix)));
-  }
-
-  public static void LogErrorPostfix(string text) {
-    PickleHooks.AfterLogError(text);
-  }
-
-  public static void UIRootOnGUIPrefix() {
-    PickleHooks.BeforeUIRootOnGUI();
-  }
-
-  public static void UIRootOnGUIPostfix() {
-    PickleHooks.AfterUIRootOnGUI();
-  }
-
-  public static void ButtonTextPostfix(Rect rect, string label) {
-    PickleHooks.AfterButtonText(rect, label);
-  }
-
-  // Harmony skips the original when a prefix returns false.
-  public static bool AddPrefix(Window window) {
-    return PickleHooks.ShouldAddWindow(window);
   }
 
   private static HarmonyMethod Handler(string name) {

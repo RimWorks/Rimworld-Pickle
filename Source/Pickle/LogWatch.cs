@@ -53,7 +53,7 @@ public static class LogWatch {
     }
   }
 
-  private class CircularBuffer<T> {
+  private sealed class CircularBuffer<T> {
     private readonly T[] buffer;
     private int head;
 

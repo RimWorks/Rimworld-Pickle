@@ -48,10 +48,6 @@ public class PickleDriver : MonoBehaviour {
     Instance.mainThreadQueue.Enqueue(action);
   }
 
-  private void Awake() {
-    mainThreadId = Thread.CurrentThread.ManagedThreadId;
-  }
-
   public PickleWait WaitTicks(int n, object? scope = null) {
     if (Current.Game == null) {
       return new PickleWait(new InvalidOperationException(
@@ -105,31 +101,6 @@ public class PickleDriver : MonoBehaviour {
     return new PickleWait(wait);
   }
 
-  private System.Collections.IEnumerator CaptureScreenshotCoroutine(string filePath, PendingWait wait) {
-    yield return new WaitForEndOfFrame();
-
-    try {
-      string? dirPath = Path.GetDirectoryName(filePath);
-      if (!string.IsNullOrEmpty(dirPath) && !Directory.Exists(dirPath)) {
-        Directory.CreateDirectory(dirPath);
-      }
-
-      Texture2D screenshot = ScreenCapture.CaptureScreenshotAsTexture();
-      byte[] pngData = screenshot.EncodeToPNG();
-      UnityEngine.Object.Destroy(screenshot);
-
-      File.WriteAllBytes(filePath, pngData);
-    } catch (Exception ex) {
-      Log.Warning($"pickle: failed to capture screenshot to {filePath}: {ex.Message}");
-    }
-
-    lock (waitsGate) {
-      if (pendingWaits.Remove(wait)) {
-        Resolve(wait, null);
-      }
-    }
-  }
-
   public void FaultScope(object scope, Exception exception) {
     List<PendingWait> faulted = [];
     lock (waitsGate) {
@@ -159,6 +130,35 @@ public class PickleDriver : MonoBehaviour {
     foreach (PendingWait wait in faulted) {
       Resolve(wait, exception);
     }
+  }
+
+  private System.Collections.IEnumerator CaptureScreenshotCoroutine(string filePath, PendingWait wait) {
+    yield return new WaitForEndOfFrame();
+
+    try {
+      string? dirPath = Path.GetDirectoryName(filePath);
+      if (!string.IsNullOrEmpty(dirPath) && !Directory.Exists(dirPath)) {
+        Directory.CreateDirectory(dirPath);
+      }
+
+      Texture2D screenshot = ScreenCapture.CaptureScreenshotAsTexture();
+      byte[] pngData = screenshot.EncodeToPNG();
+      UnityEngine.Object.Destroy(screenshot);
+
+      File.WriteAllBytes(filePath, pngData);
+    } catch (Exception ex) {
+      Log.Warning($"pickle: failed to capture screenshot to {filePath}: {ex.Message}");
+    }
+
+    lock (waitsGate) {
+      if (pendingWaits.Remove(wait)) {
+        Resolve(wait, null);
+      }
+    }
+  }
+
+  private void Awake() {
+    mainThreadId = Thread.CurrentThread.ManagedThreadId;
   }
 
   private void Update() {

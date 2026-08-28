@@ -18,6 +18,27 @@ public class ConcordBackend : IPatchBackend {
 
   public string Name => "Concord";
 
+  public static void AfterLogError(string text) {
+    PickleHooks.AfterLogError(text);
+  }
+
+  public static void BeforeUIRootOnGUI() {
+    PickleHooks.BeforeUIRootOnGUI();
+  }
+
+  public static void AfterUIRootOnGUI() {
+    PickleHooks.AfterUIRootOnGUI();
+  }
+
+  public static void AfterButtonText(Rect rect, string label) {
+    PickleHooks.AfterButtonText(rect, label);
+  }
+
+  // Concord skips the original when a head injection returns Control.Cancel.
+  public static Control BeforeWindowAdd(Window window) {
+    return PickleHooks.ShouldAddWindow(window) ? Control.Continue : Control.Cancel;
+  }
+
   public void Apply() {
     Patcher.Patch(
         typeof(Log).GetMethod("Error", [typeof(string)]),
@@ -45,27 +66,6 @@ public class ConcordBackend : IPatchBackend {
         typeof(WindowStack).GetMethod(nameof(WindowStack.Add)),
         Injection(nameof(BeforeWindowAdd)),
         At.Head);
-  }
-
-  public static void AfterLogError(string text) {
-    PickleHooks.AfterLogError(text);
-  }
-
-  public static void BeforeUIRootOnGUI() {
-    PickleHooks.BeforeUIRootOnGUI();
-  }
-
-  public static void AfterUIRootOnGUI() {
-    PickleHooks.AfterUIRootOnGUI();
-  }
-
-  public static void AfterButtonText(Rect rect, string label) {
-    PickleHooks.AfterButtonText(rect, label);
-  }
-
-  // Concord skips the original when a head injection returns Control.Cancel.
-  public static Control BeforeWindowAdd(Window window) {
-    return PickleHooks.ShouldAddWindow(window) ? Control.Continue : Control.Cancel;
   }
 
   private static MethodBase Injection(string name) {

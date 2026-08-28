@@ -99,7 +99,7 @@ public static class SuiteRunner {
       return parsedFeatures;
     }
 
-    if (filter!.StartsWith("@")) {
+    if (filter!.StartsWith('@')) {
       List<(DiscoveredSuite Suite, FeaturePlan Plan)> tagFiltered = new();
       foreach ((DiscoveredSuite suite, FeaturePlan plan) in parsedFeatures) {
         List<ScenarioPlan> scenarios = [.. plan.Scenarios.Where(s => s.Tags.Contains(filter))];

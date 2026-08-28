@@ -9,7 +9,9 @@
       try {
         var saved = localStorage.getItem("pickle-theme");
         if (saved) document.documentElement.dataset.theme = saved;
-      } catch (e) {}
+      } catch (e) {
+        /* localStorage can be blocked; the default theme is fine */
+      }
     </script>
     <script id="pickle-report" type="application/json">__PICKLE_REPORT_JSON__</script>
   </head>
