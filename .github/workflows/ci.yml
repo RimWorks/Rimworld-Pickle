@@ -6,14 +6,12 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: read
-  packages: write
-
 jobs:
   dashboard:
     name: dashboard
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -26,7 +24,7 @@ jobs:
 
       - name: Install
         working-directory: Dashboard
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Lint
         working-directory: Dashboard
@@ -45,6 +43,8 @@ jobs:
   prose:
     name: prose
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -57,13 +57,15 @@ jobs:
   links:
     name: links
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
 
       # Relative links break silently when a folder is renamed, which is how the
       # docs -> Docs rename broke the template's link to the authoring guide.
       - name: Check links
-        uses: lycheeverse/lychee-action@v2
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
         with:
           args: --config lychee.toml --no-progress README.md 'Docs/**/*.md'
           fail: true
@@ -73,10 +75,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       image-ref: ${{ steps.image.outputs.image-ref }}
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Build RimWorld 1.6 game image
         id: image
-        uses: cryptiklemur/steam-game-image-action@v1
+        uses: cryptiklemur/steam-game-image-action@19937bfbdc67d5f6f12135e4b27d61bf790d8133 # v1
         with:
           steam-username: ${{ secrets.STEAM_USERNAME }}
           steam-config-vdf: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
@@ -90,6 +95,9 @@ jobs:
     name: build and test
     needs: [dashboard, game-image]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v6
 
@@ -106,8 +114,9 @@ jobs:
       - name: Stage game assemblies from image
         env:
           GAME_IMAGE: ${{ needs.game-image.outputs.image-ref }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           docker pull -q "$GAME_IMAGE"
           cid="$(docker create "$GAME_IMAGE")"
           mkdir -p "$RUNNER_TEMP/rimworld"

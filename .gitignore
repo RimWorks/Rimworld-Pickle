@@ -11,3 +11,5 @@ Harmony/Assemblies/
 Concord/Assemblies/
 artifacts/
 Pickle-*.zip
+.sonarqube/
+.scannerwork/
