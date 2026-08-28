@@ -51,13 +51,13 @@ Open the runner from the debug actions menu.
 
 | Guide | Covers |
 | --- | --- |
-| [Getting started](Docs/getting-started.md) | Adding a suite to your mod |
-| [Built-in steps](Docs/steps.md) | Every step Pickle ships |
-| [Authoring](Docs/authoring.md) | Writing your own steps, tags, fixtures, and waits |
-| [Running tests](Docs/running.md) | The runner, the browser dashboard, and seeds |
-| [Autorun and CI](Docs/autorun.md) | Command-line flags and pipelines |
-| [Reports](Docs/reports.md) | What each run writes, and what a failure captures |
-| [Releasing](Docs/releasing.md) | How a release is cut and published |
+| [Getting started](https://github.com/cryptiklemur/Rimworld-Pickle/blob/main/Docs/getting-started.md) | Adding a suite to your mod |
+| [Built-in steps](https://github.com/cryptiklemur/Rimworld-Pickle/blob/main/Docs/steps.md) | Every step Pickle ships |
+| [Authoring](https://github.com/cryptiklemur/Rimworld-Pickle/blob/main/Docs/authoring.md) | Writing your own steps, tags, fixtures, and waits |
+| [Running tests](https://github.com/cryptiklemur/Rimworld-Pickle/blob/main/Docs/running.md) | The runner, the browser dashboard, and seeds |
+| [Autorun and CI](https://github.com/cryptiklemur/Rimworld-Pickle/blob/main/Docs/autorun.md) | Command-line flags and pipelines |
+| [Reports](https://github.com/cryptiklemur/Rimworld-Pickle/blob/main/Docs/reports.md) | What each run writes, and what a failure captures |
+| [Releasing](https://github.com/cryptiklemur/Rimworld-Pickle/blob/main/Docs/releasing.md) | How a release is cut and published |
 
 ## Building Pickle
 

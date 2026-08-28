@@ -7,6 +7,7 @@
     <Description>Compile-time reference assembly for Pickle, the in-game BDD test runner for RimWorld. Reference this to build a steps dll; the Pickle mod supplies the real assembly at runtime.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/cryptiklemur/Rimworld-Pickle</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Metadata only. The package ships Pickle's reference assembly, not this
          project's own (empty) output, so mono binds the mod's real dll at runtime. -->
@@ -26,6 +27,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
+
     <!-- ref/, not lib/: assets under ref are compile-only, so a consumer never
          copies this stub next to the real Pickle.dll the mod loads. -->
     <None Include="..\Pickle\obj\$(Configuration)\ref\Pickle.dll" Pack="true" PackagePath="ref/net472/" Visible="false" />
