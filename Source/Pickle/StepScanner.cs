@@ -76,27 +76,35 @@ public static class StepScanner {
     foreach (MethodInfo method in methods) {
       GivenAttribute? givenAttr = method.GetCustomAttribute<GivenAttribute>();
       if (givenAttr != null) {
-        StepDefinition def = CreateStepDefinition(stepsClass, method, givenAttr.Pattern, StepKind.Given);
+        StepDefinition def = CreateStepDefinition(
+            stepsClass, method, givenAttr.Pattern, StepKind.Given, givenAttr.TimeoutSeconds);
         table.Add(def);
         continue;
       }
 
       WhenAttribute? whenAttr = method.GetCustomAttribute<WhenAttribute>();
       if (whenAttr != null) {
-        StepDefinition def = CreateStepDefinition(stepsClass, method, whenAttr.Pattern, StepKind.When);
+        StepDefinition def = CreateStepDefinition(
+            stepsClass, method, whenAttr.Pattern, StepKind.When, whenAttr.TimeoutSeconds);
         table.Add(def);
         continue;
       }
 
       ThenAttribute? thenAttr = method.GetCustomAttribute<ThenAttribute>();
       if (thenAttr != null) {
-        StepDefinition def = CreateStepDefinition(stepsClass, method, thenAttr.Pattern, StepKind.Then);
+        StepDefinition def = CreateStepDefinition(
+            stepsClass, method, thenAttr.Pattern, StepKind.Then, thenAttr.TimeoutSeconds);
         table.Add(def);
       }
     }
   }
 
-  private static StepDefinition CreateStepDefinition(Type stepsClass, MethodInfo method, string pattern, StepKind kind) {
+  private static StepDefinition CreateStepDefinition(
+      Type stepsClass,
+      MethodInfo method,
+      string pattern,
+      StepKind kind,
+      float timeoutSeconds) {
     ParameterInfo[] parameters = method.GetParameters();
     List<Type> parameterTypes = new();
 
@@ -109,6 +117,12 @@ public static class StepScanner {
     string assemblyName = stepsClass.Assembly.GetName().Name ?? "Unknown";
     string source = $"{stepsClass.Name}.{method.Name} ({assemblyName})";
 
-    return new StepDefinition(pattern, kind, source, parameterTypes, method);
+    return new StepDefinition(
+        pattern,
+        kind,
+        source,
+        parameterTypes,
+        method,
+        timeoutSeconds > 0f ? timeoutSeconds : null);
   }
 }

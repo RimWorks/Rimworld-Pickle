@@ -9,4 +9,9 @@ public class ThenAttribute : Attribute {
   }
 
   public string Pattern { get; }
+
+  /// <summary>
+  /// Seconds this step may run before the runner fails it. Zero uses the run default of 5.
+  /// </summary>
+  public float TimeoutSeconds { get; set; }
 }

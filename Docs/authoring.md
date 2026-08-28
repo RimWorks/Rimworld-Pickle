@@ -127,6 +127,22 @@ game state directly after the await.
 Do not use `Task.Delay` or `Thread.Sleep`. They block the thread the game ticks on, so
 the state you wait for never arrives.
 
+### Steps that wait longer than five seconds
+
+The runner fails any step that runs longer than five seconds. A step that waits on the
+simulation needs more room, so declare it on the attribute:
+
+```csharp
+[When("I wait for the caravan to arrive", TimeoutSeconds = 35f)]
+public async Task WaitForCaravan(PickleContext ctx) {
+    await ctx.WaitUntil(() => Find.CurrentMap.mapPawns.AnyColonistSpawned, 30f);
+}
+```
+
+Set the attribute a few seconds longer than the wait inside the step. The runner then reports
+your own failure message instead of a bare timeout. `@timeout:60` on a scenario does the
+same for every step in it, and the attribute wins where both apply.
+
 ## Input
 
 | Call | Action |
