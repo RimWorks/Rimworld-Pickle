@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { Attachment, Scenario, Snapshot } from "./types";
 import { translator } from "./types";
+import type { Attachment, Scenario, Snapshot } from "./types";
 import { formatMs, statusTone } from "./types";
 
 export function Detail({ scenario, live }: Readonly<{ scenario: Scenario | null; live: Snapshot | null }>) {

@@ -22,7 +22,7 @@ public class CameraSteps {
   private static Action? followHook;
 
   [When("I move the camera to \\({int}, {int}\\)")]
-  public async Task MoveTo(PickleContext ctx, int x, int z) {
+  public static async Task MoveTo(PickleContext ctx, int x, int z) {
     Map map = RequireMap(ctx);
     IntVec3 cell = new IntVec3(x, 0, z);
     ctx.Require(cell.InBounds(map), $"cell ({x}, {z}) is outside the map, which is {map.Size.x} by {map.Size.z}");
@@ -32,7 +32,7 @@ public class CameraSteps {
   }
 
   [When("I move the camera to {string}")]
-  public async Task MoveToPawn(PickleContext ctx, string nickname) {
+  public static async Task MoveToPawn(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     Find.CameraDriver.JumpToCurrentMapLoc(pawn.Position);
     await ctx.WaitFrames(1);
@@ -40,7 +40,7 @@ public class CameraSteps {
 
   // Pans rather than jumps, because a cut looks like a glitch in a recording.
   [When("I pan the camera to \\({int}, {int}\\)")]
-  public async Task PanTo(PickleContext ctx, int x, int z) {
+  public static async Task PanTo(PickleContext ctx, int x, int z) {
     Map map = RequireMap(ctx);
     IntVec3 cell = new IntVec3(x, 0, z);
     ctx.Require(cell.InBounds(map), $"cell ({x}, {z}) is outside the map, which is {map.Size.x} by {map.Size.z}");
@@ -50,7 +50,7 @@ public class CameraSteps {
   }
 
   [When("I follow {string}")]
-  public async Task Follow(PickleContext ctx, string nickname) {
+  public static async Task Follow(PickleContext ctx, string nickname) {
     StopFollowing();
 
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -66,32 +66,32 @@ public class CameraSteps {
   }
 
   [When("I stop following")]
-  public void StopFollow(PickleContext ctx) {
+  public static void StopFollow(PickleContext ctx) {
     StopFollowing();
   }
 
   [When("I zoom in")]
-  public async Task ZoomIn(PickleContext ctx) {
+  public static async Task ZoomIn(PickleContext ctx) {
     await SetSize(ctx, Find.CameraDriver.RootSize - ZoomStep);
   }
 
   [When("I zoom out")]
-  public async Task ZoomOut(PickleContext ctx) {
+  public static async Task ZoomOut(PickleContext ctx) {
     await SetSize(ctx, Find.CameraDriver.RootSize + ZoomStep);
   }
 
   [When("I zoom all the way in")]
-  public async Task ZoomAllIn(PickleContext ctx) {
+  public static async Task ZoomAllIn(PickleContext ctx) {
     await SetSize(ctx, CloseSize);
   }
 
   [When("I zoom all the way out")]
-  public async Task ZoomAllOut(PickleContext ctx) {
+  public static async Task ZoomAllOut(PickleContext ctx) {
     await SetSize(ctx, FarSize);
   }
 
   [Then("the camera is looking at \\({int}, {int}\\)")]
-  public void AssertLookingAt(PickleContext ctx, int x, int z) {
+  public static void AssertLookingAt(PickleContext ctx, int x, int z) {
     IntVec3 at = Find.CameraDriver.MapPosition;
     ctx.Assert(
         at.x == x && at.z == z,
@@ -99,7 +99,7 @@ public class CameraSteps {
   }
 
   [Then("the camera can see {string}")]
-  public void AssertCanSee(PickleContext ctx, string nickname) {
+  public static void AssertCanSee(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     ctx.Assert(
         Find.CameraDriver.InViewOf(pawn),

@@ -1,5 +1,5 @@
-import type { Snapshot } from "./types";
 import { translator } from "./types";
+import type { Snapshot } from "./types";
 
 export const post = (url: string) => fetch(url, { method: "POST" }).catch(() => {});
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Feature, Scenario, Selection, Snapshot } from "./types";
 import { translator } from "./types";
+import type { Feature, Scenario, Selection, Snapshot } from "./types";
 import { Tree } from "./Tree";
 import { Detail } from "./Detail";
 import { Toolbar } from "./Toolbar";
