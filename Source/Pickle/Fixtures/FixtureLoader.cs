@@ -26,6 +26,10 @@ public static class FixtureLoader {
           175f,
           scope);
       await driver.WaitTicks(2, scope);
+
+      // The map is live before the screen finishes fading in. Returning here would hand
+      // the next step a half dark screen, which a click or a screenshot both care about.
+      await driver.WaitUntil(() => !ScreenFader.IsFading(), 15f, scope);
     } finally {
       try {
         if (File.Exists(tempRwsPath)) {
