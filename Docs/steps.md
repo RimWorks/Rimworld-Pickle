@@ -7,6 +7,32 @@ Pickle ships these steps. Write your own for anything your mod does; see the
 word. The keyword you write in a feature file does not have to match the table below,
 because Pickle matches on the expression text alone.
 
+## Defs
+
+| Step | Does |
+| --- | --- |
+| `def {string} exists` | Finds a def by name in any database |
+| `no def {string} exists` | Checks nothing owns that name. Use it on a def a patch removes |
+| `def {string} of type {string} exists` | Names the database, for when two share a def name |
+| `def {string} field {string} is {string}` | Reads a field or property. Dotted paths walk into nested objects |
+| `def {string} costs {int} {string}` | Counts a thing in the def's `costList` |
+| `def {string} stat {string} is {float}` | The stat value the game computes, made without stuff |
+| `def {string} raw stat {string} is {float}` | The `statBases` entry exactly as the XML sets it |
+| `def {string} is defined by mod {string}` | Matches the mod name or its packageId |
+
+**These need no save.** A scenario with no `the save ... is loaded` step runs at the main
+menu, where the def database is already built. The five scenarios in `def-steps.feature`
+finish in about 1.4 seconds together, against 10 to 15 seconds for a single scenario that
+loads a fixture. An XML-only mod can test everything it ships this way.
+
+`stat` and `raw stat` answer different questions. `raw stat` reads the `statBases` entry
+and fails when the def has none. `stat` reads what the game computes, which falls back to
+the stat's own default when the def never lists it. Use `raw stat` to prove a patch wrote
+a value, and `stat` to prove the game uses it.
+
+A lookup that misses searches every database for close matches, so a typo comes back as
+`closest matches: Wall (ThingDef), Walls (DrawStyleCategoryDef)` rather than a bare miss.
+
 ## Fixtures
 
 | Step | Does |

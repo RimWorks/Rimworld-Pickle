@@ -11,11 +11,6 @@ namespace Pickle.Vanilla;
 /// </summary>
 [PickleSteps]
 public class StatSteps {
-  // A flat tolerance breaks on MarketValue in the thousands and a relative one breaks
-  // near zero, so the comparison takes whichever is looser.
-  private const float AbsoluteTolerance = 0.01f;
-  private const float RelativeTolerance = 0.001f;
-
   [Then("{string} stat {string} is {float}")]
   public void AssertPawnStat(PickleContext ctx, string nickname, string statDefName, float expected) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -47,8 +42,8 @@ public class StatSteps {
       PickleContext ctx, Thing thing, string subject, string statDefName, float expected) {
     StatDef stat = DefLookup.Require<StatDef>(statDefName);
     float actual = thing.GetStatValue(stat);
-    float tolerance = Math.Max(AbsoluteTolerance, Math.Abs(expected) * RelativeTolerance);
-    bool passed = Math.Abs(actual - expected) <= tolerance;
+    float tolerance = StatTolerance.For(expected);
+    bool passed = StatTolerance.IsNear(actual, expected);
 
     ctx.Assert(passed, passed ? null : Describe(ctx, thing, subject, stat, actual, $"{expected} within {tolerance:G3}"));
   }
