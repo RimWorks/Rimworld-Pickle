@@ -50,7 +50,7 @@ public class BreakCard : Window {
 
     Text.Font = GameFont.Medium;
     GUI.color = RunnerStatusColors.FailedText;
-    Widgets.Label(new Rect(inRect.x, y, inRect.width, TitleHeight), "✗ Step failed, run paused");
+    Widgets.Label(new Rect(inRect.x, y, inRect.width, TitleHeight), "Pickle_StepFailed".Translate());
     GUI.color = Color.white;
     Text.Font = GameFont.Small;
     y += TitleHeight + Gap;
@@ -74,7 +74,7 @@ public class BreakCard : Window {
 
     Text.Font = GameFont.Tiny;
     GUI.color = RunnerStatusColors.Muted;
-    Widgets.Label(new Rect(inRect.x, y, inRect.width, HintHeight), "game is paused with the failing state live. inspect anything, then choose:");
+    Widgets.Label(new Rect(inRect.x, y, inRect.width, HintHeight), "Pickle_BreakHint".Translate());
     GUI.color = Color.white;
     Text.Font = GameFont.Small;
     y += HintHeight + Gap;
@@ -84,15 +84,15 @@ public class BreakCard : Window {
     Rect abortRect = new Rect(continueRect.xMax + Gap, y, buttonWidth, ButtonRowHeight);
     Rect openRect = new Rect(abortRect.xMax + Gap, y, buttonWidth, ButtonRowHeight);
 
-    if (Widgets.ButtonText(continueRect, "Continue run")) {
+    if (Widgets.ButtonText(continueRect, "Pickle_ContinueRun".Translate())) {
       Decision = BreakCardDecision.Continue;
     }
 
-    if (Widgets.ButtonText(abortRect, "Abort run")) {
+    if (Widgets.ButtonText(abortRect, "Pickle_AbortRun".Translate())) {
       Decision = BreakCardDecision.Abort;
     }
 
-    if (Widgets.ButtonText(openRect, "Open in results")) {
+    if (Widgets.ButtonText(openRect, "Pickle_OpenInResults".Translate())) {
       Decision = BreakCardDecision.OpenInResults;
     }
   }

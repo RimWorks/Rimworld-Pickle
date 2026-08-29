@@ -192,7 +192,7 @@ public static class RunnerDetailView {
   private static void DrawEmptyState(Rect outRect) {
     GUI.color = RunnerStatusColors.Muted;
     Text.Anchor = TextAnchor.MiddleCenter;
-    Widgets.Label(outRect, "Select a scenario to see its steps.");
+    Widgets.Label(outRect, "Pickle_SelectScenario".Translate());
     Text.Anchor = TextAnchor.UpperLeft;
     GUI.color = Color.white;
   }

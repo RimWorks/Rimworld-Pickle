@@ -46,7 +46,7 @@ public class RunnerWindow : Window {
   private (string SourcePath, int ScenarioIndex)? selected;
 
   public RunnerWindow() {
-    optionalTitle = "Pickle test runner";
+    optionalTitle = "Pickle_RunnerTitle".Translate();
     draggable = true;
     resizeable = true;
     doCloseX = true;

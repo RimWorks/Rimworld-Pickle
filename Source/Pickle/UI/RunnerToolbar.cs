@@ -42,7 +42,7 @@ public static class RunnerToolbar {
     x += (SegWidth * 2f) + (Padding * 2f);
     Rect breakRect = new Rect(x, rect.y, 220f, rect.height);
     bool breakOn = BreakOnFailureState.Enabled;
-    Widgets.CheckboxLabeled(breakRect, "Break on failure", ref breakOn);
+    Widgets.CheckboxLabeled(breakRect, "Pickle_BreakOnFailure".Translate(), ref breakOn);
     BreakOnFailureState.Enabled = breakOn;
 
     const float openWidth = 128f;
@@ -50,11 +50,11 @@ public static class RunnerToolbar {
     Rect openRect = new Rect(rect.xMax - openWidth - Padding, rect.y + 3f, openWidth, rect.height - 6f);
     Rect saveRect = new Rect(openRect.x - saveWidth - Padding, rect.y + 3f, saveWidth, rect.height - 6f);
 
-    if (Widgets.ButtonText(saveRect, "Save fixture…")) {
+    if (Widgets.ButtonText(saveRect, "Pickle_SaveFixture".Translate())) {
       Find.WindowStack.Add(new SaveFixtureDialog(window.DiscoveredSuites));
     }
 
-    if (Widgets.ButtonText(openRect, "Open report dir")) {
+    if (Widgets.ButtonText(openRect, "Pickle_OpenReportDir".Translate())) {
       OpenReportDirectory();
     }
   }
@@ -74,8 +74,8 @@ public static class RunnerToolbar {
     Widgets.DrawBox(rect, 1, BaseContent.WhiteTex);
     GUI.color = previousBorder;
 
-    DrawSegment(watchRect, "Watch", watchActive, PickleRunMode.Mode.Watch);
-    DrawSegment(fastRect, "Fast", !watchActive, PickleRunMode.Mode.Fast);
+    DrawSegment(watchRect, "Pickle_ModeWatch".Translate(), watchActive, PickleRunMode.Mode.Watch);
+    DrawSegment(fastRect, "Pickle_ModeFast".Translate(), !watchActive, PickleRunMode.Mode.Fast);
   }
 
   private static void DrawSegment(Rect rect, string label, bool active, PickleRunMode.Mode mode) {
@@ -106,6 +106,6 @@ public static class RunnerToolbar {
       Log.Warning($"pickle: could not open report dir {dir}: {ex.Message}");
     }
 
-    Messages.Message($"Report dir: {dir}", MessageTypeDefOf.NeutralEvent, false);
+    Messages.Message("Pickle_ReportDirMessage".Translate(dir), MessageTypeDefOf.NeutralEvent, false);
   }
 }

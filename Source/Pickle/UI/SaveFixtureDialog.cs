@@ -23,7 +23,7 @@ public class SaveFixtureDialog : Window {
   public SaveFixtureDialog(List<DiscoveredSuite> suites) {
     this.suites = suites;
 
-    optionalTitle = "Save current game as fixture";
+    optionalTitle = "Pickle_SaveFixtureTitle".Translate();
     draggable = true;
     doCloseX = true;
     closeOnClickedOutside = true;
@@ -37,12 +37,12 @@ public class SaveFixtureDialog : Window {
   public override void DoWindowContents(Rect inRect) {
     float y = inRect.y;
 
-    Widgets.Label(new Rect(inRect.x, y, inRect.width, 24f), "Name");
+    Widgets.Label(new Rect(inRect.x, y, inRect.width, 24f), "Pickle_FixtureName".Translate());
     y += 24f;
     fixtureName = Widgets.TextField(new Rect(inRect.x, y, inRect.width, 28f), fixtureName);
     y += 36f;
 
-    Widgets.Label(new Rect(inRect.x, y, inRect.width, 24f), "Mod");
+    Widgets.Label(new Rect(inRect.x, y, inRect.width, 24f), "Pickle_FixtureMod".Translate());
     y += 24f;
 
     for (int i = 0; i < suites.Count; i++) {
@@ -58,7 +58,7 @@ public class SaveFixtureDialog : Window {
 
     bool canSave = Current.Game != null && !fixtureName.NullOrEmpty() && suites.Count > 0;
     GUI.enabled = canSave;
-    if (Widgets.ButtonText(new Rect(inRect.x, y, 120f, 30f), "Save")) {
+    if (Widgets.ButtonText(new Rect(inRect.x, y, 120f, 30f), "Pickle_Save".Translate())) {
       Save(suites[selectedSuite], fixtureName.Trim());
       Close();
     }
@@ -67,7 +67,7 @@ public class SaveFixtureDialog : Window {
 
     if (Current.Game == null) {
       GUI.color = RunnerStatusColors.FailedText;
-      Widgets.Label(new Rect(inRect.x + 132f, y, inRect.width - 132f, 30f), "Load a game first");
+      Widgets.Label(new Rect(inRect.x + 132f, y, inRect.width - 132f, 30f), "Pickle_LoadGameFirst".Translate());
       GUI.color = Color.white;
     }
   }
@@ -81,7 +81,7 @@ public class SaveFixtureDialog : Window {
       // SaveGame swallows its own exceptions into a log line, so the file is the
       // only honest signal that it worked.
       if (!File.Exists(scratch)) {
-        Messages.Message("Pickle: save failed, see log", MessageTypeDefOf.RejectInput, false);
+        Messages.Message("Pickle_SaveFailed".Translate(), MessageTypeDefOf.RejectInput, false);
         return;
       }
 
@@ -89,10 +89,10 @@ public class SaveFixtureDialog : Window {
       string target = Path.Combine(suite.FixturesDir, name + ".rws");
       File.Copy(scratch, target, overwrite: true);
 
-      Messages.Message($"Pickle: saved fixture to {target}", MessageTypeDefOf.TaskCompletion, false);
+      Messages.Message("Pickle_SavedFixtureTo".Translate(target), MessageTypeDefOf.TaskCompletion, false);
     } catch (Exception ex) {
       Log.Error($"pickle: save fixture failed: {ex}");
-      Messages.Message("Pickle: save fixture failed, see log", MessageTypeDefOf.RejectInput, false);
+      Messages.Message("Pickle_SaveFixtureFailed".Translate(), MessageTypeDefOf.RejectInput, false);
     } finally {
       try {
         File.Delete(scratch);

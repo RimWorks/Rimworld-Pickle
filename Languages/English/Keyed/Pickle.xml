@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+  <!-- Runner window -->
+  <Pickle_RunnerTitle>Pickle test runner</Pickle_RunnerTitle>
+  <Pickle_SelectScenario>Select a scenario to see its steps.</Pickle_SelectScenario>
+
+  <!-- Toolbar -->
+  <Pickle_BreakOnFailure>Break on failure</Pickle_BreakOnFailure>
+  <Pickle_SaveFixture>Save fixture…</Pickle_SaveFixture>
+  <Pickle_OpenReportDir>Open report dir</Pickle_OpenReportDir>
+  <Pickle_ModeWatch>Watch</Pickle_ModeWatch>
+  <Pickle_ModeFast>Fast</Pickle_ModeFast>
+  <Pickle_ReportDirMessage>Report dir: {0}</Pickle_ReportDirMessage>
+
+  <!-- Run pill -->
+  <Pickle_Expand>Expand</Pickle_Expand>
+  <Pickle_Abort>Abort</Pickle_Abort>
+  <Pickle_PillPaused>Paused: {0}</Pickle_PillPaused>
+  <Pickle_PillRunning>Running: {0}</Pickle_PillRunning>
+
+  <!-- Break on failure card -->
+  <Pickle_StepFailed>✗ Step failed, run paused</Pickle_StepFailed>
+  <Pickle_BreakHint>game is paused with the failing state live. inspect anything, then choose:</Pickle_BreakHint>
+  <Pickle_ContinueRun>Continue run</Pickle_ContinueRun>
+  <Pickle_AbortRun>Abort run</Pickle_AbortRun>
+  <Pickle_OpenInResults>Open in results</Pickle_OpenInResults>
+
+  <!-- Save fixture dialog -->
+  <Pickle_SaveFixtureTitle>Save current game as fixture</Pickle_SaveFixtureTitle>
+  <Pickle_FixtureName>Name</Pickle_FixtureName>
+  <Pickle_FixtureMod>Mod</Pickle_FixtureMod>
+  <Pickle_Save>Save</Pickle_Save>
+  <Pickle_LoadGameFirst>Load a game first</Pickle_LoadGameFirst>
+  <Pickle_SaveFailed>Pickle: save failed, see log</Pickle_SaveFailed>
+  <Pickle_SaveFixtureFailed>Pickle: save fixture failed, see log</Pickle_SaveFixtureFailed>
+  <Pickle_SavedFixtureTo>Pickle: saved fixture to {0}</Pickle_SavedFixtureTo>
+
+</LanguageData>

@@ -29,7 +29,7 @@ export default {
                     'npm --prefix Dashboard run build',
                     'dotnet build Pickle.slnx -c Release -p:Version=${nextRelease.version}',
                     'dotnet pack Source/Pickle.Ref/Pickle.Ref.csproj -c Release -p:Version=${nextRelease.version} -o artifacts',
-                    'zip -r Pickle-${nextRelease.version}.zip About Assemblies Harmony Concord Pickle loadFolders.xml -x "*.pdb" "About/Preview.xcf" "About/Workshop/*"',
+                    'zip -r Pickle-${nextRelease.version}.zip About Assemblies Harmony Concord Languages Pickle loadFolders.xml -x "*.pdb" "About/Preview.xcf" "About/Workshop/*"',
                 ].join(' && '),
 
                 // The workflow gets NUGET_API_KEY from trusted publishing. Skipped

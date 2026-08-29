@@ -48,7 +48,9 @@ public class RunPill : Window {
     RunnerStatusColors.DrawDot(new Vector2(inRect.x + 6f, y + (TitleRowHeight / 2f)), dotColor, 8f);
 
     string scenarioName = session?.CurrentScenarioName ?? string.Empty;
-    string title = paused ? $"Paused: {scenarioName}" : $"Running: {scenarioName}";
+    string title = paused
+        ? "Pickle_PillPaused".Translate(scenarioName).ToString()
+        : "Pickle_PillRunning".Translate(scenarioName).ToString();
     GUI.color = paused ? RunnerStatusColors.FailedText : Color.white;
     Widgets.Label(new Rect(inRect.x + 18f, y, inRect.width - 18f, TitleRowHeight), title);
     GUI.color = Color.white;
@@ -64,11 +66,11 @@ public class RunPill : Window {
     Rect expandRect = new Rect(inRect.x, y, ButtonWidth, ButtonRowHeight);
     Rect abortRect = new Rect(expandRect.xMax + Gap, y, ButtonWidth, ButtonRowHeight);
 
-    if (Widgets.ButtonText(expandRect, "Expand")) {
+    if (Widgets.ButtonText(expandRect, "Pickle_Expand".Translate())) {
       owner.ExpandFromPill();
     }
 
-    if (Widgets.ButtonText(abortRect, "Abort")) {
+    if (Widgets.ButtonText(abortRect, "Pickle_Abort".Translate())) {
       session?.RequestCancel();
     }
 
