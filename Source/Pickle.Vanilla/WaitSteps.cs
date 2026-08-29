@@ -50,6 +50,32 @@ public class WaitSteps {
         () => $"research '{defName}' did not finish; progress {project.ProgressPercent:P0}");
   }
 
+  [When("I wait until {string} reaches the stockpile", TimeoutSeconds = 35f)]
+  public async Task WaitForStockpile(PickleContext ctx, string nickname) {
+    Pawn pawn = PawnLookup.RequireLiving(nickname);
+    Map map = pawn.Map;
+
+    await WaitFor(
+        ctx,
+        () => map.zoneManager.ZoneAt(pawn.Position) is Zone_Stockpile,
+        () => $"pawn '{nickname}' never reached the stockpile; standing at {pawn.Position} " +
+            $"doing {pawn.CurJobDef?.defName ?? "nothing"}");
+  }
+
+  // A tick count is a guess about how far the pawn has to walk. This ends when it
+  // actually stops, so a film runs exactly as long as the journey.
+  [When("I wait until {string} stops moving", TimeoutSeconds = 90f)]
+  public async Task WaitUntilStill(PickleContext ctx, string nickname) {
+    Pawn pawn = PawnLookup.RequireLiving(nickname);
+
+    // one frame first, or a pather that has not started yet reads as already stopped
+    await ctx.WaitFrames(2);
+    await ctx.AssertEventually(
+        () => pawn.pather?.MovingNow != true,
+        () => $"pawn '{nickname}' never stopped; at {pawn.Position} doing {pawn.CurJobDef?.defName ?? "nothing"}",
+        85f);
+  }
+
   [When("I wait until {string} is drafted", TimeoutSeconds = 35f)]
   public async Task WaitForDrafted(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);

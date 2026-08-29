@@ -69,6 +69,79 @@ public class PawnSteps {
     await ctx.WaitFrames(1);
   }
 
+  [When("I order {string} to \\({int}, {int}\\)")]
+  public async Task OrderTo(PickleContext ctx, string nickname, int x, int z) {
+    Pawn pawn = PawnLookup.RequireLiving(nickname);
+    Map map = pawn.Map;
+    IntVec3 cell = new IntVec3(x, 0, z);
+
+    ctx.Require(cell.InBounds(map), $"cell ({x}, {z}) is outside the map, which is {map.Size.x} by {map.Size.z}");
+    ctx.Require(
+        pawn.CanReach(cell, PathEndMode.OnCell, Danger.Deadly),
+        $"pawn '{nickname}' cannot reach ({x}, {z}) from {pawn.Position}. {DescribeCell(map, cell)}; " +
+        $"pawn spawned={pawn.Spawned} standable={pawn.Position.Standable(map)}");
+
+    Job job = JobMaker.MakeJob(JobDefOf.Goto, cell);
+    job.playerForced = true;
+    pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
+
+    await ctx.WaitFrames(1);
+  }
+
+  // A cell literal is a guess about a map you cannot see. The stockpile is somewhere a
+  // colonist can always stand, so a scenario can order a walk without knowing the map.
+  [When("I order {string} to the stockpile")]
+  public async Task OrderToStockpile(PickleContext ctx, string nickname) {
+    Pawn pawn = PawnLookup.RequireLiving(nickname);
+    Map map = pawn.Map;
+
+    Zone_Stockpile? stockpile = map.zoneManager.AllZones.OfType<Zone_Stockpile>().FirstOrDefault();
+    ctx.Require(stockpile != null, "the map has no stockpile zone to walk to");
+
+    IntVec3 target = stockpile!.Cells.FirstOrDefault(c => c.Standable(map) && pawn.CanReach(c, PathEndMode.OnCell, Danger.Deadly));
+    ctx.Require(
+        target.IsValid,
+        $"pawn '{nickname}' cannot reach any cell of the stockpile from {pawn.Position}");
+
+    Job job = JobMaker.MakeJob(JobDefOf.Goto, target);
+    job.playerForced = true;
+    pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
+
+    await ctx.WaitFrames(1);
+  }
+
+  // Picks the furthest cell the pawn can actually reach, so a scenario gets a long walk
+  // on any map without naming a coordinate that may be inside a mountain.
+  [When("I order {string} to the far side of the map")]
+  public async Task OrderFar(PickleContext ctx, string nickname) {
+    Pawn pawn = PawnLookup.RequireLiving(nickname);
+    Map map = pawn.Map;
+    IntVec3 from = pawn.Position;
+
+    IntVec3 best = IntVec3.Invalid;
+    float bestDistance = -1f;
+    foreach (IntVec3 cell in map.AllCells) {
+      float distance = cell.DistanceToSquared(from);
+      if (distance <= bestDistance || !cell.Standable(map)) {
+        continue;
+      }
+
+      if (pawn.CanReach(cell, PathEndMode.OnCell, Danger.Deadly)) {
+        best = cell;
+        bestDistance = distance;
+      }
+    }
+
+    ctx.Require(best.IsValid, $"pawn '{nickname}' cannot reach anywhere from {from}");
+
+    Job job = JobMaker.MakeJob(JobDefOf.Goto, best);
+    job.playerForced = true;
+    pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
+    ctx.Set(best);
+
+    await ctx.WaitFrames(1);
+  }
+
   [Then("{string} needs {string} is below {int} percent")]
   public void AssertNeedBelow(PickleContext ctx, string nickname, string needDefName, int percent) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -185,6 +258,13 @@ public class PawnSteps {
     }
 
     return held.Count == 0 ? "(nothing)" : string.Join(", ", held);
+  }
+
+  private static string DescribeCell(Map map, IntVec3 cell) {
+    TerrainDef? terrain = cell.GetTerrain(map);
+    string things = string.Join(", ", cell.GetThingList(map).Select(t => t.def.defName));
+    return $"target terrain={terrain?.defName ?? "?"} standable={cell.Standable(map)} " +
+        $"walkable={cell.Walkable(map)} holds=[{things}]";
   }
 
   private static string DescribeSkill(SkillRecord skill) {
