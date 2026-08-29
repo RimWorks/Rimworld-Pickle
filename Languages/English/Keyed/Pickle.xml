@@ -36,4 +36,25 @@
   <Pickle_SaveFixtureFailed>Pickle: save fixture failed, see log</Pickle_SaveFixtureFailed>
   <Pickle_SavedFixtureTo>Pickle: saved fixture to {0}</Pickle_SavedFixtureTo>
 
+  <!-- Dashboard and report, served to the browser from the active language -->
+  <Pickle_RunAll>Run all</Pickle_RunAll>
+  <Pickle_RunSelected>Run selected</Pickle_RunSelected>
+  <Pickle_RerunFailed>Rerun failed</Pickle_RerunFailed>
+  <Pickle_SelectAll>Select all</Pickle_SelectAll>
+  <Pickle_DeselectAll>Deselect all</Pickle_DeselectAll>
+  <Pickle_Aborting>Aborting</Pickle_Aborting>
+  <Pickle_WaitingForGame>Waiting for the game</Pickle_WaitingForGame>
+  <Pickle_Idle>Idle</Pickle_Idle>
+  <Pickle_NoFeatures>No features discovered.</Pickle_NoFeatures>
+  <Pickle_NoReportData>This report has no data embedded in it.</Pickle_NoReportData>
+  <Pickle_Attachments>Attachments</Pickle_Attachments>
+  <Pickle_StateAtFailure>State at failure</Pickle_StateAtFailure>
+  <Pickle_LogTail>Log tail</Pickle_LogTail>
+  <Pickle_Filmstrip>filmstrip</Pickle_Filmstrip>
+  <Pickle_Film>film</Pickle_Film>
+  <Pickle_CloseImage>Close image</Pickle_CloseImage>
+  <Pickle_OutcomePassed>Passed</Pickle_OutcomePassed>
+  <Pickle_OutcomeFailed>Failed</Pickle_OutcomeFailed>
+  <Pickle_OutcomeSkipped>Skipped</Pickle_OutcomeSkipped>
+
 </LanguageData>

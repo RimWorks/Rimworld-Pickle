@@ -19,14 +19,16 @@ public static class HtmlReportWriter {
       IReadOnlyList<ScenarioResult> results,
       string exitReason,
       string template,
-      Func<string, byte[]?>? readAttachmentBytes = null) {
-    return template.Replace(Placeholder, BuildPayload(results, exitReason, readAttachmentBytes));
+      Func<string, byte[]?>? readAttachmentBytes = null,
+      string? stringsJson = null) {
+    return template.Replace(Placeholder, BuildPayload(results, exitReason, readAttachmentBytes, stringsJson));
   }
 
   public static string BuildPayload(
       IReadOnlyList<ScenarioResult> results,
       string exitReason,
-      Func<string, byte[]?>? readAttachmentBytes) {
+      Func<string, byte[]?>? readAttachmentBytes,
+      string? stringsJson = null) {
     StringBuilder json = new StringBuilder();
     json.Append('{');
     json.Append("\"status\":\"idle\",\"feature\":\"\",\"scenario\":\"\",\"step\":\"\",");
@@ -34,6 +36,7 @@ public static class HtmlReportWriter {
     json.Append("\"failed\":").Append(results.Count(r => r.Outcome == ScenarioOutcome.Failed)).Append(',');
     json.Append("\"cancelRequested\":false,\"watch\":true,\"breakOnFailure\":false,\"controllable\":false,");
     json.Append("\"exitReason\":").Append(JsonEscape.Quote(exitReason)).Append(',');
+    json.Append("\"strings\":").Append(stringsJson ?? "{}").Append(',');
 
     // The dashboard groups by feature, but a ScenarioResult only knows its feature
     // name, so that name is both the grouping key and the stand-in for a path.

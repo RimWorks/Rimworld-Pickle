@@ -38,6 +38,7 @@ public static class RunnerSnapshot {
     json.Append("\"watch\":").Append(PickleRunMode.Current == PickleRunMode.Mode.Watch ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"breakOnFailure\":").Append(BreakOnFailureState.Enabled ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"controllable\":").Append(isSelected != null ? TrueLiteral : FalseLiteral).Append(',');
+    json.Append("\"strings\":").Append(DashboardStrings.BuildJson()).Append(',');
 
     int scenarioIndex = 0;
     List<string> features = new List<string>();

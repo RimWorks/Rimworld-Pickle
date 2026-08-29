@@ -53,7 +53,8 @@ public static class AutorunBootstrap {
               results,
               exitReason,
               Web.Dashboard.ReportTemplate,
-              path => File.Exists(path) ? File.ReadAllBytes(path) : null));
+              path => File.Exists(path) ? File.ReadAllBytes(path) : null,
+              Web.DashboardStrings.BuildJson()));
     } catch (Exception ex) {
       string msg = $"pickle: failed writing reports: {ex.Message}";
       if (onError != null) {

@@ -36,6 +36,7 @@ export type Feature = {
 };
 
 export type Snapshot = {
+  strings?: Record<string, string>;
   status: "idle" | "running" | "paused";
   feature: string;
   scenario: string;
@@ -70,4 +71,10 @@ export function formatMs(ms: number): string {
   if (ms <= 0) return "";
   if (ms < 1000) return `${Math.round(ms)}ms`;
   return `${(ms / 1000).toFixed(1)}s`;
+}
+
+// The game sends the active language from Languages/<lang>/Keyed/Pickle.xml. A missing
+// or empty value falls back to the English text passed at the call site.
+export function translator(snap: Snapshot | null) {
+  return (key: string, fallback: string): string => snap?.strings?.[key] || fallback;
 }

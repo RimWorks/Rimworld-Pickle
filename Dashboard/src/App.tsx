@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Feature, Scenario, Selection, Snapshot } from "./types";
+import { translator } from "./types";
 import { Tree } from "./Tree";
 import { Detail } from "./Detail";
 import { Toolbar } from "./Toolbar";
@@ -131,10 +132,11 @@ function statusDotClass(snap: Snapshot | null, paused: boolean, running: boolean
 }
 
 function headline(snap: Snapshot | null, paused: boolean, running: boolean): string {
-  if (!snap) return "Waiting for the game";
+  const strings = translator(snap);
+  if (!snap) return strings("Pickle_WaitingForGame", "Waiting for the game");
   if (paused) return `Paused: ${snap.scenario}`;
   if (running) return snap.scenario || "Running";
-  return "Idle";
+  return strings("Pickle_Idle", "Idle");
 }
 
 function Header({

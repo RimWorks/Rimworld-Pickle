@@ -1,8 +1,10 @@
 import type { Snapshot } from "./types";
+import { translator } from "./types";
 
 export const post = (url: string) => fetch(url, { method: "POST" }).catch(() => {});
 
 export function Toolbar({ snap }: Readonly<{ snap: Snapshot }>) {
+  const t = translator(snap);
   const running = snap.status === "running" || snap.status === "paused";
   const anySelected = snap.features.some((f) => f.scenarios.some((s) => s.selected));
   const anyFailed = snap.features.some((f) => f.scenarios.some((s) => s.outcome === "Failed"));
@@ -16,7 +18,7 @@ export function Toolbar({ snap }: Readonly<{ snap: Snapshot }>) {
         disabled={running || !snap.controllable}
         onClick={() => post("/run?scope=all")}
       >
-        Run all
+        {t("Pickle_RunAll", "Run all")}
       </button>
       <button
         type="button"
@@ -24,7 +26,7 @@ export function Toolbar({ snap }: Readonly<{ snap: Snapshot }>) {
         disabled={running || !anySelected || !snap.controllable}
         onClick={() => post("/run?scope=selected")}
       >
-        Run selected
+        {t("Pickle_RunSelected", "Run selected")}
       </button>
       <button
         type="button"
@@ -32,7 +34,7 @@ export function Toolbar({ snap }: Readonly<{ snap: Snapshot }>) {
         disabled={running || !anyFailed || !snap.controllable}
         onClick={() => post("/run?scope=failed")}
       >
-        Rerun failed
+        {t("Pickle_RerunFailed", "Rerun failed")}
       </button>
 
       <div className="divider divider-horizontal mx-1" />
@@ -43,14 +45,14 @@ export function Toolbar({ snap }: Readonly<{ snap: Snapshot }>) {
           className={`btn btn-sm join-item ${snap.watch ? "btn-active" : ""}`}
           onClick={() => post("/mode?value=watch")}
         >
-          Watch
+          {t("Pickle_ModeWatch", "Watch")}
         </button>
         <button
           type="button"
           className={`btn btn-sm join-item ${!snap.watch ? "btn-active" : ""}`}
           onClick={() => post("/mode?value=fast")}
         >
-          Fast
+          {t("Pickle_ModeFast", "Fast")}
         </button>
       </div>
 
@@ -72,7 +74,7 @@ export function Toolbar({ snap }: Readonly<{ snap: Snapshot }>) {
         disabled={!snap.controllable}
         onClick={() => post(`/select?scope=${allSelected ? "none" : "all"}`)}
       >
-        {allSelected ? "Deselect all" : "Select all"}
+        {allSelected ? t("Pickle_DeselectAll", "Deselect all") : t("Pickle_SelectAll", "Select all")}
       </button>
     </div>
   );

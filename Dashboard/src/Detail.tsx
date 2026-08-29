@@ -1,21 +1,29 @@
 import { useEffect, useState } from "react";
 import type { Attachment, Scenario, Snapshot } from "./types";
+import { translator } from "./types";
 import { formatMs, statusTone } from "./types";
 
 export function Detail({ scenario, live }: Readonly<{ scenario: Scenario | null; live: Snapshot | null }>) {
   const [zoomed, setZoomed] = useState<string | null>(null);
+  const t = translator(live);
 
   if (!scenario) {
     return (
       <div className="h-full grid place-items-center text-sm text-base-content/40">
-        {live ? `Running ${live.scenario}` : "Select a scenario"}
+        {live ? `Running ${live.scenario}` : t("Pickle_SelectScenario", "Select a scenario")}
       </div>
     );
   }
 
   return (
     <div className="max-w-5xl">
-      {zoomed && <Lightbox src={zoomed} onClose={() => setZoomed(null)} />}
+      {zoomed && (
+        <Lightbox
+          src={zoomed}
+          label={t("Pickle_CloseImage", "Close image")}
+          onClose={() => setZoomed(null)}
+        />
+      )}
       <div className="flex items-baseline gap-3 flex-wrap">
         <h1 className="text-xl font-semibold">{scenario.name}</h1>
         <span className="text-xs text-base-content/40 font-mono">
@@ -57,7 +65,7 @@ export function Detail({ scenario, live }: Readonly<{ scenario: Scenario | null;
 
       {scenario.attachments.length > 0 && (
         <section className="mt-6">
-          <h2 className="text-xs uppercase tracking-widest text-base-content/40">Attachments</h2>
+          <h2 className="text-xs uppercase tracking-widest text-base-content/40">{t("Pickle_Attachments", "Attachments")}</h2>
           <div className="mt-2 flex flex-col gap-3">
             {filmVideo(scenario.attachments) && <FilmVideo src={filmVideo(scenario.attachments)!} />}
             {filmFrames(scenario.attachments).length > 0 && (
@@ -83,7 +91,7 @@ export function Detail({ scenario, live }: Readonly<{ scenario: Scenario | null;
 
       {(scenario.stateDumps ?? []).length > 0 && (
         <section className="mt-6">
-          <h2 className="text-xs uppercase tracking-widest text-base-content/40">State at failure</h2>
+          <h2 className="text-xs uppercase tracking-widest text-base-content/40">{t("Pickle_StateAtFailure", "State at failure")}</h2>
           <div className="mt-2 flex flex-col gap-3">
             {scenario.stateDumps.map((dump) => (
               <div key={dump.source}>
@@ -99,7 +107,7 @@ export function Detail({ scenario, live }: Readonly<{ scenario: Scenario | null;
 
       {scenario.logTail.length > 0 && (
         <section className="mt-6">
-          <h2 className="text-xs uppercase tracking-widest text-base-content/40">Log tail</h2>
+          <h2 className="text-xs uppercase tracking-widest text-base-content/40">{t("Pickle_LogTail", "Log tail")}</h2>
           <pre className="mt-2 rounded-box bg-base-100 p-3 text-xs whitespace-pre-wrap break-words">
             {scenario.logTail.join("\n")}
           </pre>
@@ -181,7 +189,7 @@ function Zoomable({
 
 // A frame is 1920 wide and the pane is not, so the strip is only useful if a click can
 // show the real thing.
-function Lightbox({ src, onClose }: Readonly<{ src: string; onClose: () => void }>) {
+function Lightbox({ src, label, onClose }: Readonly<{ src: string; label: string; onClose: () => void }>) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -193,7 +201,7 @@ function Lightbox({ src, onClose }: Readonly<{ src: string; onClose: () => void 
   return (
     <button
       type="button"
-      aria-label="Close image"
+      aria-label={label}
       onClick={onClose}
       className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4 cursor-zoom-out"
     >
