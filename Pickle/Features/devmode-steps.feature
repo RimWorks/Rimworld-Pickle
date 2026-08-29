@@ -1,3 +1,4 @@
+@film
 Feature: dev mode steps
 
   Background:

@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading;
 using Pickle.Input;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Verse;
 
 namespace Pickle.Runtime;
@@ -23,6 +24,9 @@ public class PickleDriver : MonoBehaviour {
   private readonly object waitsGate = new object();
   private readonly List<PendingWait> pendingWaits = [];
   private int frameCounter;
+
+  private RenderTexture? frameTarget;
+  private Texture2D? frameScratch;
   private int mainThreadId;
 
   public static bool Exists => instance != null;
@@ -33,6 +37,10 @@ public class PickleDriver : MonoBehaviour {
       return instance!;
     }
   }
+
+  // Runs once per rendered frame. Multicast on purpose: the filmstrip samples here and
+  // a camera follow steers here, and both can be live at the same time.
+  public Action? FrameHook { get; set; }
 
   public static void EnsureExists() {
     if (instance != null) {
@@ -46,6 +54,14 @@ public class PickleDriver : MonoBehaviour {
 
   public static void Post(Action action) {
     Instance.mainThreadQueue.Enqueue(action);
+  }
+
+  public void AddFrameHook(Action hook) {
+    FrameHook += hook;
+  }
+
+  public void RemoveFrameHook(Action hook) {
+    FrameHook -= hook;
   }
 
   public PickleWait WaitTicks(int n, object? scope = null) {
@@ -101,6 +117,24 @@ public class PickleDriver : MonoBehaviour {
     return new PickleWait(wait);
   }
 
+  // no PendingWait: the filmstrip fires frames as steps finish and nothing awaits them,
+  // so registering waits here would leave entries for FaultAllPending to trip over
+  public void CaptureFrameDetached(string filePath, int maxWidth) {
+    StartCoroutine(CaptureFrameCoroutine(filePath, maxWidth));
+  }
+
+  public void ReleaseFrameBuffers() {
+    if (frameTarget != null) {
+      RenderTexture.ReleaseTemporary(frameTarget);
+      frameTarget = null;
+    }
+
+    if (frameScratch != null) {
+      UnityEngine.Object.Destroy(frameScratch);
+      frameScratch = null;
+    }
+  }
+
   public void FaultScope(object scope, Exception exception) {
     List<PendingWait> faulted = [];
     lock (waitsGate) {
@@ -132,7 +166,63 @@ public class PickleDriver : MonoBehaviour {
     }
   }
 
-  private System.Collections.IEnumerator CaptureScreenshotCoroutine(string filePath, PendingWait wait) {
+  // CaptureScreenshotIntoRenderTexture keeps the frame on the GPU and AsyncGPUReadback
+  // pulls it back without stalling, which is what makes thirty frames a second possible.
+  // ReadPixels blocks until the GPU catches up and cannot keep that rate.
+  private System.Collections.IEnumerator CaptureFrameCoroutine(string filePath, int maxWidth) {
+    yield return new WaitForEndOfFrame();
+
+    RenderTexture? scaled = null;
+    try {
+      int width = Mathf.Min(maxWidth, Screen.width);
+
+      // yuv420p rejects an odd width or height
+      width -= width % 2;
+      int height = Mathf.RoundToInt(Screen.height * (width / (float)Screen.width));
+      height -= height % 2;
+
+      if (frameTarget == null || frameTarget.width != Screen.width || frameTarget.height != Screen.height) {
+        ReleaseFrameBuffers();
+        frameTarget = RenderTexture.GetTemporary(Screen.width, Screen.height, 0);
+      }
+
+      ScreenCapture.CaptureScreenshotIntoRenderTexture(frameTarget);
+
+      scaled = RenderTexture.GetTemporary(width, height, 0);
+      Graphics.Blit(frameTarget, scaled);
+
+      if (frameScratch == null || frameScratch.width != width || frameScratch.height != height) {
+        if (frameScratch != null) {
+          UnityEngine.Object.Destroy(frameScratch);
+        }
+
+        frameScratch = new Texture2D(width, height, TextureFormat.RGB24, false);
+      }
+
+      Texture2D scratch = frameScratch;
+      AsyncGPUReadback.Request(scaled, 0, TextureFormat.RGB24, request => {
+        if (request.hasError) {
+          return;
+        }
+
+        try {
+          scratch.LoadRawTextureData(request.GetData<byte>());
+          scratch.Apply(false);
+          File.WriteAllBytes(filePath, scratch.EncodeToJPG(75));
+        } catch (Exception ex) {
+          Log.Warning($"pickle: frame readback failed for {filePath}: {ex.Message}");
+        }
+      });
+    } catch (Exception ex) {
+      Log.Warning($"pickle: failed to capture frame to {filePath}: {ex.Message}");
+    } finally {
+      if (scaled != null) {
+        RenderTexture.ReleaseTemporary(scaled);
+      }
+    }
+  }
+
+  private System.Collections.IEnumerator CaptureScreenshotCoroutine(string filePath, PendingWait? wait) {
     yield return new WaitForEndOfFrame();
 
     try {
@@ -148,6 +238,10 @@ public class PickleDriver : MonoBehaviour {
       File.WriteAllBytes(filePath, pngData);
     } catch (Exception ex) {
       Log.Warning($"pickle: failed to capture screenshot to {filePath}: {ex.Message}");
+    }
+
+    if (wait == null) {
+      yield break;
     }
 
     lock (waitsGate) {
@@ -171,6 +265,13 @@ public class PickleDriver : MonoBehaviour {
     }
 
     frameCounter++;
+
+    try {
+      FrameHook?.Invoke();
+    } catch (Exception ex) {
+      Log.Error($"pickle: frame hook threw: {ex}");
+    }
+
     ScanWaits();
 
     // BeginFrame() after ScanWaits: steps during Update(N) see tags from OnGUI(N-1), then we clear for OnGUI(N).

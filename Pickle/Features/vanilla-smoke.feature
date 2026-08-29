@@ -1,3 +1,4 @@
+@film
 Feature: vanilla smoke
 
   Background:

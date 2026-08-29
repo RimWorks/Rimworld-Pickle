@@ -1,3 +1,4 @@
+@film
 Feature: sim steps
 
   Background:

@@ -4,7 +4,8 @@ Every run writes the same set of files to the report directory. Pickle rewrites 
 after each scenario, so a run that hangs still leaves a complete record of what
 finished.
 
-Set the directory with `-pickle-report-dir=PATH`.
+Set the directory with `-pickle-report-dir=PATH`. Without it Pickle writes to
+`PickleReports` beside your saves, because the game folder is often read only.
 
 | File | Use |
 | --- | --- |
@@ -13,7 +14,7 @@ Set the directory with `-pickle-report-dir=PATH`.
 | `messages.ndjson` | [Cucumber messages](https://github.com/cucumber/messages), for Cucumber tooling |
 | `summary.json` | Counts and an `exitReason` field |
 | `summary.md` | A short summary to paste into a pull request |
-| `screenshots/` | A screenshot for each failed scenario |
+| `screenshots/` | A screenshot for each failed scenario, plus any filmstrip frames |
 
 ## report.html
 
@@ -21,8 +22,39 @@ The HTML report is the same interface as the live dashboard, with the run's resu
 embedded in it. It has no external files and needs no server. Attach it to a pull
 request or a CI artifact and open it directly.
 
-It opens on the first failing scenario. Pickle embeds the screenshots, so the file gets
-large when a run captures several.
+It opens on the first failing scenario. Failure screenshots are embedded, so the file
+travels on its own.
+
+Filmstrip frames are the exception. A `@film` scenario captures a full size frame per
+step, and embedding those would push the report past what a browser opens comfortably.
+The report links them from `screenshots/film/` instead, so keep that folder next to
+`report.html` when you move it.
+
+## Video
+
+A `@film` scenario writes its frames to `screenshots/film/<feature>--<scenario>/`. They
+are named `0000.jpg`, `0001.jpg`, and so on. When `ffmpeg` is on the PATH, Pickle also
+encodes them into `film.webm` in that folder. The report then shows a player next to the
+strip.
+
+RimWorld cannot encode video on its own, so `ffmpeg` is the only way to get a file a
+browser will play. Install it and Pickle picks it up:
+
+| System | Command |
+| --- | --- |
+| Debian or Ubuntu | `sudo apt install ffmpeg` |
+| Arch | `sudo pacman -S ffmpeg` |
+| macOS | `brew install ffmpeg` |
+| Windows | `winget install Gyan.FFmpeg` |
+
+Without `ffmpeg` the run still succeeds and the strip still works. Pickle logs one
+warning and moves on.
+
+To encode a folder yourself later:
+
+```sh
+ffmpeg -framerate 2 -i 0%03d.jpg -c:v libvpx-vp9 -pix_fmt yuv420p -crf 38 film.webm
+```
 
 ## summary.json
 

@@ -46,6 +46,19 @@ public static class ScreenshotCapture {
     return Path.Combine(ReportsDirectory(), filename);
   }
 
+  // One folder per scenario with plain numbered names, because ffmpeg reads a sequence
+  // by pattern and cannot see a scenario name embedded in the file name.
+  public static string FrameDirectory(string featureName, string scenarioName) {
+    string dir = Path.Combine(ReportsDirectory(), "film", $"{Sanitize(featureName)}--{Sanitize(scenarioName)}");
+    TryCreate(dir);
+
+    return dir;
+  }
+
+  public static string BuildFramePath(string featureName, string scenarioName, int frameIndex) {
+    return Path.Combine(FrameDirectory(featureName, scenarioName), $"{frameIndex:D4}.jpg");
+  }
+
   public static PickleWait CaptureToFile(string filePath) {
     return PickleDriver.Instance.CaptureScreenshot(filePath);
   }

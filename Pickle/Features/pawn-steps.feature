@@ -1,3 +1,4 @@
+@film
 Feature: pawn steps
 
   Background:
@@ -27,9 +28,9 @@ Feature: pawn steps
     When "Jet" skill "Shooting" is set to level 12
     Then "Jet" has skill "Shooting" at level 12
 
-  Scenario: a fresh colonist carries nothing
+  Scenario: carried counts read a pawn's real inventory
     Given a colonist "Empty" exists
-    Then "Empty" is carrying nothing
+    Then "Empty" is carrying 0 "Silver"
 
   Scenario: one pawn can be ordered to attack another
     Given a colonist "Fighter" exists

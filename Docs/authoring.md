@@ -77,6 +77,21 @@ that feature.
 | `@seed:42` | Use this random seed instead of the run seed |
 | `@same-world` | Skip the fixture reload and keep the previous world |
 | `@allow-errors` | Do not fail the scenario when the game logs an error |
+| `@film` | Record the scenario and attach the video to the report |
+| `@watch` | Make wait steps pass real time instead of driving ticks |
+
+A film stops at sixty seconds by default, and Pickle logs when it does. Raise it with
+`-pickle-max-film-seconds`. Nothing sets the game's own speed for you, so add
+`game speed is fast` when you want the film to show more than real time.
+
+`@watch` matters most with `@film`. A run drives sixty ticks per rendered frame by
+default, so `I wait 10000 ticks` finishes in seconds and films almost nothing. Under
+`@watch` the same wait takes the real minutes it describes, and the video shows them.
+
+`@film` captures one full size jpeg as each step finishes. The report links them rather
+than embedding them, and turns them into a video when `ffmpeg` is installed. Encoding a
+frame stalls the frame it lands on, so tag a scenario while you work out why something
+looks wrong, then take it off. See [reports](reports.md) for where the files land.
 
 `@same-world` makes a scenario faster, because loading a save takes about ten seconds.
 It also couples that scenario to the one before it. Use it only when the coupling is

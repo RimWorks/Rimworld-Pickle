@@ -49,3 +49,7 @@ defName
 hediff
 hediffs
 Dev
+png
+jpeg
+jpegs
+substring

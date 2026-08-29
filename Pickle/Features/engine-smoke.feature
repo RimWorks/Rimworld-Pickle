@@ -1,3 +1,4 @@
+@film
 Feature: engine smoke
 
   Scenario: the fixture loads and the engine runs steps

@@ -1,11 +1,12 @@
 using System;
 using System.IO;
+using Verse;
 
 namespace Pickle.Autorun;
 
 /// <summary>
-/// -pickle-report-dir wins. Otherwise prefer /out/pickle-reports, the writable mount in
-/// the harness where cwd is read-only.
+/// -pickle-report-dir wins, then /out/pickle-reports for the harness mount. The save
+/// folder is the last resort because the game directory is often read only.
 /// </summary>
 public static class ReportDirectoryResolver {
   public static string Resolve(string? explicitDir) {
@@ -17,7 +18,11 @@ public static class ReportDirectoryResolver {
       return Path.Combine("/out", "pickle-reports");
     }
 
-    return Path.Combine(Directory.GetCurrentDirectory(), "pickle-reports");
+    try {
+      return Path.Combine(GenFilePaths.SaveDataFolderPath, "PickleReports");
+    } catch (Exception) {
+      return Path.Combine(Directory.GetCurrentDirectory(), "pickle-reports");
+    }
   }
 
   private static bool IsWritableDirectory(string dir) {

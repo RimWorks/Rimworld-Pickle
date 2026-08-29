@@ -27,6 +27,8 @@ public class RunSession {
 
   private const float FixtureStepTimeoutSeconds = 180f;
 
+  private const string WatchTag = "@watch";
+
   private readonly StepTable stepTable;
   private readonly PickleDriver driver;
   private readonly IReadOnlyList<DiscoveredSuite> suites;
@@ -205,6 +207,8 @@ public class RunSession {
 
     List<StepResult> stepResults = new();
     currentStepResults = stepResults;
+    FilmstripRecorder? film = null;
+    PickleRunMode.Mode modeBeforeScenario = PickleRunMode.Current;
 
     try {
       // Not Rand.PushState: Root.Update drains the stack whenever a step awaits past a
@@ -213,6 +217,19 @@ public class RunSession {
       LogWatch.Arm();
 
       await RunBeforeHooks(ctx, scenario.Tags);
+
+      // no frame before the first step: a scenario usually opens by loading a fixture, so
+      // a frame taken here shows the world the previous scenario left behind
+      // Fast mode drives sixty ticks a frame, so a long wait costs almost no real time
+      // and films almost nothing. @watch trades run time for a real recording.
+      if (scenario.Tags.Contains(WatchTag)) {
+        PickleRunMode.Current = PickleRunMode.Mode.Watch;
+      }
+
+      film = scenario.Tags.Contains(FilmstripRecorder.Tag)
+          ? new FilmstripRecorder(ctx, featureName, scenario.Name)
+          : null;
+      film?.Start();
 
       foreach (StepPlan step in scenario.Steps) {
         StepResult stepResult = await RunStep(ctx, step);
@@ -294,6 +311,8 @@ public class RunSession {
           attachmentsWithScreenshot,
           stateDumps);
     } finally {
+      film?.Finish();
+      PickleRunMode.Current = modeBeforeScenario;
       LogWatch.Disarm();
       Watchdog.EndScenario();
     }

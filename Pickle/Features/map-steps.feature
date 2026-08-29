@@ -1,3 +1,4 @@
+@film
 Feature: map steps
 
   Background:

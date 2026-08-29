@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Pickle.Core.Run;
@@ -94,6 +95,19 @@ public static class HtmlReportWriter {
       Func<string, byte[]?>? readAttachmentBytes) {
     // Attachment content is a path on disk. The report has to stand alone, so an
     // image becomes a data URI and anything unreadable falls back to the path.
+    // Film frames are linked, not inlined. A strip is dozens of full size frames, and
+    // base64 would push the report past what a browser will happily open.
+    // film-frames points at frame zero. The video is encoded after the run, so the
+    // report looks for it beside that frame rather than expecting an attachment.
+    if (attachment.Name == "film-frames") {
+      string dir = Path.GetDirectoryName(attachment.Content) ?? string.Empty;
+      string folder = Path.GetFileName(dir);
+      string name = File.Exists(Path.Combine(dir, "film.webm")) ? "film-video" : "film-frames";
+      string file = name == "film-video" ? "film.webm" : Path.GetFileName(attachment.Content);
+      return "{\"name\":" + JsonEscape.Quote(name)
+          + ",\"content\":" + JsonEscape.Quote($"screenshots/film/{folder}/{file}") + "}";
+    }
+
     string content = attachment.Content;
     byte[]? bytes = readAttachmentBytes?.Invoke(attachment.Content);
     if (bytes != null) {

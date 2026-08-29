@@ -31,6 +31,7 @@ public static class AutorunBootstrap {
     string reportDir = ReportDirectoryResolver.Resolve(args.ReportDir);
     Directory.CreateDirectory(reportDir);
     ScreenshotCapture.SetReportRoot(reportDir);
+    FilmstripRecorder.MaxSeconds = args.MaxFilmSeconds;
 
     Watchdog.Start(args.ScenarioTimeoutSeconds, args.RunTimeoutMinutes, reportDir, Application.consoleLogPath);
 
@@ -95,6 +96,10 @@ public static class AutorunBootstrap {
       Watchdog.Stop();
     }
 
+    // After the run, not during it. Encoding is seconds of ffmpeg per scenario, and
+    // doing it between scenarios would show up in every duration the report prints.
+    EncodeFilms();
+
     WriteReports(reportDir, accumulated, exitCode switch {
       0 => "passed",
       1 => "failed",
@@ -103,6 +108,27 @@ public static class AutorunBootstrap {
 
     Log.Message($"pickle: autorun exit code = {exitCode}");
     Quit(exitCode);
+  }
+
+  private static void EncodeFilms() {
+    IReadOnlyList<(string Directory, double Fps)> films = FilmstripRecorder.RecordedFilms;
+    if (films.Count == 0) {
+      return;
+    }
+
+    if (!FilmEncoder.Available) {
+      Log.Warning($"pickle: {films.Count} scenario(s) were filmed but ffmpeg is not on the PATH; frames were kept");
+      return;
+    }
+
+    Log.Message($"pickle: encoding {films.Count} film(s) before exit");
+    for (int i = 0; i < films.Count; i++) {
+      (string dir, double fps) = films[i];
+      Log.Message($"pickle: encoding film {i + 1}/{films.Count} at {fps:0.#} fps");
+      FilmEncoder.TryEncode(dir, fps);
+    }
+
+    Log.Message($"pickle: encoded {films.Count} film(s)");
   }
 
   // Environment.Exit does not end the process under Unity's Mono, so a passing run

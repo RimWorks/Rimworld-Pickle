@@ -55,6 +55,8 @@ the game.
 | `I wait for a {string} to exist` | Waits for a thing def to appear on the map |
 | `I wait for research {string} to finish` | Waits for a research project to complete |
 | `I wait until {string} is drafted` | Waits for the pawn to be drafted |
+| `I wait until {string} reaches the stockpile` | Waits for the pawn to stand inside a stockpile zone |
+| `I wait until {string} stops moving` | Waits for the pawn to finish walking, however far it is |
 
 Each of these gives up after 30 seconds and fails with the state it found. Prefer them
 over `I wait {int} ticks`. A tick count is a guess about how long the game needs, and the
@@ -70,6 +72,9 @@ guess breaks on a faster machine.
 | `{string} health is above {int} percent` | Checks the pawn's summary health |
 | `{string} is given hediff {string}` | Adds a hediff to the pawn |
 | `{string} attacks {string}` | Drafts the pawn and orders a forced melee attack |
+| `I order {string} to ({int}, {int})` | Sends the pawn to a cell and fails if it cannot reach |
+| `I order {string} to the stockpile` | Sends the pawn to the first stockpile, without naming a cell |
+| `I order {string} to the far side of the map` | Sends the pawn to the furthest cell it can reach |
 | `{string} needs {string} is below {int} percent` | Checks a need level, such as `Food` |
 | `{string} needs {string} is set to {int} percent` | Sets a need level |
 | `{string} mood is above {int} percent` | Checks the pawn's mood |
@@ -77,7 +82,7 @@ guess breaks on a faster machine.
 | `{string} skill {string} is set to level {int}` | Sets a skill level |
 | `{string} has trait {string}` | Checks the pawn has a trait def |
 | `{string} is carrying {int} {string}` | Counts a thing def across the pawn's hands and inventory |
-| `{string} is carrying nothing` | Checks the pawn holds no items |
+| `{string} is carrying nothing` | Checks the pawn holds no items. A generated colonist often starts with drugs, so this rarely holds for a fresh one |
 
 When one of these fails it reports what the pawn actually had. A failed skill check names
 the real level, and a failed carry check lists everything the pawn holds.
@@ -98,6 +103,25 @@ the real level, and a failed carry check lists everything the pawn holds.
 
 A cell outside the map fails with the map size, so a wrong coordinate does not read as a
 missing object.
+
+## Camera
+
+| Step | Does |
+| --- | --- |
+| `I move the camera to ({int}, {int})` | Jumps the camera to a cell |
+| `I move the camera to {string}` | Jumps the camera to a pawn |
+| `I pan the camera to ({int}, {int})` | Pans there instead of cutting, which reads better on film |
+| `I follow {string}` | Keeps the camera on a pawn every frame until you stop |
+| `I stop following` | Releases the camera |
+| `I zoom in` | One step closer |
+| `I zoom out` | One step further |
+| `I zoom all the way in` | Closest view |
+| `I zoom all the way out` | Widest view |
+| `the camera is looking at ({int}, {int})` | Checks the camera cell |
+| `the camera can see {string}` | Checks the pawn is inside the view |
+
+RimWorld has no follow of its own, so Pickle steers the camera once per rendered frame
+while a follow is active.
 
 ## Alerts and messages
 

@@ -24,6 +24,9 @@ public sealed class PickleArgs {
 
   public int RunTimeoutMinutes { get; private set; } = 60;
 
+  /// <summary>Seconds of footage a filmed scenario keeps before it stops capturing.</summary>
+  public int MaxFilmSeconds { get; private set; } = 60;
+
   public static PickleArgs Parse() {
     bool runBare = GenCommandLine.CommandLineArgPassed("-pickle-run");
     bool runValued = GenCommandLine.TryGetCommandLineArg("-pickle-run", out string runValue);
@@ -41,6 +44,11 @@ public sealed class PickleArgs {
         && int.TryParse(scenarioTimeoutValue, out int parsedScenarioTimeout)
             ? parsedScenarioTimeout
             : null;
+
+    int? cliMaxFilm = GenCommandLine.TryGetCommandLineArg("-pickle-max-film-seconds", out string maxFilmValue)
+        && int.TryParse(maxFilmValue, out int parsedMaxFilm)
+        ? parsedMaxFilm
+        : null;
     int? cliRunTimeout = GenCommandLine.TryGetCommandLineArg("-pickle-run-timeout", out string runTimeoutValue)
         && int.TryParse(runTimeoutValue, out int parsedRunTimeout)
             ? parsedRunTimeout
@@ -59,6 +67,7 @@ public sealed class PickleArgs {
       Seed = cliSeed ?? config?.Seed ?? RunSession.DefaultSeed,
       ScenarioTimeoutSeconds = cliScenarioTimeout ?? config?.ScenarioTimeoutSeconds ?? 120,
       RunTimeoutMinutes = cliRunTimeout ?? config?.RunTimeoutMinutes ?? 60,
+      MaxFilmSeconds = cliMaxFilm ?? 60,
     };
   }
 

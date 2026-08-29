@@ -1,3 +1,4 @@
+@film
 Feature: ui steps
 
   Background:
@@ -16,3 +17,19 @@ Feature: ui steps
     When I close all dialogs
     Then window "MainTabWindow_Research" is closed
     Then no errors were logged
+
+  @timeout:60
+  Scenario: a filmstrip follows a colonist through a whole order
+    Given the save "test-colony" is loaded
+    And a colonist "Star" exists
+    And game speed is fast
+    When I select "Star"
+    And I follow "Star"
+    And I zoom all the way in
+    And I draft "Star"
+    And I order "Star" to the far side of the map
+    And I wait until "Star" stops moving
+    And I zoom all the way out
+    And I stop following
+    And I undraft "Star"
+    Then the engine is alive
