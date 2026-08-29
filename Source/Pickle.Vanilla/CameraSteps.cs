@@ -12,7 +12,7 @@ namespace Pickle.Vanilla;
 /// about, and RimWorld has no follow of its own, so Pickle steers one per frame.
 /// </summary>
 [PickleSteps]
-public class CameraSteps {
+public static class CameraSteps {
   // RootSize is half the visible height in cells, so smaller is closer in.
   private const float CloseSize = 12f;
   private const float FarSize = 50f;

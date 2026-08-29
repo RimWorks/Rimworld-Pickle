@@ -39,11 +39,13 @@ public static class ScenarioFilter {
   }
 
   public static IReadOnlyList<string> SplitTerms(string? filter) {
-    if (string.IsNullOrEmpty(filter)) {
+    // Not IsNullOrEmpty: net472 has no NotNullWhen on it, so the compiler still
+    // wants a null-forgiving operator after the guard.
+    if (filter == null || filter.Length == 0) {
       return [];
     }
 
-    return [.. filter!.Split(',').Select(t => t.Trim()).Where(t => t.Length > 0)];
+    return [.. filter.Split(',').Select(t => t.Trim()).Where(t => t.Length > 0)];
   }
 
   public static bool MatchesPath(string? sourcePath, string term) {
