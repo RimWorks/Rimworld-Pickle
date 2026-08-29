@@ -18,7 +18,7 @@ public class WorldSteps {
     Map map = RequireMap(ctx);
     Pawn pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
     pawn.Name = new NameTriple(nickname, nickname, nickname);
-    GenSpawn.Spawn(pawn, map.Center, map, WipeMode.Vanish);
+    GenSpawn.Spawn(pawn, FindSpawnCell(ctx, map), map, WipeMode.Vanish);
   }
 
   [Given("{int} {string} is spawned at the stockpile")]
@@ -61,6 +61,21 @@ public class WorldSteps {
     };
 
     Find.TickManager.CurTimeSpeed = timeSpeed;
+  }
+
+  // map.Center is inside the mountain on plenty of maps, and a colonist standing in rock
+  // cannot path anywhere, so every movement step downstream fails for no visible reason
+  private static IntVec3 FindSpawnCell(PickleContext ctx, Map map) {
+    IntVec3 origin = map.mapPawns.FreeColonistsSpawned.FirstOrDefault()?.Position ?? map.Center;
+    if (CellFinder.TryFindRandomCellNear(origin, map, 20, c => c.Standable(map), out IntVec3 near, 200)) {
+      return near;
+    }
+
+    ctx.Require(
+        CellFinder.TryFindRandomCellNear(map.Center, map, 80, c => c.Standable(map), out IntVec3 wide, 500),
+        "no standable cell found on this map to spawn a colonist into");
+
+    return wide;
   }
 
   private static Map RequireMap(PickleContext ctx) {
