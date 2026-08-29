@@ -10,7 +10,7 @@ const THEMES = { dark: "dim", light: "winter" } as const;
 
 export function App() {
   const [snap, setSnap] = useState<Snapshot | null>(null);
-  const [selected, setSelected] = useState<Selection | null>(null);
+  const [selected, setSelected] = useState<Selection | null>(() => readHash());
   const [aborting, setAborting] = useState(false);
   const [theme, setTheme] = useState<string>(
     () => localStorage.getItem("pickle-theme") ?? THEMES.dark,
@@ -44,12 +44,28 @@ export function App() {
     };
   }, []);
 
+  // The hash is the address of a scenario, so a link into one failure survives a reload
+  // and the back button walks the scenarios you looked at.
+  useEffect(() => {
+    const onHash = () => setSelected(readHash());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  useEffect(() => {
+    const next = selected ? toHash(selected) : "";
+    if (next && window.location.hash !== next) {
+      window.history.replaceState(null, "", next);
+    }
+  }, [selected]);
+
   // Jump to the first failure the moment a run ends, matching the in-game runner.
   useEffect(() => {
     const running = snap?.status === "running" || snap?.status === "paused";
     if (wasRunning.current && !running && snap) {
+      // a hash in the address bar is an explicit request, so do not jump away from it
       const failure = findFirstFailure(snap.features);
-      if (failure) setSelected(failure);
+      if (failure && !window.location.hash) setSelected(failure);
       setAborting(false);
     }
     wasRunning.current = running;
@@ -190,6 +206,23 @@ function Offline() {
       </div>
     </div>
   );
+}
+
+function toHash(selection: Selection): string {
+  return `#${encodeURIComponent(selection.path)}:${selection.index}`;
+}
+
+function readHash(): Selection | null {
+  const raw = window.location.hash.slice(1);
+  if (!raw) return null;
+
+  const split = raw.lastIndexOf(":");
+  if (split < 0) return null;
+
+  const index = Number(raw.slice(split + 1));
+  if (!Number.isInteger(index)) return null;
+
+  return { path: decodeURIComponent(raw.slice(0, split)), index };
 }
 
 function findScenario(features: Feature[] | undefined, selected: Selection | null): Scenario | null {
