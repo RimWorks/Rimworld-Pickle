@@ -54,10 +54,27 @@ public static class FilmEncoder {
         return null;
       }
 
-      return File.Exists(output) ? output : null;
+      if (!File.Exists(output)) {
+        return null;
+      }
+
+      PurgeFrames(frameDirectory);
+      return output;
     } catch (Exception ex) {
       Log.Warning($"pickle: ffmpeg failed for {frameDirectory}: {ex.Message}");
       return null;
+    }
+  }
+
+  // Only after a webm exists. A failed or missing encode leaves the frames alone, so
+  // the report still has a strip to fall back on.
+  private static void PurgeFrames(string frameDirectory) {
+    try {
+      foreach (string frame in Directory.GetFiles(frameDirectory, "*.jpg")) {
+        File.Delete(frame);
+      }
+    } catch (Exception ex) {
+      Log.Warning($"pickle: kept frames in {frameDirectory}: {ex.Message}");
     }
   }
 
