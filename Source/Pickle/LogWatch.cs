@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Verse;
 
@@ -7,6 +8,7 @@ public static class LogWatch {
   private static readonly object Gate = new object();
   private static readonly CircularBuffer<string> ErrorBuffer = new CircularBuffer<string>(50);
   private static bool armed;
+  private static long totalRecorded;
 
   public static bool Armed {
     get {
@@ -32,6 +34,32 @@ public static class LogWatch {
     }
   }
 
+  /// <summary>
+  /// Errors recorded since the process started. Take one of these before an action and
+  /// pass it to <see cref="ErrorsSince"/> to see only what that action logged.
+  /// </summary>
+  public static long Mark {
+    get {
+      lock (Gate) {
+        return totalRecorded;
+      }
+    }
+  }
+
+  public static IReadOnlyList<string> ErrorsSince(long mark) {
+    lock (Gate) {
+      long since = totalRecorded - mark;
+      if (since <= 0) {
+        return [];
+      }
+
+      // The buffer holds 50, so a burst larger than that reports only its tail.
+      List<string> snapshot = ErrorBuffer.GetSnapshot();
+      int take = (int)Math.Min(since, snapshot.Count);
+      return snapshot.GetRange(snapshot.Count - take, take);
+    }
+  }
+
   public static void Arm() {
     lock (Gate) {
       ErrorBuffer.Clear();
@@ -49,6 +77,7 @@ public static class LogWatch {
     lock (Gate) {
       if (armed) {
         ErrorBuffer.Enqueue(message);
+        totalRecorded++;
       }
     }
   }

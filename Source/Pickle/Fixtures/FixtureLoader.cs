@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Pickle.Autorun;
 using Pickle.Runtime;
 using Verse;
 
@@ -13,9 +14,44 @@ public static class FixtureLoader {
 
     try {
       File.Copy(resolvedRwsPath, tempRwsPath, overwrite: true);
+      await LoadAndSettle("__pickle_fixture", driver, scope);
+    } finally {
+      DeleteQuietly(tempRwsPath);
+    }
+  }
 
-      Game? gameBeforeLoad = Current.Game;
-      GameDataSaveLoader.LoadGame("__pickle_fixture");
+  /// <summary>
+  /// Saves the running game and loads it straight back, so a scenario can assert that
+  /// state survived the trip. Errors thrown while scribing are left in the log on
+  /// purpose; the caller decides whether they fail the step.
+  /// </summary>
+  public static async Task SaveAndReload(string saveName, PickleDriver driver, object? scope, bool keepSave) {
+    string savePath = GenFilePaths.FilePathForSavedGame(saveName);
+
+    try {
+      GameDataSaveLoader.SaveGame(saveName);
+
+      // SaveGame swallows its own exceptions into a log line, so the file is the only
+      // honest signal that it worked.
+      if (!File.Exists(savePath)) {
+        throw new InvalidOperationException(
+            $"saving '{saveName}' wrote no file; the scribe error is in the log above");
+      }
+
+      await LoadAndSettle(saveName, driver, scope);
+    } finally {
+      if (!keepSave) {
+        DeleteQuietly(savePath);
+      }
+    }
+  }
+
+  private static async Task LoadAndSettle(string saveName, PickleDriver driver, object? scope) {
+    Game? gameBeforeLoad = Current.Game;
+
+    AutorunState.SuppressingFixtureLoad = true;
+    try {
+      GameDataSaveLoader.LoadGame(saveName);
 
       await driver.WaitUntil(
           () => Current.Game != null
@@ -31,13 +67,17 @@ public static class FixtureLoader {
       // the next step a half dark screen, which a click or a screenshot both care about.
       await driver.WaitUntil(() => !ScreenFader.IsFading(), 15f, scope);
     } finally {
-      try {
-        if (File.Exists(tempRwsPath)) {
-          File.Delete(tempRwsPath);
-        }
-      } catch {
-        Log.Warning("Failed to delete temporary fixture file: " + tempRwsPath);
+      AutorunState.SuppressingFixtureLoad = false;
+    }
+  }
+
+  private static void DeleteQuietly(string path) {
+    try {
+      if (File.Exists(path)) {
+        File.Delete(path);
       }
+    } catch {
+      Log.Warning("pickle: failed to delete temporary save file: " + path);
     }
   }
 }

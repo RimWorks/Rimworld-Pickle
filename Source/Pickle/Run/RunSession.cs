@@ -27,6 +27,8 @@ public class RunSession {
 
   private const float FixtureStepTimeoutSeconds = 180f;
 
+  private const string RoundTripSaveName = "__pickle_roundtrip";
+
   private const string WatchTag = "@watch";
 
   private readonly StepTable stepTable;
@@ -502,16 +504,59 @@ public class RunSession {
   }
 
   private void RegisterBuiltInEngineSteps() {
-    string pattern = "the save {string} is loaded";
-    StepDefinition engineStep = new StepDefinition(
-        pattern,
+    AddEngineStep(
+        "the save {string} is loaded",
         StepKind.Given,
-        "Pickle engine",
-        new List<Type> { typeof(string) },
-        new Func<PickleContext, string, Task>(LoadFixtureStep),
-        FixtureStepTimeoutSeconds);
+        [typeof(string)],
+        new Func<PickleContext, string, Task>(LoadFixtureStep));
 
-    stepTable.Add(engineStep);
+    AddEngineStep(
+        "I save and reload",
+        StepKind.When,
+        [],
+        new Func<PickleContext, Task>(SaveAndReloadStep));
+
+    AddEngineStep(
+        "I save and reload as {string}",
+        StepKind.When,
+        [typeof(string)],
+        new Func<PickleContext, string, Task>(SaveAndReloadAsStep));
+
+    AddEngineStep(
+        "the save round trips",
+        StepKind.Then,
+        [],
+        new Func<PickleContext, Task>(RoundTripStep));
+  }
+
+  private void AddEngineStep(string pattern, StepKind kind, List<Type> parameterTypes, Delegate binding) {
+    stepTable.Add(new StepDefinition(
+        pattern,
+        kind,
+        "Pickle engine",
+        parameterTypes,
+        binding,
+        FixtureStepTimeoutSeconds));
+  }
+
+  private Task SaveAndReloadStep(PickleContext ctx) {
+    return FixtureLoader.SaveAndReload(RoundTripSaveName, driver, ctx.WaitScope, keepSave: false);
+  }
+
+  private Task SaveAndReloadAsStep(PickleContext ctx, string saveName) {
+    return FixtureLoader.SaveAndReload(saveName, driver, ctx.WaitScope, keepSave: true);
+  }
+
+  // LogWatch is not re-armed around the trip, unlike a fixture load. An exception thrown
+  // while the game writes or reads its own data is the bug this step exists to catch.
+  private async Task RoundTripStep(PickleContext ctx) {
+    long mark = LogWatch.Mark;
+    await FixtureLoader.SaveAndReload(RoundTripSaveName, driver, ctx.WaitScope, keepSave: false);
+
+    IReadOnlyList<string> errors = LogWatch.ErrorsSince(mark);
+    ctx.Assert(
+        errors.Count == 0,
+        $"the save did not round trip; {errors.Count} error(s) logged: {string.Join(" | ", errors)}");
   }
 
   private async Task LoadFixtureStep(PickleContext ctx, string fixtureName) {
@@ -525,12 +570,7 @@ public class RunSession {
       throw new InvalidOperationException(resolution.Error.Message);
     }
 
-    AutorunState.SuppressingFixtureLoad = true;
-    try {
-      await FixtureLoader.LoadFixture(resolution.Fixture!.FullPath, driver, ctx.WaitScope);
-    } finally {
-      AutorunState.SuppressingFixtureLoad = false;
-    }
+    await FixtureLoader.LoadFixture(resolution.Fixture!.FullPath, driver, ctx.WaitScope);
 
     currentLoadedFixture = fixtureName;
     LogWatch.Arm();

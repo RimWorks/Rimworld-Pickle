@@ -62,6 +62,21 @@ public static class FixtureSmoke {
         throw new InvalidOperationException("Deliberate test error not found in LogWatch");
       }
 
+      // A mark taken after the first error must not see it, and must see the next one.
+      // This is what "the save round trips" leans on to blame only the trip.
+      long mark = LogWatch.Mark;
+      if (LogWatch.ErrorsSince(mark).Count != 0) {
+        throw new InvalidOperationException("LogWatch.ErrorsSince reported an error logged before the mark");
+      }
+
+      Log.Error("pickle: deliberate marked test error");
+
+      IReadOnlyList<string> sinceMark = LogWatch.ErrorsSince(mark);
+      if (sinceMark.Count != 1 || !sinceMark[0].Contains("pickle: deliberate marked test error")) {
+        throw new InvalidOperationException(
+            $"Expected 1 error since the mark, but got {sinceMark.Count}");
+      }
+
       LogWatch.Disarm();
     } finally {
       try {

@@ -16,6 +16,24 @@ because Pickle matches on the expression text alone.
 Most scenarios start here. Loading a save reloads the Unity scene, so read game state
 again afterwards.
 
+## Save and reload
+
+| Step | Does |
+| --- | --- |
+| `I save and reload` | Saves the running game, loads it straight back, and deletes the file |
+| `I save and reload as {string}` | Same, into a named save you can open afterwards |
+| `the save round trips` | Saves and reloads, then fails if anything hit the error log during the trip |
+
+These catch a broken `ExposeData`, which is the most common way a mod loses state. Put
+your normal checks after the reload and they test the saved copy instead of the live one.
+
+`the save round trips` only counts errors logged during the trip itself, so an error from
+earlier in the scenario does not fail it. Use `no errors were logged` for that.
+
+A reload replaces every object in the game. Steps that look a pawn up by name work
+unchanged, because they resolve the name each time. Anything a step of your own stored
+with `ctx.Set<T>()` still points at the old game and needs setting again.
+
 ## World setup
 
 | Step | Does |
