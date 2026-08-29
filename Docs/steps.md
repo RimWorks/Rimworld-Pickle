@@ -105,6 +105,25 @@ guess breaks on a faster machine.
 When one of these fails it reports what the pawn actually had. A failed skill check names
 the real level, and a failed carry check lists everything the pawn holds.
 
+## Stats
+
+| Step | Does |
+| --- | --- |
+| `{string} stat {string} is {float}` | Checks a pawn's stat value |
+| `{string} stat {string} is above {float}` | Checks a pawn's stat is higher |
+| `{string} stat {string} is below {float}` | Checks a pawn's stat is lower |
+| `the {string} at ({int}, {int}) stat {string} is {float}` | Checks a stat on a thing at a map cell |
+
+A `StatPart` or a `StatWorker` patch changes the number without changing the def, so no
+other check can see one. Write the value as a whole number or with decimals; both work.
+
+An exact check allows 0.01, or 0.1% of the expected value when that is larger. A flat
+tolerance breaks on `MarketValue` in the thousands, and a relative one breaks near zero.
+
+A failure prints the stat breakdown and attaches the full version to the report, so you
+see which part moved the number. When the stat does not apply to the thing you asked
+about, the failure says so, because the value you are reading is the def default.
+
 ## Map and things
 
 | Step | Does |
