@@ -95,44 +95,21 @@ public static class SuiteRunner {
 
   private static List<(DiscoveredSuite Suite, FeaturePlan Plan)> FilterFeatures(
       List<(DiscoveredSuite Suite, FeaturePlan Plan)> parsedFeatures, string? filter) {
-    if (string.IsNullOrEmpty(filter)) {
+    IReadOnlyList<string> terms = ScenarioFilter.SplitTerms(filter);
+    if (terms.Count == 0) {
       return parsedFeatures;
     }
 
-    if (filter!.StartsWith('@')) {
-      List<(DiscoveredSuite Suite, FeaturePlan Plan)> tagFiltered = new();
-      foreach ((DiscoveredSuite suite, FeaturePlan plan) in parsedFeatures) {
-        List<ScenarioPlan> scenarios = [.. plan.Scenarios.Where(s => s.Tags.Contains(filter))];
-        if (scenarios.Count > 0) {
-          tagFiltered.Add((suite, new FeaturePlan(plan.Name, plan.Tags, scenarios, plan.SourcePath)));
-        }
+    List<(DiscoveredSuite Suite, FeaturePlan Plan)> kept = new();
+    foreach ((DiscoveredSuite suite, FeaturePlan plan) in parsedFeatures) {
+      List<ScenarioPlan> scenarios = [.. plan.Scenarios
+          .Where(s => terms.Any(t => ScenarioFilter.Matches(suite.ModName, plan.SourcePath, s, t)))];
+      if (scenarios.Count > 0) {
+        kept.Add((suite, new FeaturePlan(plan.Name, plan.Tags, scenarios, plan.SourcePath)));
       }
-
-      return tagFiltered;
     }
 
-    return [.. parsedFeatures
-        .Where(pf => string.Equals(pf.Suite.ModName, filter, StringComparison.OrdinalIgnoreCase)
-            || FeatureMatchesPath(pf.Plan.SourcePath, filter))];
-  }
-
-  private static bool FeatureMatchesPath(string? sourcePath, string filter) {
-    if (sourcePath == null) {
-      return false;
-    }
-
-    string normalizedSource = sourcePath.Replace('\\', '/');
-    string normalizedFilter = filter.Replace('\\', '/');
-
-    if (string.Equals(normalizedSource, normalizedFilter, StringComparison.OrdinalIgnoreCase)) {
-      return true;
-    }
-
-    if (normalizedSource.EndsWith("/" + normalizedFilter, StringComparison.OrdinalIgnoreCase)) {
-      return true;
-    }
-
-    return string.Equals(Path.GetFileName(sourcePath), filter, StringComparison.OrdinalIgnoreCase);
+    return kept;
   }
 
   private static List<(DiscoveredSuite Suite, FeaturePlan Plan)> ParseFeatures(List<DiscoveredSuite> discoveredSuites) {

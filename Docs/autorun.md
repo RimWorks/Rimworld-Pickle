@@ -12,12 +12,34 @@ exits.
 
 | Flag | Effect |
 | --- | --- |
-| `-pickle-run[=filter]` | Run the suite. The filter selects one mod or one feature file |
+| `-pickle-run[=filter]` | Run the suite. See [choosing what runs](#choosing-what-runs) |
 | `-pickle-report-dir=PATH` | Write reports here. Defaults to `/out/pickle-reports`, then a temporary directory |
 | `-pickle-include-wip` | Include scenarios tagged `@wip` |
 | `-pickle-seed=N` | Set the run seed. Pickle logs the seed it used |
 | `-pickle-scenario-timeout=N` | Fail a scenario after N seconds |
 | `-pickle-run-timeout=N` | Stop the run after N minutes |
+| `-pickle-max-film-seconds=N` | Seconds of footage a `@film` scenario keeps. Defaults to 60 |
+
+## Choosing what runs
+
+The filter is a comma separated list of terms. A scenario runs when any term picks it,
+so you can combine a whole feature with one scenario from another.
+
+| Term | Runs |
+| --- | --- |
+| `MyMod` | Every scenario in that mod |
+| `pawn-steps.feature` | Every scenario in that file |
+| `@film` | Every scenario with that tag |
+| `pawn-steps.feature::skills` | Scenarios in that file whose name contains `skills` |
+| `::skills` | Scenarios in any file whose name contains `skills` |
+| `pawn-steps.feature:24` | The scenario declared on line 24 |
+
+```sh
+./RimWorldLinux -pickle-run="pawn-steps.feature::skills,@film"
+```
+
+Names match on a substring and ignore case, so you rarely need the whole thing. A line
+number is exact, which is what you want when two scenarios share a prefix.
 | `-pickle-config=PATH` | Read these flags from a file |
 | `-pickle-http` | Serve the dashboard on port 27750 |
 | `-pickle-http-port=N` | Serve the dashboard on port N |
