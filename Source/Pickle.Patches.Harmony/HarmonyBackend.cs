@@ -1,3 +1,4 @@
+using System.Xml;
 using HarmonyLib;
 using Pickle.Patching;
 using UnityEngine;
@@ -36,6 +37,26 @@ public class HarmonyBackend : IPatchBackend {
   // Harmony skips the original when a prefix returns false.
   public static bool AddPrefix(Window window) {
     return PickleHooks.ShouldAddWindow(window);
+  }
+
+  public static void ApplyPatchesPrefix(XmlDocument xmlDoc) {
+    PickleHooks.BeforeApplyPatches(xmlDoc);
+  }
+
+  public static void ClearCachedPatchesPrefix() {
+    PickleHooks.BeforeClearCachedPatches();
+  }
+
+  public void ApplyEarly() {
+    HarmonyLib.Harmony harmony = new HarmonyLib.Harmony("cryptiklemur.pickle.early");
+
+    harmony.Patch(
+        typeof(LoadedModManager).GetMethod(nameof(LoadedModManager.ApplyPatches)),
+        prefix: Handler(nameof(ApplyPatchesPrefix)));
+
+    harmony.Patch(
+        typeof(LoadedModManager).GetMethod(nameof(LoadedModManager.ClearCachedPatches)),
+        prefix: Handler(nameof(ClearCachedPatchesPrefix)));
   }
 
   public void Apply() {

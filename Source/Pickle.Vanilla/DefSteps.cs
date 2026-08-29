@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Pickle.Patching;
 using RimWorld;
 using Verse;
 
@@ -101,6 +102,52 @@ public class DefSteps {
         StatTolerance.IsNear(entry!.value, expected),
         $"def '{defName}' statBases '{statDefName}' should be {expected} within " +
         $"{StatTolerance.For(expected):G3}; actual {entry.value}");
+  }
+
+  [Then("def {string} was patched by mod {string}")]
+  public void AssertDefPatchedBy(PickleContext ctx, string defName, string modName) {
+    RequirePatchable(ctx, defName);
+
+    IReadOnlyCollection<string> patchers = PatchAttribution.PatchersOf(defName);
+    ctx.Assert(
+        patchers.Any(m => string.Equals(m, modName, StringComparison.OrdinalIgnoreCase)),
+        $"def '{defName}' should have been patched by '{modName}'; patched by {Describe(patchers)}");
+  }
+
+  [Then("def {string} was patched")]
+  public void AssertDefPatched(PickleContext ctx, string defName) {
+    RequirePatchable(ctx, defName);
+
+    IReadOnlyCollection<string> patchers = PatchAttribution.PatchersOf(defName);
+    ctx.Assert(patchers.Count > 0, $"def '{defName}' was not patched by any mod");
+  }
+
+  [Then("no def {string} was patched")]
+  public void AssertDefNotPatched(PickleContext ctx, string defName) {
+    RequireAttribution(ctx);
+
+    IReadOnlyCollection<string> patchers = PatchAttribution.PatchersOf(defName);
+    ctx.Assert(patchers.Count == 0, $"def '{defName}' was patched by {Describe(patchers)}");
+  }
+
+  // A patch targets a defName, not a database, so a name held by two def types is fine
+  // here even though the other def steps reject it.
+  private static void RequirePatchable(PickleContext ctx, string defName) {
+    RequireAttribution(ctx);
+    ctx.Require(DefLookup.FindAll(defName).Count > 0, DefLookup.DescribeMissingAnywhere(defName));
+  }
+
+  // Reporting "not patched" when the hook never installed would be a wrong answer rather
+  // than a failure, so say so instead.
+  private static void RequireAttribution(PickleContext ctx) {
+    ctx.Require(
+        PatchAttribution.Armed,
+        "patch attribution never installed, so no def can be reported as patched. " +
+        "Pickle needs Harmony or Concord loaded before the game applies XML patches");
+  }
+
+  private static string Describe(IReadOnlyCollection<string> patchers) {
+    return patchers.Count == 0 ? "(no mod)" : string.Join(", ", patchers);
   }
 
   private static BuildableDef RequireBuildable(PickleContext ctx, string defName, string what) {

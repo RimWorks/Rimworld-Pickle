@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- Never applied to anything. Pickle patches this in Patches/Pickle_Attribution.xml so
+       its own suite can prove patch attribution without depending on an expansion. -->
+  <HediffDef>
+    <defName>Pickle_AttributionProbe</defName>
+    <label>pickle attribution probe</label>
+    <description>A marker def that exists only so Pickle can test its own patch attribution.</description>
+    <hediffClass>Hediff</hediffClass>
+  </HediffDef>
+
+</Defs>

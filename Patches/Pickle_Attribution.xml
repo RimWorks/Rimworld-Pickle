@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+
+  <!-- Patches Pickle's own marker def, so attribution has a target on every install. -->
+  <Operation Class="PatchOperationReplace">
+    <xpath>Defs/HediffDef[defName="Pickle_AttributionProbe"]/label</xpath>
+    <value>
+      <label>pickle attribution probe (patched)</label>
+    </value>
+  </Operation>
+
+</Patch>

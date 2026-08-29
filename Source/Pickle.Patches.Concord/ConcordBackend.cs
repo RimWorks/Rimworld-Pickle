@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Xml;
 using Concord;
 using Pickle.Patching;
 using UnityEngine;
@@ -37,6 +38,26 @@ public class ConcordBackend : IPatchBackend {
   // Concord skips the original when a head injection returns Control.Cancel.
   public static Control BeforeWindowAdd(Window window) {
     return PickleHooks.ShouldAddWindow(window) ? Control.Continue : Control.Cancel;
+  }
+
+  public static void BeforeApplyPatches(XmlDocument xmlDoc) {
+    PickleHooks.BeforeApplyPatches(xmlDoc);
+  }
+
+  public static void BeforeClearCachedPatches() {
+    PickleHooks.BeforeClearCachedPatches();
+  }
+
+  public void ApplyEarly() {
+    Patcher.Patch(
+        typeof(LoadedModManager).GetMethod(nameof(LoadedModManager.ApplyPatches)),
+        Injection(nameof(BeforeApplyPatches)),
+        At.Head);
+
+    Patcher.Patch(
+        typeof(LoadedModManager).GetMethod(nameof(LoadedModManager.ClearCachedPatches)),
+        Injection(nameof(BeforeClearCachedPatches)),
+        At.Head);
   }
 
   public void Apply() {

@@ -19,6 +19,9 @@ because Pickle matches on the expression text alone.
 | `def {string} stat {string} is {float}` | The stat value the game computes, made without stuff |
 | `def {string} raw stat {string} is {float}` | The `statBases` entry exactly as the XML sets it |
 | `def {string} is defined by mod {string}` | Matches the mod name or its packageId |
+| `def {string} was patched by mod {string}` | Names the mod whose XML patch changed the def |
+| `def {string} was patched` | Checks any mod patched it |
+| `no def {string} was patched` | Checks no mod patched it |
 
 **These need no save.** A scenario with no `the save ... is loaded` step runs at the main
 menu, where the def database is already built. The five scenarios in `def-steps.feature`
@@ -32,6 +35,15 @@ a value, and `stat` to prove the game uses it.
 
 A lookup that misses searches every database for close matches, so a typo comes back as
 `closest matches: Wall (ThingDef), Walls (DrawStyleCategoryDef)` rather than a bare miss.
+
+RimWorld records that a def was patched but never by whom, and it drops every patch object
+once loading ends. Pickle reads the patch tree just before the patches run, matches each
+xpath against the document, and keeps only the operations that changed something. The three
+`was patched` steps accept a def name held by two databases, because a patch targets a name
+rather than a type.
+
+This needs Harmony or Concord loaded before the game applies XML patches. When that did not
+happen the steps fail and say so, instead of reporting every def as unpatched.
 
 ## Fixtures
 

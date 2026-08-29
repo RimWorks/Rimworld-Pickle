@@ -10,4 +10,7 @@ public interface IPatchBackend {
 
   /// <summary>Applies every Pickle hook. Called once, on the winning backend only.</summary>
   public void Apply();
+
+  /// <summary>Hooks that must land before RimWorld applies XML patches at load.</summary>
+  public void ApplyEarly();
 }

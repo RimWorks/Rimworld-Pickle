@@ -41,4 +41,12 @@ public static class PickleHooks {
   public static bool ShouldAddWindow(Window window) {
     return AutorunDialogSuppression.ShouldAdd(window);
   }
+
+  public static void BeforeApplyPatches(System.Xml.XmlDocument xmlDoc) {
+    PatchAttribution.BeforeApplyPatches(xmlDoc);
+  }
+
+  public static void BeforeClearCachedPatches() {
+    PatchAttribution.BeforeClearCachedPatches();
+  }
 }
