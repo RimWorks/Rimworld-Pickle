@@ -162,6 +162,33 @@ A failure prints the stat breakdown and attaches the full version to the report,
 see which part moved the number. When the stat does not apply to the thing you asked
 about, the failure says so, because the value you are reading is the def default.
 
+## Weapons and apparel
+
+| Step | Does |
+| --- | --- |
+| `I equip {string} with {string}` | Makes the weapon and puts it in the pawn's hands |
+| `I equip {string} with {string} made of {string}` | Same, with the stuff named |
+| `I dress {string} in {string}` | Makes the apparel and wears it |
+| `I dress {string} in {string} made of {string}` | Same, with the stuff named |
+| `I strip {string}` | Drops every weapon and worn item at the pawn's feet |
+| `I destroy the gear of {string}` | Removes the same items without leaving them on the map |
+| `{string} is wielding {string}` | Checks the equipped weapon |
+| `{string} is wielding nothing` | Checks the pawn holds no weapon |
+| `{string} is wearing {string}` | Checks worn apparel for a def |
+| `{string} apparel covers {string}` | Checks a body part group is covered |
+
+`{string} is carrying {int} {string}` only counts hands and inventory. A weapon and worn
+apparel live in different places, so none of this was reachable through it.
+
+Naming no stuff for something built from stuff picks the default, the same as
+`I spawn a {string} at`. Stuff changes apparel stats, so name it when the numbers matter.
+
+A pawn missing the body part fails the step and says so. A clash on the same apparel layer
+is not a failure: the item already there is dropped, which is what the game does.
+
+`apparel covers` reads everything the pawn wears, not only what you dressed it in. A
+generated colonist arrives in a shirt and pants, so `Legs` is covered before you start.
+
 ## Map and things
 
 | Step | Does |
