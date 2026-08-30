@@ -1,0 +1,86 @@
+name: game image
+
+# Builds the runnable RimWorld image Pickle's suite runs against. Kept separate from ci
+# so a rebuild can be triggered on its own and the image cannot change as a side effect.
+
+on:
+  workflow_call:
+    inputs:
+      force:
+        description: Rebuild even when the Steam buildid has not moved.
+        type: boolean
+        default: false
+    outputs:
+      image-ref:
+        description: Image ref the suite and build jobs should pull.
+        value: ${{ jobs.image.outputs.image-ref }}
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild even when the Steam buildid has not moved.
+        type: boolean
+        default: false
+  schedule:
+    # RimWorld ships fixes without telling anyone, and the action skips when the buildid
+    # is unchanged, so a weekly poll is nearly free.
+    - cron: '0 6 * * 1'
+
+jobs:
+  image:
+    name: rimworld 1.6 image
+    runs-on: ubuntu-latest
+    outputs:
+      image-ref: ${{ steps.image.outputs.image-ref }}
+      skipped: ${{ steps.image.outputs.skipped }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Build RimWorld 1.6 game image
+        id: image
+        uses: cryptiklemur/steam-game-image-action@19937bfbdc67d5f6f12135e4b27d61bf790d8133 # v1
+        with:
+          steam-username: ${{ secrets.STEAM_USERNAME }}
+          steam-config-vdf: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
+          app-id: '294100'
+          branch: 'version-1.6.4633'
+          # No include-paths, so the whole game lands on the action's xvfb runtime base
+          # and RimWorld can actually be launched from it.
+          image: ghcr.io/${{ github.repository_owner }}/rimworld-game-runnable
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+          skip-if-unchanged: ${{ inputs.force && 'false' || 'true' }}
+
+      - name: Refuse to leave the image public
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          # This image holds the whole paid game, not just the managed assemblies, so a
+          # publicly pullable package would be redistributing it.
+          name='rimworld-game-runnable'
+          token="$(curl -sSfL \
+            "https://ghcr.io/token?scope=repository:${OWNER}/${name}:pull&service=ghcr.io" \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("token", ""))')"
+
+          code="$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer ${token}" \
+            "https://ghcr.io/v2/${OWNER}/${name}/tags/list")"
+
+          if [ "$code" = "200" ]; then
+            echo "::error::ghcr.io/${OWNER}/${name} is publicly pullable and contains the" \
+                 "whole game. Set the package to private before running the suite again."
+            exit 1
+          fi
+
+          echo "package is not anonymously pullable (HTTP ${code})"
+
+      - name: Report what was built
+        run: |
+          {
+            echo "## RimWorld game image"
+            echo
+            echo "| field | value |"
+            echo "| --- | --- |"
+            echo "| ref | \`${{ steps.image.outputs.image-ref }}\` |"
+            echo "| steam buildid | ${{ steps.image.outputs.buildid }} |"
+            echo "| rebuilt | ${{ steps.image.outputs.skipped == 'true' && 'no, buildid unchanged' || 'yes' }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

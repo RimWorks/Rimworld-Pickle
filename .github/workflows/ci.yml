@@ -72,24 +72,8 @@ jobs:
 
   game-image:
     name: rimworld 1.6 image
-    runs-on: ubuntu-latest
-    outputs:
-      image-ref: ${{ steps.image.outputs.image-ref }}
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Build RimWorld 1.6 game image
-        id: image
-        uses: cryptiklemur/steam-game-image-action@19937bfbdc67d5f6f12135e4b27d61bf790d8133 # v1
-        with:
-          steam-username: ${{ secrets.STEAM_USERNAME }}
-          steam-config-vdf: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
-          app-id: '294100'
-          branch: 'version-1.6.4633'
-          image: ghcr.io/${{ github.repository_owner }}/rimworld-game
-          registry-password: ${{ secrets.GITHUB_TOKEN }}
-          include-paths: RimWorldLinux_Data/Managed
+    uses: ./.github/workflows/game-image.yml
+    secrets: inherit
 
   build:
     name: build and test
@@ -119,8 +103,10 @@ jobs:
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           docker pull -q "$GAME_IMAGE"
           cid="$(docker create "$GAME_IMAGE")"
-          mkdir -p "$RUNNER_TEMP/rimworld"
-          docker cp "$cid:/game/RimWorldLinux_Data" "$RUNNER_TEMP/rimworld/RimWorldLinux_Data"
+          mkdir -p "$RUNNER_TEMP/rimworld/RimWorldLinux_Data"
+          # Only the managed assemblies, because the image now carries the whole game.
+          docker cp "$cid:/game/RimWorldLinux_Data/Managed" \
+            "$RUNNER_TEMP/rimworld/RimWorldLinux_Data/Managed"
           docker rm -f "$cid"
 
       - name: dotnet build (Krafs reference assemblies)
@@ -128,3 +114,88 @@ jobs:
 
       - name: Run tests
         run: dotnet test Pickle.slnx -c Release --no-build
+
+  suite:
+    name: suite (${{ matrix.backends }})
+    needs: [dashboard, game-image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      # Every combination should be reported, not just the first one that breaks.
+      fail-fast: false
+      matrix:
+        backends: [harmony, concord, both]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dashboard-dist
+          path: Dashboard/dist
+
+      - name: Build the mod
+        run: dotnet build Pickle.slnx -c Release
+
+      - name: Stage mods and config
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          .github/scripts/stage-pickle-mods.sh \
+            "${{ matrix.backends }}" "$RUNNER_TEMP/mods" "$RUNNER_TEMP/config"
+
+          # The repo root is the mod folder once it is built. Source and the git
+          # history are not part of what ships, so they stay out of the container.
+          mkdir -p "$RUNNER_TEMP/mods/Pickle"
+          tar -c --exclude=.git --exclude=node_modules --exclude=Source \
+              --exclude=Dashboard --exclude=pickle-reports . \
+            | tar -x -C "$RUNNER_TEMP/mods/Pickle"
+
+      - name: Run the suite
+        env:
+          GAME_IMAGE: ${{ needs.game-image.outputs.image-ref }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull -q "$GAME_IMAGE"
+
+          # The image runs as uid 1000, so the report directory has to be writable by it.
+          mkdir -p "$PWD/pickle-reports"
+          chmod 777 "$PWD/pickle-reports"
+
+          CFG="/home/app/.config/unity3d/Ludeon Studios/RimWorld by Ludeon Studios/Config"
+          docker run --rm \
+            -v "$RUNNER_TEMP/mods:/game/Mods:ro" \
+            -v "$RUNNER_TEMP/config:$CFG" \
+            -v "$PWD/pickle-reports:/out" \
+            "$GAME_IMAGE" \
+            xvfb-run -a -s '-screen 0 1920x1080x24' \
+              /game/RimWorldLinux -pickle-run \
+                -pickle-report-dir=/out -logfile /out/Player.log
+
+      - name: Publish the counts
+        if: always()
+        run: |
+          {
+            echo "## Pickle suite (${{ matrix.backends }})"
+            if [ -f pickle-reports/summary.md ]; then
+              tail -n +2 pickle-reports/summary.md
+            else
+              echo "The run produced no summary. Read Player.log in the artifact below."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pickle-report-${{ matrix.backends }}
+          path: pickle-reports/
+          if-no-files-found: warn
