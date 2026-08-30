@@ -57,19 +57,24 @@ jobs:
           # This image holds the whole paid game, not just the managed assemblies, so a
           # publicly pullable package would be redistributing it.
           name='rimworld-game-runnable'
-          token="$(curl -sSfL \
-            "https://ghcr.io/token?scope=repository:${OWNER}/${name}:pull&service=ghcr.io" \
-            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("token", ""))')"
+
+          # A refused token means the package is not anonymously readable, which is the
+          # outcome we want, so neither call may abort the step.
+          curl -sS -o "${RUNNER_TEMP}/ghcr-token.json" \
+            "https://ghcr.io/token?scope=repository:${OWNER}/${name}:pull&service=ghcr.io" || true
+          token="$(jq -r '.token // empty' "${RUNNER_TEMP}/ghcr-token.json" 2>/dev/null || true)"
 
           code="$(curl -s -o /dev/null -w '%{http_code}' \
             -H "Authorization: Bearer ${token}" \
             "https://ghcr.io/v2/${OWNER}/${name}/tags/list")"
 
-          if [ "$code" = "200" ]; then
+          if [[ "$code" == "200" ]]; then
             echo "::error::ghcr.io/${OWNER}/${name} is publicly pullable and contains the" \
                  "whole game. Set the package to private before running the suite again."
             exit 1
           fi
+
+          echo "not anonymously pullable (HTTP ${code})"
 
           echo "package is not anonymously pullable (HTTP ${code})"
 

@@ -73,6 +73,10 @@ jobs:
   game-image:
     name: rimworld 1.6 image
     uses: ./.github/workflows/game-image.yml
+    # A called workflow cannot hold more than its caller, and the repo default is read.
+    permissions:
+      contents: read
+      packages: write
     secrets: inherit
 
   build:

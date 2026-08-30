@@ -16,11 +16,13 @@ mkdir -p "$MODS_DIR" "$CONFIG_DIR"
 # Anonymous API calls allow 60 an hour per IP, which a three way matrix on a shared
 # runner address can exhaust. A token raises it and costs nothing in Actions.
 gh_api() {
-  if [ -n "${GITHUB_TOKEN:-}" ]; then
+  local url="$1"
+
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
     curl -sSfL -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-      -H "X-GitHub-Api-Version: 2022-11-28" "$1"
+      -H "X-GitHub-Api-Version: 2022-11-28" "$url"
   else
-    curl -sSfL "$1"
+    curl -sSfL "$url"
   fi
 }
 
@@ -50,7 +52,7 @@ print(match[0]["browser_download_url"])')" || {
   unzip -qo "$tmp/mod.zip" -d "$tmp/x"
 
   inner="$(find "$tmp/x" -mindepth 1 -maxdepth 1 -type d -print -quit)"
-  [ -n "$inner" ] || { echo "error: no mod folder inside the ${repo} zip" >&2; exit 1; }
+  [[ -n "$inner" ]] || { echo "error: no mod folder inside the ${repo} zip" >&2; exit 1; }
 
   rm -rf "$dest"
   mv "$inner" "$dest"
@@ -63,7 +65,7 @@ stage_harmony() {
 
 # CONCORD_MOD_DIR points at an already downloaded copy, such as the workshop item.
 stage_concord() {
-  if [ -n "${CONCORD_MOD_DIR:-}" ]; then
+  if [[ -n "${CONCORD_MOD_DIR:-}" ]]; then
     mkdir -p "$MODS_DIR/Concord"
     tar -c --exclude=.git -C "$CONCORD_MOD_DIR" . | tar -x -C "$MODS_DIR/Concord"
     return
@@ -75,13 +77,13 @@ stage_concord() {
 ACTIVE=""
 
 # Concord declares loadBefore Ludeon.RimWorld, so it goes ahead of the base game.
-if [ "$BACKENDS" = "concord" ] || [ "$BACKENDS" = "both" ]; then
+if [[ "$BACKENDS" == "concord" || "$BACKENDS" == "both" ]]; then
   stage_concord
   ACTIVE="${ACTIVE}concordlib.concord
 "
 fi
 
-if [ "$BACKENDS" = "harmony" ] || [ "$BACKENDS" = "both" ]; then
+if [[ "$BACKENDS" == "harmony" || "$BACKENDS" == "both" ]]; then
   stage_harmony
   ACTIVE="${ACTIVE}brrainz.harmony
 "
