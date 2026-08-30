@@ -189,6 +189,30 @@ is not a failure: the item already there is dropped, which is what the game does
 `apparel covers` reads everything the pawn wears, not only what you dressed it in. A
 generated colonist arrives in a shirt and pants, so `Legs` is covered before you start.
 
+## Bills and work
+
+| Step | Does |
+| --- | --- |
+| `I add bill {string} to the {string}` | Adds a recipe to the first bench of that def |
+| `I add bill {string} to the {string} at ({int}, {int})` | Adds it to the bench at a cell |
+| `the {string} has {int} bills` | Counts the bill stack without waiting for anything |
+| `I set {string} priority {string} to {int}` | Sets a work type priority |
+| `{string} priority {string} is {int}` | Checks one |
+| `I wait for bill {string} to finish` | Waits for the recipe's product to appear |
+
+Setting a priority turns manual priorities on first. The game keeps only 0 or 3 while they
+are off, so `to 1` would read back as 3. A work type the pawn cannot do fails the step
+instead of quietly staying at 0.
+
+A bill has no finished event. `I wait for bill` reads the product count first and waits for
+it to rise, so a map that already holds some still works. It allows 120 seconds, because a
+craft needs real work done by a real pawn. A recipe that makes its output through
+`specialProducts`, like `Make_StoneBlocksAny`, has no fixed product to count, and the step
+says so rather than waiting out the clock.
+
+An end to end craft is worth writing. Pickle seeds the game before each scenario, so the
+same colonist makes the same choices every run.
+
 ## Map and things
 
 | Step | Does |
