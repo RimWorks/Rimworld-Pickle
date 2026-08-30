@@ -48,15 +48,20 @@ public static class PatchBackends {
       return;
     }
 
-    IPatchBackend backend = found.OrderByDescending(r => r.Priority).First().Backend;
-
-    try {
-      backend.ApplyEarly();
-      PatchAttribution.Arm();
-      Log.Message($"pickle: early hooks applied via {backend.Name}");
-    } catch (Exception ex) {
-      Log.Error($"pickle: {backend.Name} backend failed to apply early patches: {ex}");
+    // A backend that throws must not take the run down with it when another one is
+    // loaded and working, so each is tried in turn.
+    foreach ((IPatchBackend backend, int _) in found.OrderByDescending(r => r.Priority)) {
+      try {
+        backend.ApplyEarly();
+        PatchAttribution.Arm();
+        Log.Message($"pickle: early hooks applied via {backend.Name}");
+        return;
+      } catch (Exception ex) {
+        Log.Error($"pickle: {backend.Name} backend failed to apply early patches: {ex}");
+      }
     }
+
+    Log.Error("pickle: every patching backend failed to apply early hooks; attribution is off.");
   }
 
   public static void ApplyBest() {
@@ -72,19 +77,25 @@ public static class PatchBackends {
       return;
     }
 
-    (IPatchBackend backend, int priority) = Registered.OrderByDescending(r => r.Priority).First();
+    // A backend that throws hands over to the next one rather than leaving the game
+    // unpatched while a working library sits right there.
+    foreach ((IPatchBackend backend, int priority) in Registered.OrderByDescending(r => r.Priority)) {
+      try {
+        backend.Apply();
+      } catch (Exception ex) {
+        Log.Error($"pickle: {backend.Name} backend failed to apply patches: {ex}");
+        continue;
+      }
 
-    try {
-      backend.Apply();
-    } catch (Exception ex) {
-      Log.Error($"pickle: {backend.Name} backend failed to apply patches: {ex}");
+      string others = string.Join(", ", Registered.Where(r => r.Backend != backend).Select(r => r.Backend.Name));
+      Log.Message(others.Length == 0
+          ? $"pickle: patched via {backend.Name}"
+          : $"pickle: patched via {backend.Name} (priority {priority}); idle: {others}");
       return;
     }
 
-    string others = string.Join(", ", Registered.Where(r => r.Backend != backend).Select(r => r.Backend.Name));
-    Log.Message(others.Length == 0
-        ? $"pickle: patched via {backend.Name}"
-        : $"pickle: patched via {backend.Name} (priority {priority}); idle: {others}");
+    Log.Error("pickle: every patching backend failed to apply; Pickle cannot run steps.");
+    MissingBackendNotice.ShowIfDevMode();
   }
 
   private static void CollectBackends(Assembly assembly, List<(IPatchBackend Backend, int Priority)> into) {
