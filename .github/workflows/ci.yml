@@ -19,6 +19,11 @@ on:
         description: Passed to -pickle-run. Empty runs the whole suite.
         type: string
         default: ''
+      backend:
+        description: Which patch backend to run. A manual run does one, not all three.
+        type: choice
+        options: [harmony, concord, both]
+        default: harmony
 
 # A superseded run is going to be replaced anyway, and the suite is expensive.
 concurrency:
@@ -153,9 +158,11 @@ jobs:
       matrix:
         # A pull request runs the backend most people have; main covers all three, so a
         # regression in the others is still caught before a release.
-        backends: ${{ github.event_name == 'pull_request'
+        backends: ${{ github.event_name == 'workflow_dispatch'
+          && fromJSON(format('["{0}"]', inputs.backend))
+          || (github.event_name == 'pull_request'
           && fromJSON('["harmony"]')
-          || fromJSON('["harmony","concord","both"]') }}
+          || fromJSON('["harmony","concord","both"]')) }}
     steps:
       - uses: actions/checkout@v6
 
