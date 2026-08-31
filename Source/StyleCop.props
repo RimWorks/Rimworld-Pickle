@@ -1,7 +1,7 @@
 <Project>
 
   <!--
-    Shared StyleCop wiring for CryptikLemur mods. Import this from a repo's
+    Shared StyleCop wiring for RimWorks mods. Import this from a repo's
     Directory.Build.props:
 
         <Import Project="StyleCop.props" />

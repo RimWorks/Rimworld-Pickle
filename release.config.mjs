@@ -35,7 +35,7 @@ export default {
                 // The workflow gets NUGET_API_KEY from trusted publishing. Skipped
                 // when it is absent, so a local dry run does not try to push.
                 publishCmd:
-                    'if [ -n "$NUGET_API_KEY" ]; then dotnet nuget push "artifacts/CryptikLemur.Pickle.Ref.${nextRelease.version}.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate; else echo "no NUGET_API_KEY, skipping nuget push"; fi',
+                    'if [ -n "$NUGET_API_KEY" ]; then dotnet nuget push "artifacts/RimWorks.Pickle.Ref.${nextRelease.version}.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate; else echo "no NUGET_API_KEY, skipping nuget push"; fi',
             },
         ],
         ...(WORKSHOP_ID
@@ -65,7 +65,7 @@ export default {
             {
                 assets: [
                     { path: 'Pickle-*.zip', label: 'Pickle mod' },
-                    { path: 'artifacts/CryptikLemur.Pickle.Ref.*.nupkg', label: 'Reference package' },
+                    { path: 'artifacts/RimWorks.Pickle.Ref.*.nupkg', label: 'Reference package' },
                 ],
             },
         ],

@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <PackageId>CryptikLemur.Pickle.Ref</PackageId>
+    <PackageId>RimWorks.Pickle.Ref</PackageId>
     <Version>0.1.0</Version>
-    <Authors>cryptiklemur</Authors>
+    <Authors>RimWorks</Authors>
     <Description>Compile-time reference assembly for Pickle, the in-game BDD test runner for RimWorld. Reference this to build a steps dll; the Pickle mod supplies the real assembly at runtime.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/RimWorks/Rimworld-Pickle</PackageProjectUrl>

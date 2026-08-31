@@ -36,7 +36,7 @@ project.
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CryptikLemur.Pickle.Ref" Version="1.*"
+    <PackageReference Include="RimWorks.Pickle.Ref" Version="1.*"
                       ExcludeAssets="runtime" PrivateAssets="all" />
     <ProjectReference Include="../MyMod/MyMod.csproj" />
   </ItemGroup>

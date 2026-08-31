@@ -6,7 +6,7 @@ reads the commit messages, picks the version, and publishes.
 ## What a release does
 
 1. Builds the dashboard, then the mod.
-2. Packs `CryptikLemur.Pickle.Ref` and pushes it to nuget.org.
+2. Packs `RimWorks.Pickle.Ref` and pushes it to nuget.org.
 3. Zips the mod and attaches it to a GitHub release.
 4. Updates the Steam Workshop item, once one exists.
 

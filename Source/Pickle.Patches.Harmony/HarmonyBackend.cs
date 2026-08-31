@@ -48,7 +48,7 @@ public class HarmonyBackend : IPatchBackend {
   }
 
   public void ApplyEarly() {
-    HarmonyLib.Harmony harmony = new HarmonyLib.Harmony("cryptiklemur.pickle.early");
+    HarmonyLib.Harmony harmony = new HarmonyLib.Harmony("rimworks.pickle.early");
 
     harmony.Patch(
         typeof(LoadedModManager).GetMethod(nameof(LoadedModManager.ApplyPatches)),
@@ -60,7 +60,7 @@ public class HarmonyBackend : IPatchBackend {
   }
 
   public void Apply() {
-    HarmonyLib.Harmony harmony = new HarmonyLib.Harmony("cryptiklemur.pickle");
+    HarmonyLib.Harmony harmony = new HarmonyLib.Harmony("rimworks.pickle");
 
     harmony.Patch(
         typeof(Log).GetMethod("Error", [typeof(string)]),

@@ -50,11 +50,11 @@ Open the runner from the debug actions menu.
 ### Writing steps in C#
 
 Feature files alone need no build. To write your own step definitions, reference the
-[`CryptikLemur.Pickle.Ref`](https://www.nuget.org/packages/CryptikLemur.Pickle.Ref)
+[`RimWorks.Pickle.Ref`](https://www.nuget.org/packages/RimWorks.Pickle.Ref)
 package from a steps project:
 
 ```xml
-<PackageReference Include="CryptikLemur.Pickle.Ref" Version="1.*"
+<PackageReference Include="RimWorks.Pickle.Ref" Version="1.*"
                   ExcludeAssets="runtime" PrivateAssets="all" />
 ```
 
