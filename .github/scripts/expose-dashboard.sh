@@ -28,9 +28,17 @@ done
 for i in $(seq 1 90); do
   url="$(grep -ohE 'https://[a-z0-9-]+\.trycloudflare\.com' "$LOG" 2>/dev/null | head -1)"
   if [[ -n "${url:-}" ]]; then
+    # Annotations only surface once the job ends, so the streaming log is the only
+    # place this is usable while the run is still going.
     echo "::notice title=Pickle dashboard::${url}"
-    echo "dashboard live at ${url}"
-    exit 0
+    printf '\n========================================\n'
+    printf '  DASHBOARD: %s\n' "$url"
+    printf '========================================\n\n'
+
+    # Scenario lines push it off screen, so repeat it near the tail of the log.
+    while sleep 45; do
+      echo "--- dashboard: ${url}"
+    done
   fi
   if (( i % 10 == 0 )); then
     echo "still waiting for the tunnel (${i}0s) ..."

@@ -142,9 +142,8 @@ jobs:
     name: suite (${{ matrix.backends }})
     needs: [dashboard, game-image]
     runs-on: ubuntu-latest
-    # TEMPORARY: one backend while the full suite is timed on a runner for the first
-    # time. Restore the event-based matrix once it is known to fit.
-    timeout-minutes: 45
+    # A leg runs the whole suite in about eleven minutes, so this is slack, not a target.
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: read
@@ -152,7 +151,11 @@ jobs:
       # Every combination should be reported, not just the first one that breaks.
       fail-fast: false
       matrix:
-        backends: [harmony]
+        # A pull request runs the backend most people have; main covers all three, so a
+        # regression in the others is still caught before a release.
+        backends: ${{ github.event_name == 'pull_request'
+          && fromJSON('["harmony"]')
+          || fromJSON('["harmony","concord","both"]') }}
     steps:
       - uses: actions/checkout@v6
 
@@ -215,6 +218,14 @@ jobs:
           [[ -n "$SUITE_FILTER" ]] && run_arg="-pickle-run=$SUITE_FILTER"
           echo "running: $run_arg"
 
+          # The game image carries no encoder, so a static one is mounted in when a
+          # filmed run actually needs it.
+          ffmpeg_mount=()
+          if [[ "$FILM_SECONDS" != "0" ]]; then
+            .github/scripts/fetch-ffmpeg.sh "$RUNNER_TEMP/ffmpeg"
+            ffmpeg_mount=(-v "$RUNNER_TEMP/ffmpeg:/usr/local/bin/ffmpeg:ro")
+          fi
+
           # Redirected rather than piped, so $! stays the container and its exit code
           # still reaches wait below.
           : > "$RUNNER_TEMP/container.log"
@@ -225,6 +236,7 @@ jobs:
             -v "$RUNNER_TEMP/mods:/game/Mods:ro" \
             -v "$RUNNER_TEMP/config:$CFG" \
             -v "$PWD/pickle-reports:/out" \
+            "${ffmpeg_mount[@]}" \
             "$GAME_IMAGE" \
             xvfb-run -a -s '-screen 0 1920x1080x24' \
               /game/RimWorldLinux "$run_arg" -pickle-http \
@@ -253,16 +265,18 @@ jobs:
               | grep --line-buffered -E '^pickle: ' ) &
           follow=$!
 
+          dashboard=
           if [[ "$LIVE_DASHBOARD" == "true" ]]; then
             # Backgrounded so a slow tunnel cannot hold up the run it is meant to show.
             .github/scripts/expose-dashboard.sh 27750 &
+            dashboard=$!
           fi
 
           # set -e would abort on a failing wait before the status is captured.
           status=0
           wait "$game" || status=$?
           sleep 1
-          kill "$follow" "$container_follow" 2>/dev/null || true
+          kill "$follow" "$container_follow" ${dashboard:-} 2>/dev/null || true
           exit "$status"
 
       - name: Publish the counts
