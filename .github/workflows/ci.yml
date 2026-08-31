@@ -10,7 +10,7 @@ on:
       live-dashboard:
         description: Expose Pickle's dashboard over a temporary public URL while the suite runs.
         type: boolean
-        default: false
+        default: true
       film:
         description: Record filmed scenarios. Slower, and frame readback is unreliable headless.
         type: boolean
@@ -185,7 +185,9 @@ jobs:
         env:
           GAME_IMAGE: ${{ needs.game-image.outputs.image-ref }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LIVE_DASHBOARD: ${{ inputs.live-dashboard }}
+          # On every run except a dispatch that opts out. The URL is random and dies with
+          # the job, and the dashboard only ever shows run progress.
+          LIVE_DASHBOARD: ${{ github.event_name != 'workflow_dispatch' || inputs.live-dashboard }}
           # Filming costs about a fifth of the run and its frame readback is unreliable
           # under software rendering, so it is opt in rather than the default here.
           FILM_SECONDS: ${{ inputs.film && '60' || '0' }}
