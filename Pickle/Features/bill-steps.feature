@@ -24,11 +24,14 @@ Feature: bill steps
   @slow
   Scenario: a colonist fills a bill and the product appears
     Given a colonist "Cutter" exists
-    And I spawn a "TableStonecutter" at (150, 155)
+    And "Cutter" has childhood "ShopKid36"
+    And "Cutter" has backstory "Blacksmith7"
+    Then "Cutter" can do "Crafting"
+    Given I spawn a "TableStonecutter" at (150, 155)
     And I spawn a "ChunkSandstone" at (152, 155)
     And "Cutter" skill "Crafting" is set to level 10
     When I set "Cutter" priority "Crafting" to 1
     And I add bill "Make_StoneBlocksSandstone" to the "TableStonecutter" at (150, 155)
-    And game speed is superfast
+    And game speed is ultrafast
     And I wait for bill "Make_StoneBlocksSandstone" to finish
     Then a "BlocksSandstone" exists

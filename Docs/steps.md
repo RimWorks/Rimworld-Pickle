@@ -80,7 +80,29 @@ with `ctx.Set<T>()` still points at the old game and needs setting again.
 | `{int} {string} is spawned at the stockpile` | Spawns items into the first stockpile |
 | `a {string} is built at ({int}, {int})` | Places a finished building at a map cell |
 | `research {string} is finished` | Marks a research project complete |
-| `game speed is {word}` | Sets the speed: `paused`, `normal`, `fast`, `superfast` |
+| `game speed is {word}` | Sets the speed: `paused`, `normal`, `fast`, `superfast`, `ultrafast` |
+
+## Shaping a colonist
+
+| Step | Does |
+| --- | --- |
+| `{string} has backstory {string}` | Forces the adulthood backstory |
+| `{string} has childhood {string}` | Forces the childhood backstory |
+| `I give {string} the trait {string}` | Adds a trait |
+| `I give {string} the trait {string} at degree {int}` | Adds a degreed trait, such as a level of Psychopath |
+| `I take the trait {string} from {string}` | Removes a trait |
+| `{string} is {int} years old` | Sets biological age |
+| `{string} gender is {word}` | `male` or `female` |
+| `{string} has {word} passion for {string}` | `none`, `minor` or `major` |
+| `{string} can do {string}` | Checks a work type is enabled |
+| `{string} cannot do {string}` | Checks a work type is disabled |
+
+A generated colonist is random, so a scenario that needs one to cook, craft or shoot
+should say so rather than hope. Backstories and traits both disable work, which is why a
+test that only set a skill level could still meet a pawn that refuses the job.
+
+Changing a backstory or trait drops the pawn's disabled-work cache, so the new
+capabilities apply straight away.
 
 ## Simulation
 

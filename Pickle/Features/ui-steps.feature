@@ -22,7 +22,7 @@ Feature: ui steps
   Scenario: a filmstrip follows a colonist through a whole order
     Given the save "test-colony" is loaded
     And a colonist "Star" exists
-    And game speed is fast
+    And game speed is ultrafast
     When I select "Star"
     And I follow "Star"
     And I zoom all the way in

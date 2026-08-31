@@ -56,8 +56,9 @@ public class WorldSteps {
       "normal" => TimeSpeed.Normal,
       "fast" => TimeSpeed.Fast,
       "superfast" => TimeSpeed.Superfast,
+      "ultrafast" => TimeSpeed.Ultrafast,
       _ => throw new ArgumentException(
-          $"unknown game speed '{speed}'; supported: paused, normal, fast, superfast"),
+          $"unknown game speed '{speed}'; supported: paused, normal, fast, superfast, ultrafast"),
     };
 
     Find.TickManager.CurTimeSpeed = timeSpeed;
