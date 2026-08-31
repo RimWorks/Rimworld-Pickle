@@ -19,6 +19,7 @@ export function App() {
     () => readTheme() ?? THEMES.dark,
   );
   const wasRunning = useRef(false);
+  const [following, setFollowing] = useState(true);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -60,6 +61,31 @@ export function App() {
     if (next && window.location.hash !== next) {
       window.history.replaceState(null, "", next);
     }
+  }, [selected]);
+
+  // The view follows the run rather than making you chase the highlight down the
+  // sidebar. Clicking a scenario is a deliberate look elsewhere, so it stops following.
+  useEffect(() => {
+    if (!following || snap?.status !== "running") return;
+
+    const next = findRunning(snap);
+    if (!next) return;
+    if (next.path === selected?.path && next.index === selected?.index) return;
+
+    setSelected(next);
+  }, [snap, selected, following]);
+
+  // A new run is a fresh reason to watch, so following comes back on by itself.
+  useEffect(() => {
+    if (snap?.status === "running" && !wasRunning.current) setFollowing(true);
+  }, [snap]);
+
+  // Keep the followed row on screen; the sidebar is taller than the viewport.
+  useEffect(() => {
+    if (!selected) return;
+    document
+      .querySelector('[data-pickle-selected="true"]')
+      ?.scrollIntoView({ block: "nearest" });
   }, [selected]);
 
   // Jump to the first failure the moment a run ends, matching the in-game runner.
@@ -108,10 +134,22 @@ export function App() {
                 selected={selected}
                 activeScenario={running ? snap.scenario : null}
                 controllable={snap.controllable}
-                onSelect={setSelected}
+                onSelect={(next) => {
+                  setFollowing(false);
+                  setSelected(next);
+                }}
               />
             </aside>
             <main className="flex-1 overflow-y-auto p-6">
+              {running && !following && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-primary mb-4"
+                  onClick={() => setFollowing(true)}
+                >
+                  Follow the run
+                </button>
+              )}
               <Detail scenario={current} live={running ? snap : null} />
             </main>
           </div>
@@ -119,6 +157,25 @@ export function App() {
       )}
     </div>
   );
+}
+
+function findRunning(snap: Snapshot): Selection | null {
+  for (const feature of snap.features) {
+    for (const scenario of feature.scenarios) {
+      if (scenario.outcome === "Running") return { path: feature.path, index: scenario.index };
+    }
+  }
+
+  // The outcome only turns Running once a step reports, so fall back to the names the
+  // snapshot carries for the scenario it is on right now.
+  for (const feature of snap.features) {
+    if (feature.name !== snap.feature) continue;
+    for (const scenario of feature.scenarios) {
+      if (scenario.name === snap.scenario) return { path: feature.path, index: scenario.index };
+    }
+  }
+
+  return null;
 }
 
 function subline(snap: Snapshot | null, running: boolean): string {

@@ -44,6 +44,7 @@ export function Tree({
                   return (
                     <li
                       key={scenario.index}
+                      data-pickle-selected={isSelected ? "true" : undefined}
                       className={`flex items-center gap-2 rounded-btn px-2 py-1 ${
                         isSelected ? "bg-base-300" : "hover:bg-base-200"
                       }`}
