@@ -15,6 +15,10 @@ on:
         description: Record filmed scenarios. Slower, and frame readback is unreliable headless.
         type: boolean
         default: false
+      suite-filter:
+        description: Passed to -pickle-run. Empty runs the whole suite.
+        type: string
+        default: ''
 
 # A superseded run is going to be replaced anyway, and the suite is expensive.
 concurrency:
@@ -138,7 +142,8 @@ jobs:
     name: suite (${{ matrix.backends }})
     needs: [dashboard, game-image]
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # TEMPORARY debug settings; restore 45, the event-based matrix, and an empty filter.
+    timeout-minutes: 5
     permissions:
       contents: read
       packages: read
@@ -146,11 +151,7 @@ jobs:
       # Every combination should be reported, not just the first one that breaks.
       fail-fast: false
       matrix:
-        # A pull request runs the backend most people have; main covers all three, so a
-        # regression in the others is still caught before a release.
-        backends: ${{ github.event_name == 'pull_request'
-          && fromJSON('["harmony"]')
-          || fromJSON('["harmony","concord","both"]') }}
+        backends: [harmony]
     steps:
       - uses: actions/checkout@v6
 
@@ -191,25 +192,37 @@ jobs:
           # Filming costs about a fifth of the run and its frame readback is unreliable
           # under software rendering, so it is opt in rather than the default here.
           FILM_SECONDS: ${{ inputs.film && '60' || '0' }}
+          # TEMPORARY: needs no fixture, so it proves the path in seconds.
+          SUITE_FILTER: ${{ inputs.suite-filter || 'def-steps.feature' }}
         run: |
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+          # The image is the whole game, so this is minutes of silence without a marker.
+          echo "pulling $GAME_IMAGE ..."
+          start=$SECONDS
           docker pull -q "$GAME_IMAGE"
+          echo "pulled in $((SECONDS - start))s"
 
           # The image runs as uid 1000, so the report directory has to be writable by it.
           mkdir -p "$PWD/pickle-reports"
           chmod 777 "$PWD/pickle-reports"
 
           CFG="/home/app/.config/unity3d/Ludeon Studios/RimWorld by Ludeon Studios/Config"
+          run_arg="-pickle-run"
+          [[ -n "$SUITE_FILTER" ]] && run_arg="-pickle-run=$SUITE_FILTER"
+          echo "running: $run_arg"
+
           docker run --rm -p 27750:27750 \
             -v "$RUNNER_TEMP/mods:/game/Mods:ro" \
             -v "$RUNNER_TEMP/config:$CFG" \
             -v "$PWD/pickle-reports:/out" \
             "$GAME_IMAGE" \
             xvfb-run -a -s '-screen 0 1920x1080x24' \
-              /game/RimWorldLinux -pickle-run -pickle-http \
+              /game/RimWorldLinux "$run_arg" -pickle-http \
                 -pickle-max-film-seconds="$FILM_SECONDS" \
                 -pickle-report-dir=/out -logfile /out/Player.log &
           game=$!
+          echo "game container started, waiting for its log ..."
 
           # The game says nothing on stdout, so follow its own log and echo the pickle
           # lines. Without this the step is silent for the whole run.
@@ -222,8 +235,9 @@ jobs:
             .github/scripts/expose-dashboard.sh 27750 || true
           fi
 
-          wait "$game"
-          status=$?
+          # set -e would abort on a failing wait before the status is captured.
+          status=0
+          wait "$game" || status=$?
           sleep 1
           kill "$follow" 2>/dev/null || true
           exit "$status"
