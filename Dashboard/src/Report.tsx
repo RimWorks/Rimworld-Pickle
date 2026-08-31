@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Feature, Scenario, Selection, Snapshot } from "./types";
 import { readTheme, writeTheme } from "./theme";
+import { readHash, toHash } from "./hash";
 import { Tree } from "./Tree";
 import { Detail } from "./Detail";
 import { Logo } from "./Logo";
@@ -20,12 +21,29 @@ function loadReport(): ReportSnapshot | null {
 export function Report() {
   const [report] = useState(loadReport);
   const [selected, setSelected] = useState<Selection | null>(() => {
+    // A hash in the address bar is an explicit request, so it wins over the first failure.
+    const fromHash = readHash();
+    if (fromHash) return fromHash;
+
     const data = loadReport();
     return data ? (firstFailure(data.features) ?? firstScenario(data.features)) : null;
   });
   const [theme, setTheme] = useState<string>(
     () => readTheme() ?? "dim",
   );
+
+  useEffect(() => {
+    const onHash = () => setSelected(readHash());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  useEffect(() => {
+    const next = selected ? toHash(selected) : "";
+    if (next && window.location.hash !== next) {
+      window.history.replaceState(null, "", next);
+    }
+  }, [selected]);
 
   const toggleTheme = () => {
     const next = theme === "dim" ? "winter" : "dim";

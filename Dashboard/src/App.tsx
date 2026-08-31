@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { translator } from "./types";
 import { readTheme, writeTheme } from "./theme";
+import { readHash, toHash } from "./hash";
 import type { Feature, Scenario, Selection, Snapshot } from "./types";
 import { Tree } from "./Tree";
 import { Detail } from "./Detail";
@@ -209,23 +210,6 @@ function Offline() {
       </div>
     </div>
   );
-}
-
-function toHash(selection: Selection): string {
-  return `#${encodeURIComponent(selection.path)}:${selection.index}`;
-}
-
-function readHash(): Selection | null {
-  const raw = window.location.hash.slice(1);
-  if (!raw) return null;
-
-  const split = raw.lastIndexOf(":");
-  if (split < 0) return null;
-
-  const index = Number(raw.slice(split + 1));
-  if (!Number.isInteger(index)) return null;
-
-  return { path: decodeURIComponent(raw.slice(0, split)), index };
 }
 
 function findScenario(features: Feature[] | undefined, selected: Selection | null): Scenario | null {
