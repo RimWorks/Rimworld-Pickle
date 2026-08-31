@@ -105,10 +105,21 @@ public static class HtmlReportWriter {
     if (attachment.Name == "film-frames") {
       string dir = Path.GetDirectoryName(attachment.Content) ?? string.Empty;
       string folder = Path.GetFileName(dir);
-      string name = File.Exists(Path.Combine(dir, "film.webm")) ? "film-video" : "film-frames";
-      string file = name == "film-video" ? "film.webm" : Path.GetFileName(attachment.Content);
-      return "{\"name\":" + JsonEscape.Quote(name)
-          + ",\"content\":" + JsonEscape.Quote($"screenshots/film/{folder}/{file}") + "}";
+      string video = Path.Combine(dir, "film.webm");
+
+      // The encoded video is small enough to carry, unlike the strip it came from, so a
+      // report shared on its own still plays.
+      if (File.Exists(video)) {
+        byte[]? encoded = readAttachmentBytes?.Invoke(video);
+        string source = encoded != null
+            ? "data:video/webm;base64," + Convert.ToBase64String(encoded)
+            : $"screenshots/film/{folder}/film.webm";
+
+        return "{\"name\":\"film-video\",\"content\":" + JsonEscape.Quote(source) + "}";
+      }
+
+      return "{\"name\":\"film-frames\",\"content\":"
+          + JsonEscape.Quote($"screenshots/film/{folder}/{Path.GetFileName(attachment.Content)}") + "}";
     }
 
     string content = attachment.Content;
