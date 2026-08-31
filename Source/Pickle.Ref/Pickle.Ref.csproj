@@ -12,7 +12,9 @@
     <!-- Metadata only. The package ships Pickle's reference assembly, not this
          project's own (empty) output, so mono binds the mod's real dll at runtime. -->
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <!-- NU5131 wants a <references> group, which only a hand written nuspec can carry.
+         Without one a consumer references every assembly under ref/, which is the one we ship. -->
+    <NoWarn>$(NoWarn);NU5128;NU5131</NoWarn>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
