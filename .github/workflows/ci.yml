@@ -5,6 +5,21 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      live-dashboard:
+        description: Expose Pickle's dashboard over a temporary public URL while the suite runs.
+        type: boolean
+        default: false
+      film:
+        description: Record filmed scenarios. Slower, and frame readback is unreliable headless.
+        type: boolean
+        default: false
+
+# A superseded run is going to be replaced anyway, and the suite is expensive.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   dashboard:
@@ -131,7 +146,11 @@ jobs:
       # Every combination should be reported, not just the first one that breaks.
       fail-fast: false
       matrix:
-        backends: [harmony, concord, both]
+        # A pull request runs the backend most people have; main covers all three, so a
+        # regression in the others is still caught before a release.
+        backends: ${{ github.event_name == 'pull_request'
+          && fromJSON('["harmony"]')
+          || fromJSON('["harmony","concord","both"]') }}
     steps:
       - uses: actions/checkout@v6
 
@@ -166,6 +185,10 @@ jobs:
         env:
           GAME_IMAGE: ${{ needs.game-image.outputs.image-ref }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LIVE_DASHBOARD: ${{ inputs.live-dashboard }}
+          # Filming costs about a fifth of the run and its frame readback is unreliable
+          # under software rendering, so it is opt in rather than the default here.
+          FILM_SECONDS: ${{ inputs.film && '60' || '0' }}
         run: |
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           docker pull -q "$GAME_IMAGE"
@@ -175,14 +198,33 @@ jobs:
           chmod 777 "$PWD/pickle-reports"
 
           CFG="/home/app/.config/unity3d/Ludeon Studios/RimWorld by Ludeon Studios/Config"
-          docker run --rm \
+          docker run --rm -p 27750:27750 \
             -v "$RUNNER_TEMP/mods:/game/Mods:ro" \
             -v "$RUNNER_TEMP/config:$CFG" \
             -v "$PWD/pickle-reports:/out" \
             "$GAME_IMAGE" \
             xvfb-run -a -s '-screen 0 1920x1080x24' \
-              /game/RimWorldLinux -pickle-run \
-                -pickle-report-dir=/out -logfile /out/Player.log
+              /game/RimWorldLinux -pickle-run -pickle-http \
+                -pickle-max-film-seconds="$FILM_SECONDS" \
+                -pickle-report-dir=/out -logfile /out/Player.log &
+          game=$!
+
+          # The game says nothing on stdout, so follow its own log and echo the pickle
+          # lines. Without this the step is silent for the whole run.
+          ( until [[ -f pickle-reports/Player.log ]]; do sleep 1; done
+            tail -n +1 -f pickle-reports/Player.log \
+              | grep --line-buffered -E '^pickle: ' ) &
+          follow=$!
+
+          if [[ "$LIVE_DASHBOARD" == "true" ]]; then
+            .github/scripts/expose-dashboard.sh 27750 || true
+          fi
+
+          wait "$game"
+          status=$?
+          sleep 1
+          kill "$follow" 2>/dev/null || true
+          exit "$status"
 
       - name: Publish the counts
         if: always()

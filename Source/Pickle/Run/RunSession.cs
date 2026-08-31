@@ -128,6 +128,7 @@ public class RunSession {
       ScenarioResult result = await RunScenario(scenario, plan.Name, plan.SourcePath, scenarioIndex);
       results.Add(result);
       onScenarioCompleted?.Invoke(result);
+      LogScenarioProgress(result);
 
       if (result.Outcome == ScenarioOutcome.Passed) {
         PassedCount++;
@@ -147,6 +148,19 @@ public class RunSession {
     Verse.Log.Message($"pickle: run finished: {passedCount} passed, {failedCount} failed, {skippedCount} skipped");
 
     return results;
+  }
+
+  // A headless run is silent for as long as it takes without this, so a watcher cannot
+  // tell a slow scenario from a hung one.
+  private static void LogScenarioProgress(ScenarioResult result) {
+    string outcome = result.Outcome switch {
+      ScenarioOutcome.Passed => "passed",
+      ScenarioOutcome.Failed => "FAILED",
+      _ => "skipped",
+    };
+
+    Verse.Log.Message(
+        $"pickle: {outcome} in {result.DurationMs:F0}ms: {result.FeatureName}: {result.ScenarioName}");
   }
 
   private static Task InvokeDelegateBinding(PickleContext ctx, Delegate @delegate, IReadOnlyList<object?> args) {

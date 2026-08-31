@@ -48,12 +48,22 @@ public sealed class FilmstripRecorder {
   public static IReadOnlyList<(string Directory, double Fps)> RecordedFilms => Recorded;
 
   public void Start() {
+    // Zero turns filming off. Software rendering makes frame readback expensive, and a
+    // headless run usually wants the report without the video.
+    if (MaxSeconds <= 0) {
+      return;
+    }
+
     clock.Restart();
     nextCaptureAt = 0.0;
     PickleDriver.Instance.AddFrameHook(OnFrame);
   }
 
   public void Finish() {
+    if (MaxSeconds <= 0) {
+      return;
+    }
+
     PickleDriver.Instance.RemoveFrameHook(OnFrame);
     PickleDriver.Instance.ReleaseFrameBuffers();
     clock.Stop();
