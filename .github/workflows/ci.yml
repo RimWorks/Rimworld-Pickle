@@ -142,8 +142,9 @@ jobs:
     name: suite (${{ matrix.backends }})
     needs: [dashboard, game-image]
     runs-on: ubuntu-latest
-    # TEMPORARY debug settings; restore 45, the event-based matrix, and an empty filter.
-    timeout-minutes: 5
+    # TEMPORARY: one backend while the full suite is timed on a runner for the first
+    # time. Restore the event-based matrix once it is known to fit.
+    timeout-minutes: 45
     permissions:
       contents: read
       packages: read
@@ -192,8 +193,7 @@ jobs:
           # Filming costs about a fifth of the run and its frame readback is unreliable
           # under software rendering, so it is opt in rather than the default here.
           FILM_SECONDS: ${{ inputs.film && '60' || '0' }}
-          # TEMPORARY: needs no fixture, so it proves the path in seconds.
-          SUITE_FILTER: ${{ inputs.suite-filter || 'def-steps.feature' }}
+          SUITE_FILTER: ${{ inputs.suite-filter }}
         run: |
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
