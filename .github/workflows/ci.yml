@@ -280,6 +280,30 @@ jobs:
             echo "plus \`junit.xml\` and the full \`Player.log\`."
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Publish the report
+        if: always()
+        env:
+          DOCBIN_TOKEN: ${{ secrets.DOCBIN_TOKEN }}
+        run: |
+          # Optional: without a token the artifact below is still the fallback.
+          if [[ -z "${DOCBIN_TOKEN:-}" ]] || [[ ! -f pickle-reports/report.html ]]; then
+            echo "skipping docbin upload (no token or no report)"
+            exit 0
+          fi
+
+          name="pickle-${{ matrix.backends }}-${{ github.run_id }}"
+          out="$(npx -y docbin@1 push pickle-reports/report.html \
+            --name "$name" --type html --visibility unlisted --expires 30d 2>&1 | head -1)"
+          url="${out%% (*}"
+
+          if [[ "$url" == https://* ]]; then
+            echo "::notice title=Pickle report::${url}"
+            echo "**[Open the report](${url})** - failures carry screenshots." \
+              >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "docbin upload did not return a url: $out"
+          fi
+
       - name: Upload the report
         if: always()
         uses: actions/upload-artifact@v4
