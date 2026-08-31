@@ -6,10 +6,14 @@ Feature: pawn steps
 
   Scenario: health and hediff steps read a pawn's real condition
     Given a colonist "Patient" exists
-    Then "Patient" is healthy
+    And I heal "Patient"
+    Then "Patient" has no hediffs
+    And "Patient" is healthy
     And "Patient" health is above 90 percent
     When "Patient" is given hediff "Flu"
     Then "Patient" has hediff "Flu"
+    When "Patient" is cured of hediff "Flu"
+    Then "Patient" has no hediff "Flu"
 
   Scenario: a downed pawn reports downed
     Given a colonist "Faller" exists

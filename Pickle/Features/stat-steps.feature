@@ -10,6 +10,7 @@ Feature: stat steps
 
   Scenario: a pawn stat reads the live value, not the def default
     Given a colonist "Runner" exists
+    And I heal "Runner"
     Then "Runner" stat "MoveSpeed" is above 2
     And "Runner" stat "MoveSpeed" is below 10
 

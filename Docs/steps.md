@@ -149,6 +149,10 @@ guess breaks on a faster machine.
 | `{string} has hediff {string}` | Checks the pawn carries a hediff def |
 | `{string} health is above {int} percent` | Checks the pawn's summary health |
 | `{string} is given hediff {string}` | Adds a hediff to the pawn |
+| `{string} is cured of hediff {string}` | Removes every hediff of that def |
+| `I heal {string}` | Removes every hediff, for a scenario that needs a well pawn |
+| `{string} has no hediffs` | Checks the pawn carries none at all |
+| `{string} has no hediff {string}` | Checks one def is absent |
 | `{string} attacks {string}` | Drafts the pawn and orders a forced melee attack |
 | `I order {string} to ({int}, {int})` | Sends the pawn to a cell and fails if it cannot reach |
 | `I order {string} to the stockpile` | Sends the pawn to the first stockpile, without naming a cell |

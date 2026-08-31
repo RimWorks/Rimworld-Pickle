@@ -48,6 +48,44 @@ public class PawnSteps {
         $"pawn '{nickname}' health should be above {percent}%; actual {actual:F0}%");
   }
 
+  [Then("{string} has no hediffs")]
+  public void AssertNoHediffs(PickleContext ctx, string nickname) {
+    Pawn pawn = PawnLookup.RequireLiving(nickname);
+    ctx.Assert(
+        pawn.health.hediffSet.hediffs.Count == 0,
+        $"pawn '{nickname}' should carry no hediffs; {DescribeHealth(pawn)}");
+  }
+
+  [Then("{string} has no hediff {string}")]
+  public void AssertNoHediff(PickleContext ctx, string nickname, string hediffDefName) {
+    Pawn pawn = PawnLookup.RequireLiving(nickname);
+    HediffDef def = DefLookup.Require<HediffDef>(hediffDefName);
+    ctx.Assert(
+        !pawn.health.hediffSet.HasHediff(def),
+        $"pawn '{nickname}' should not have hediff '{hediffDefName}'; {DescribeHealth(pawn)}");
+  }
+
+  // A generated colonist arrives with whatever age and history rolled it, so a scenario
+  // that wants a well pawn has to say so rather than hope for one.
+  [When("I heal {string}")]
+  public void Heal(PickleContext ctx, string nickname) {
+    Pawn pawn = PawnLookup.RequireLiving(nickname);
+
+    foreach (Hediff hediff in pawn.health.hediffSet.hediffs.ToList()) {
+      pawn.health.RemoveHediff(hediff);
+    }
+  }
+
+  [When("{string} is cured of hediff {string}")]
+  public void CureHediff(PickleContext ctx, string nickname, string hediffDefName) {
+    Pawn pawn = PawnLookup.RequireLiving(nickname);
+    HediffDef def = DefLookup.Require<HediffDef>(hediffDefName);
+
+    foreach (Hediff hediff in pawn.health.hediffSet.hediffs.Where(h => h.def == def).ToList()) {
+      pawn.health.RemoveHediff(hediff);
+    }
+  }
+
   [When("{string} is given hediff {string}")]
   public void GiveHediff(PickleContext ctx, string nickname, string hediffDefName) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
