@@ -50,7 +50,7 @@ jobs:
         run: |
           ${{ runner.temp }}/scanner/dotnet-sonarscanner begin \
             /k:"RimWorks_Rimworld-Pickle" \
-            /o:"RimWorks" \
+            /o:"rimworks" \
             /d:sonar.token="$SONAR_TOKEN" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.exclusions="Dashboard/dist/**,Dashboard/node_modules/**,Styles/**,artifacts/**,**/bin/**,**/obj/**" \
