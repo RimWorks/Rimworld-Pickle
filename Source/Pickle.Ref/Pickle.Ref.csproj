@@ -6,7 +6,7 @@
     <Authors>cryptiklemur</Authors>
     <Description>Compile-time reference assembly for Pickle, the in-game BDD test runner for RimWorld. Reference this to build a steps dll; the Pickle mod supplies the real assembly at runtime.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/cryptiklemur/Rimworld-Pickle</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/RimWorks/Rimworld-Pickle</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Metadata only. The package ships Pickle's reference assembly, not this

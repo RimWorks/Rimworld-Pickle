@@ -36,4 +36,4 @@ RimWorld 1.6 and one patching library. Harmony or Concord both work. Pickle pref
 
 Start from the template repository, or add a Pickle folder to a mod you already have. The docs cover steps, tags, fixtures, and waits.
 
-Source and documentation: https://github.com/cryptiklemur/Rimworld-Pickle
+Source and documentation: https://github.com/RimWorks/Rimworld-Pickle

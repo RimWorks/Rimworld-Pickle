@@ -6,7 +6,7 @@
   "description": "In-game BDD testing for RimWorld mods.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cryptiklemur/Rimworld-Pickle"
+    "url": "https://github.com/RimWorks/Rimworld-Pickle"
   },
   "scripts": {
     "release": "semantic-release"
