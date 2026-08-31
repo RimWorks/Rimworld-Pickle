@@ -253,7 +253,8 @@ jobs:
           follow=$!
 
           if [[ "$LIVE_DASHBOARD" == "true" ]]; then
-            .github/scripts/expose-dashboard.sh 27750 || true
+            # Backgrounded so a slow tunnel cannot hold up the run it is meant to show.
+            .github/scripts/expose-dashboard.sh 27750 &
           fi
 
           # set -e would abort on a failing wait before the status is captured.
@@ -273,6 +274,10 @@ jobs:
             else
               echo "The run produced no summary. Read Player.log in the artifact below."
             fi
+            echo
+            echo "[Download **pickle-report-${{ matrix.backends }}**](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)"
+            echo "for \`report.html\` (open it in a browser; failures carry screenshots),"
+            echo "plus \`junit.xml\` and the full \`Player.log\`."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the report
