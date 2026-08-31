@@ -7,6 +7,8 @@ using Pickle.Core.Steps;
 namespace Pickle.Core.Run;
 
 public static class RunOutcomes {
+  private const string RequiresPrefix = "@requires:";
+
   // A step in any of these states stops the scenario; the rest are reported as skipped.
   public static bool EndsScenario(StepStatus status) {
     return status == StepStatus.Failed || status == StepStatus.Undefined || status == StepStatus.Ambiguous;
@@ -14,6 +16,25 @@ public static class RunOutcomes {
 
   public static bool ShouldSkip(TagSet tags, bool includeWip = false) {
     return (!includeWip && tags.Contains("@wip")) || tags.Contains("@skip");
+  }
+
+  /// <summary>
+  /// Names the first <c>@requires:</c> tag the caller reports as absent, or null when the
+  /// scenario can run. The caller decides what counts as present, so this stays testable.
+  /// </summary>
+  public static string? MissingRequirement(TagSet tags, Func<string, bool> isPresent) {
+    foreach (string tag in tags) {
+      if (!tag.StartsWith(RequiresPrefix, StringComparison.OrdinalIgnoreCase)) {
+        continue;
+      }
+
+      string wanted = tag.Substring(RequiresPrefix.Length).Trim();
+      if (wanted.Length > 0 && !isPresent(wanted)) {
+        return wanted;
+      }
+    }
+
+    return null;
   }
 
   public static ScenarioOutcome OutcomeFromSteps(IReadOnlyList<StepResult> steps) {

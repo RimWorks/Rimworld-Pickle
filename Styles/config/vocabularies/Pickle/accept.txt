@@ -53,3 +53,10 @@ png
 jpeg
 jpegs
 substring
+ideo
+ideos
+psylink
+precept
+precepts
+DLC
+packageId

@@ -169,6 +169,150 @@ guess breaks on a faster machine.
 When one of these fails it reports what the pawn actually had. A failed skill check names
 the real level, and a failed carry check lists everything the pawn holds.
 
+## Surgery and body parts
+
+| Step | Does |
+| --- | --- |
+| `{string} is missing {string}` | Checks a body part is gone |
+| `{string} is not missing {string}` | Checks it is still there, which is how an install proves it restored one |
+| `{string} has hediff {string} on {string}` | Checks a hediff sits on a named part |
+| `{string} has no hediff {string} on {string}` | Checks that part is clear |
+| `{string} is given hediff {string} on {string}` | Adds a hediff to a named part, with no recipe involved |
+| `I amputate {string} from {string}` | Cuts a part off the pawn |
+| `I install {string} on {string} of {string}` | Runs a surgery recipe at once, with no doctor |
+| `I queue surgery {string} on {string} of {string}` | Adds the surgery to the pawn's bill stack for a doctor to do |
+| `{string} has {int} surgeries queued` | Counts the queue without waiting |
+| `I wait for surgery {string} on {string} to finish` | Waits for the bill to leave the queue |
+
+Name a part the way the game labels it: `left shoulder`, `right kidney`, `heart`. The
+`defName` and the plain label work too. But `shoulder` on a human matches two parts, so the
+step fails and names both rather than picking one.
+
+`I amputate` deals the same `SurgicalCut` damage `Recipe_RemoveBodyPart` does, so cutting a
+vital part kills the pawn. `I install` calls the recipe's own worker with no `billDoer`. That
+is the path the game takes when nobody performs the operation. It restores the part, drops the
+old one on the floor, then adds the hediff.
+
+A recipe that cannot reach the part you named fails with the parts it can reach. That check
+catches the most common mistake, which is naming the part a prosthetic replaces instead of the
+one it attaches to. `InstallSimpleProstheticArm` goes on the shoulder, not the arm.
+
+**A queued surgery needs a whole colony.** The pawn walks to a medical bed on its own, but
+only once a doctor is free. So the scenario needs a second colonist who can doctor, a medical
+bed, and the ingredients the recipe lists. A surgery has no finished event, so
+`I wait for surgery` watches the bill leave the queue. The game also drops a bill it decides
+is impossible. Assert the result afterwards rather than trusting the wait alone. On failure
+the step reports whether a doctor could take the job and whether the map had a medical bed.
+
+## Thoughts and social
+
+| Step | Does |
+| --- | --- |
+| `{string} has thought {string}` | Checks a memory or a situational thought |
+| `{string} has no thought {string}` | Checks the thought is absent |
+| `{string} thought {string} mood offset is {float}` | The mood that one thought contributes |
+| `{string} is given thought {string}` | Adds a memory |
+| `{string} is given thought {string} about {string}` | Adds a social memory aimed at another pawn |
+| `{string} opinion of {string} is {int}` | Checks an exact opinion |
+| `{string} opinion of {string} is above {int}` | Checks the opinion is higher |
+| `{string} opinion of {string} is below {int}` | Checks the opinion is lower |
+| `{string} and {string} are {string}` | Checks whether two pawns hold a relation def |
+| `I make {string} and {string} {string}` | Adds a direct relation between two pawns |
+
+`{string} mood is above {int} percent` only sees the total. These steps see one thought at a
+time, which is what a mod that adds or changes a thought needs.
+
+A failed opinion check prints the full breakdown from the game, so `expected above 20, got
+-14` also names the insult that cost the 30 points.
+
+**A social thought moves opinion, not mood.** Asking for its mood offset fails and says so.
+`Insulted` is social. `AteWithoutTable` is a mood memory. Some social thoughts also make a
+separate mood thought, and `Insulted` makes `InsultedMood`.
+
+A situational thought is recalculated on an interval, not on the change that caused it. So
+`has thought` waits for the state to settle. A memory lands at once.
+
+`is given thought` can fail to do anything at all. A nullifying trait or precept silently
+throws the memory away. So the step proves the memory landed. When it did not, the failure
+lists every thought the pawn holds.
+
+`I make` refuses a relation the game derives rather than stores. `Sibling` follows from two
+`Parent` relations, so set those instead.
+
+## World conditions
+
+| Step | Does |
+| --- | --- |
+| `the weather is {string}` | Checks the current weather def |
+| `I set the weather to {string}` | Changes the weather at once |
+| `the season is {word}` | Checks the season at this map's tile |
+| `I set the season to {word}` | Moves the calendar until the season matches |
+| `the hour is {int}` | Checks the local hour, 0 to 23 |
+| `I set the hour to {int}` | Moves the clock forward to that hour |
+| `it is {word}` | `day` or `night`, from the game's own sun glow |
+| `the temperature at ({int}, {int}) is above {int}` | Reads one cell in Celsius |
+| `the temperature at ({int}, {int}) is below {int}` | |
+| `the outdoor temperature is above {int}` | Reads the map's outdoor temperature |
+| `the outdoor temperature is below {int}` | |
+
+**The time steps move the calendar and nothing else.** No plant grows. No meal rots. No pawn
+gets hungry. The runner drives about 1200 ticks a second, and one season is 900000
+ticks. So real elapsed time is not on offer, and these steps set the date instead.
+
+Use them to test code that reads the date. Do not use them to age anything.
+
+`I set the weather` changes `curWeather` at once. The sky blends over the next few seconds,
+so code that reads the perceived weather still sees the old one. A failure prints both.
+
+Not every tile has four seasons. An equatorial tile reports `PermanentSummer` all year, and
+`I set the season` then fails and names the seasons that tile really sees. The `test-colony`
+fixture is one of those tiles.
+
+## DLC content
+
+| Step | Does |
+| --- | --- |
+| `the ideo has precept {string}` | Checks a precept on the player ideo |
+| `the ideo has no precept {string}` | Checks a precept is absent |
+| `I give {string} the title {string}` | Grants an Empire title. No rewards, no letter |
+| `{string} has title {string}` | Checks a pawn holds a title |
+| `{string} psylink level is {int}` | Checks psylink level |
+| `the {string} at ({int}, {int}) is studiable` | Checks the thing can be studied now |
+| `the {string} at ({int}, {int}) study knowledge is above {float}` | Reads knowledge gained so far |
+
+**Tag a DLC scenario with `@requires:`.** Pickle skips a scenario tagged
+`@requires:Ideology` when Ideology is not loaded. Without the tag the scenario fails, which
+reads as a broken mod rather than a missing expansion.
+
+The tag matches a mod name or a `packageId`, so `@requires:Royalty` and
+`@requires:brrainz.harmony` both work. Use it for your own dependencies too, not only for
+expansions.
+
+A failed precept check lists every precept the ideo holds. That is how you learn the real
+name of one, because a generated ideo picks its own.
+
+## Zones and construction
+
+| Step | Does |
+| --- | --- |
+| `I designate a {string} from ({int}, {int}) to ({int}, {int})` | Places blueprints over a rectangle |
+| `a blueprint for {string} is at ({int}, {int})` | Checks a blueprint stands at a cell |
+| `I create a stockpile from ({int}, {int}) to ({int}, {int})` | Makes a stockpile zone |
+| `a stockpile covers ({int}, {int})` | Checks a cell is in a stockpile |
+| `I wait for the {string} at ({int}, {int}) to be built` | Waits for the real building to appear |
+
+`a {string} is built at ({int}, {int})` places a finished building. It never exercises a
+blueprint, a frame, or the hauling and construction jobs. `I designate` places what the
+architect menu places, so a colonist has to fetch material and do the work.
+
+Construction has no finished event, so `I wait for the ... to be built` watches the cell.
+A failure reads the frame and reports what it still needs, such as
+`a frame stands there at 40%, needing 5 WoodLog`.
+
+A stockpile skips any cell that already belongs to a zone or holds something a zone cannot
+cover, such as a wall. The game's own designator does the same. The step fails only when
+every cell in the rectangle is unusable.
+
 ## Stats
 
 | Step | Does |

@@ -36,6 +36,42 @@ public class RunOutcomesTests {
   }
 
   [Fact]
+  public void MissingRequirement_WhenPresent_ReturnsNull() {
+    TagSet tags = new TagSet(["@requires:Ideology"]);
+    Assert.Null(RunOutcomes.MissingRequirement(tags, _ => true));
+  }
+
+  [Fact]
+  public void MissingRequirement_WhenAbsent_NamesIt() {
+    TagSet tags = new TagSet(["@slow", "@requires:Anomaly"]);
+    Assert.Equal("Anomaly", RunOutcomes.MissingRequirement(tags, _ => false));
+  }
+
+  [Fact]
+  public void MissingRequirement_ChecksEveryRequirement() {
+    TagSet tags = new TagSet(["@requires:Royalty", "@requires:Anomaly"]);
+    Assert.Equal("Anomaly", RunOutcomes.MissingRequirement(tags, name => name == "Royalty"));
+  }
+
+  [Fact]
+  public void MissingRequirement_IgnoresTagCase() {
+    TagSet tags = new TagSet(["@Requires:Anomaly"]);
+    Assert.Equal("Anomaly", RunOutcomes.MissingRequirement(tags, _ => false));
+  }
+
+  [Fact]
+  public void MissingRequirement_WithoutRequiresTags_ReturnsNull() {
+    TagSet tags = new TagSet(PlainTags);
+    Assert.Null(RunOutcomes.MissingRequirement(tags, _ => false));
+  }
+
+  [Fact]
+  public void MissingRequirement_WithEmptyName_IsIgnored() {
+    TagSet tags = new TagSet(["@requires:"]);
+    Assert.Null(RunOutcomes.MissingRequirement(tags, _ => false));
+  }
+
+  [Fact]
   public void OutcomeFromSteps_AllPassed_ReturnsPassed() {
     List<StepResult> steps = new()
     {

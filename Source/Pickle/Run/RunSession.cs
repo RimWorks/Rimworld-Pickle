@@ -111,7 +111,14 @@ public class RunSession {
         continue;
       }
 
-      if (RunOutcomes.ShouldSkip(scenario.Tags, includeWip)) {
+      // @requires:<mod> keeps a dlc scenario out of a run that has no dlc, reported as
+      // skipped rather than failed.
+      string? missingMod = RunOutcomes.MissingRequirement(scenario.Tags, IsModPresent);
+      if (missingMod != null) {
+        Verse.Log.Message($"pickle: skipping '{scenario.Name}', '{missingMod}' is not loaded");
+      }
+
+      if (missingMod != null || RunOutcomes.ShouldSkip(scenario.Tags, includeWip)) {
         ScenarioResult skipped = new ScenarioResult(
             scenario.Name,
             plan.Name,
@@ -199,6 +206,17 @@ public class RunSession {
     }
 
     return stepResults.FirstOrDefault(s => s.Status == StepStatus.Failed)?.FailureMessage ?? "Scenario failed";
+  }
+
+  private static bool IsModPresent(string wanted) {
+    foreach (Verse.ModContentPack pack in Verse.LoadedModManager.RunningModsListForReading) {
+      if (string.Equals(pack.Name, wanted, StringComparison.OrdinalIgnoreCase)
+          || string.Equals(pack.PackageId, wanted, StringComparison.OrdinalIgnoreCase)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private static void SkipRemainingSteps(ScenarioPlan scenario, List<StepResult> stepResults) {
