@@ -212,7 +212,10 @@ jobs:
           [[ -n "$SUITE_FILTER" ]] && run_arg="-pickle-run=$SUITE_FILTER"
           echo "running: $run_arg"
 
-          docker run --rm -p 27750:27750 \
+          # Redirected rather than piped, so $! stays the container and its exit code
+          # still reaches wait below.
+          : > "$RUNNER_TEMP/container.log"
+          docker run --rm --name pickle-suite -p 27750:27750 \
             -v "$RUNNER_TEMP/mods:/game/Mods:ro" \
             -v "$RUNNER_TEMP/config:$CFG" \
             -v "$PWD/pickle-reports:/out" \
@@ -220,9 +223,22 @@ jobs:
             xvfb-run -a -s '-screen 0 1920x1080x24' \
               /game/RimWorldLinux "$run_arg" -pickle-http \
                 -pickle-max-film-seconds="$FILM_SECONDS" \
-                -pickle-report-dir=/out -logfile /out/Player.log &
+                -pickle-report-dir=/out -logfile /out/Player.log \
+            > "$RUNNER_TEMP/container.log" 2>&1 &
           game=$!
           echo "game container started, waiting for its log ..."
+
+          tail -n +1 -f "$RUNNER_TEMP/container.log" | sed 's/^/[container] /' &
+          container_follow=$!
+
+          # The game writes to its own logfile, so a container that dies says nothing
+          # unless its state is dumped here.
+          ( sleep 45
+            if [[ ! -f pickle-reports/Player.log ]]; then
+              echo "no Player.log after 45s; dumping state"
+              docker ps -a --filter name=pickle-suite --format '{{.Status}} {{.Image}}'
+              ls -la pickle-reports || true
+            fi ) &
 
           # The game says nothing on stdout, so follow its own log and echo the pickle
           # lines. Without this the step is silent for the whole run.
@@ -239,7 +255,7 @@ jobs:
           status=0
           wait "$game" || status=$?
           sleep 1
-          kill "$follow" 2>/dev/null || true
+          kill "$follow" "$container_follow" 2>/dev/null || true
           exit "$status"
 
       - name: Publish the counts
