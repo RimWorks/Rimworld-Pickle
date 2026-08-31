@@ -215,7 +215,9 @@ jobs:
           # Redirected rather than piped, so $! stays the container and its exit code
           # still reaches wait below.
           : > "$RUNNER_TEMP/container.log"
-          docker run --rm --name pickle-suite -p 27750:27750 \
+          # --init is load bearing: xvfb-run waits for Xvfb to signal SIGUSR1 to its
+          # parent, which never arrives when xvfb-run is itself PID 1.
+          docker run --rm --init --name pickle-suite -p 27750:27750 \
             -v "$RUNNER_TEMP/mods:/game/Mods:ro" \
             -v "$RUNNER_TEMP/config:$CFG" \
             -v "$PWD/pickle-reports:/out" \
