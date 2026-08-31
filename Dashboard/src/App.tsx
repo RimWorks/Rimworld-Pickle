@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { translator } from "./types";
-import { readTheme, writeTheme } from "./theme";
+import { initialTheme, writeTheme, THEMES } from "./theme";
 import { readHash, toHash } from "./hash";
 import type { Feature, Scenario, Selection, Snapshot } from "./types";
 import { Tree } from "./Tree";
@@ -9,14 +9,13 @@ import { Toolbar } from "./Toolbar";
 import { Logo } from "./Logo";
 
 const POLL_MS = 400;
-const THEMES = { dark: "dim", light: "winter" } as const;
 
 export function App() {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [selected, setSelected] = useState<Selection | null>(() => readHash());
   const [aborting, setAborting] = useState(false);
   const [theme, setTheme] = useState<string>(
-    () => readTheme() ?? THEMES.dark,
+    () => initialTheme(),
   );
   const wasRunning = useRef(false);
   const [following, setFollowing] = useState(true);

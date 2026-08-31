@@ -24,6 +24,8 @@ public static class FilmEncoder {
   public static string? TryEncode(string frameDirectory, double framesPerSecond) {
     string ffmpeg = ResolveFfmpeg();
     if (ffmpeg.Length == 0) {
+      Log.Warning(
+          $"pickle: no ffmpeg on PATH, so {frameDirectory} keeps its frames and gets no video.");
       return null;
     }
 

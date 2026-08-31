@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Feature, Scenario, Selection, Snapshot } from "./types";
-import { readTheme, writeTheme } from "./theme";
+import { initialTheme, writeTheme } from "./theme";
 import { readHash, toHash } from "./hash";
 import { Tree } from "./Tree";
 import { Detail } from "./Detail";
@@ -29,8 +29,13 @@ export function Report() {
     return data ? (firstFailure(data.features) ?? firstScenario(data.features)) : null;
   });
   const [theme, setTheme] = useState<string>(
-    () => readTheme() ?? "dim",
+    () => initialTheme(),
   );
+
+  // The document ships with a hardcoded theme, so the chosen one has to be applied.
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
 
   useEffect(() => {
     const onHash = () => setSelected(readHash());
