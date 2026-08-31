@@ -1,7 +1,9 @@
 using System;
+using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
+using Pickle.Evidence;
 using Pickle.Run;
 using Verse;
 
@@ -14,6 +16,8 @@ namespace Pickle.Web;
 public static class PickleHttpServer {
   private const string JsonContentType = "application/json";
   private const string OkBody = "{\"ok\":true}";
+
+  private const string EvidencePrefix = "/screenshots/";
 
   private const int DefaultPort = 27750;
 
@@ -150,12 +154,61 @@ public static class PickleHttpServer {
       return;
     }
 
+    if (path.StartsWith(EvidencePrefix, StringComparison.Ordinal)) {
+      ServeEvidence(context, path.Substring(EvidencePrefix.Length));
+      return;
+    }
+
     context.Response.StatusCode = 404;
     Write(context, "text/plain", "not found");
   }
 
+  // In CI this listener sits behind a public tunnel for the length of a job, so a request
+  // is only answered once the resolved file is known to sit inside the evidence tree.
+  private static void ServeEvidence(HttpListenerContext context, string relative) {
+    string root = Path.GetFullPath(ScreenshotCapture.ReportsDirectory());
+    string full;
+
+    try {
+      full = Path.GetFullPath(Path.Combine(root, Uri.UnescapeDataString(relative)));
+    } catch (Exception) {
+      context.Response.StatusCode = 400;
+      Write(context, "text/plain", "bad path");
+      return;
+    }
+
+    if (!full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.Ordinal) || !File.Exists(full)) {
+      context.Response.StatusCode = 404;
+      Write(context, "text/plain", "not found");
+      return;
+    }
+
+    Write(context, ContentTypeFor(full), File.ReadAllBytes(full));
+  }
+
+  private static string ContentTypeFor(string path) {
+    switch (Path.GetExtension(path).ToLowerInvariant()) {
+      case ".jpg":
+      case ".jpeg":
+        return "image/jpeg";
+      case ".png":
+        return "image/png";
+      case ".webm":
+        return "video/webm";
+      case ".html":
+        return "text/html; charset=utf-8";
+      case ".json":
+        return JsonContentType;
+      default:
+        return "application/octet-stream";
+    }
+  }
+
   private static void Write(HttpListenerContext context, string contentType, string body) {
-    byte[] bytes = Encoding.UTF8.GetBytes(body);
+    Write(context, contentType, Encoding.UTF8.GetBytes(body));
+  }
+
+  private static void Write(HttpListenerContext context, string contentType, byte[] bytes) {
     context.Response.ContentType = contentType;
     context.Response.ContentLength64 = bytes.Length;
     context.Response.OutputStream.Write(bytes, 0, bytes.Length);
