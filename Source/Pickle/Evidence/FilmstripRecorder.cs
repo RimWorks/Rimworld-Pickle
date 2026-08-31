@@ -13,12 +13,12 @@ namespace Pickle.Evidence;
 public sealed class FilmstripRecorder {
   public const string Tag = "@film";
 
-  // Target rate. The game rarely renders this fast, so the real rate is measured
-  // per scenario and handed to the encoder; otherwise playback runs fast.
-  public const int TargetFramesPerSecond = 30;
+  // Ten, not thirty: a software renderer cannot read back and encode faster than that.
+  // The game rarely hits even this, so the encoder gets the rate measured per scenario.
+  public const int TargetFramesPerSecond = 10;
 
   // 960 wide, not 1920. The readback is async so it does not stall, but the jpeg encode
-  // still runs on the main thread and thirty full size frames a second would show.
+  // still runs on the main thread and full size frames would show.
   private const int FrameWidth = 960;
 
   private static readonly List<(string Directory, double Fps)> Recorded = [];

@@ -168,7 +168,7 @@ public class PickleDriver : MonoBehaviour {
   }
 
   // CaptureScreenshotIntoRenderTexture keeps the frame on the GPU and AsyncGPUReadback
-  // pulls it back without stalling, which is what makes thirty frames a second possible.
+  // pulls it back without stalling, which is what makes filming a live run possible.
   // ReadPixels blocks until the GPU catches up and cannot keep that rate.
   // Software rendering has no working async readback, so a filmed run silently produced
   // nothing. Say it once rather than per frame.

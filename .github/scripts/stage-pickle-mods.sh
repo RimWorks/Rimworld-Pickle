@@ -95,7 +95,7 @@ ludeon.rimworld.ideology
 ludeon.rimworld.biotech
 ludeon.rimworld.anomaly
 ludeon.rimworld.odyssey
-cryptiklemur.pickle"
+rimworks.pickle"
 
 cat > "$CONFIG_DIR/ModsConfig.xml" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
