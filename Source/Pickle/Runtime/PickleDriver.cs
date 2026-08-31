@@ -16,6 +16,7 @@ namespace Pickle.Runtime;
 /// </summary>
 public class PickleDriver : MonoBehaviour {
   private static PickleDriver? instance;
+  private static bool warnedFrameReadback;
 
   private readonly ConcurrentQueue<Action> mainThreadQueue = new();
 
@@ -169,6 +170,33 @@ public class PickleDriver : MonoBehaviour {
   // CaptureScreenshotIntoRenderTexture keeps the frame on the GPU and AsyncGPUReadback
   // pulls it back without stalling, which is what makes thirty frames a second possible.
   // ReadPixels blocks until the GPU catches up and cannot keep that rate.
+  // Software rendering has no working async readback, so a filmed run silently produced
+  // nothing. Say it once rather than per frame.
+  private static void WarnFrameReadbackOnce() {
+    if (warnedFrameReadback) {
+      return;
+    }
+
+    warnedFrameReadback = true;
+    Log.Warning(
+        "pickle: the GPU refused a frame readback, so filming captured nothing. " +
+        "This is expected without a real GPU; run with -pickle-max-film-seconds=0 there.");
+  }
+
+  private static void ReadFrameSynchronously(RenderTexture source, Texture2D scratch, string filePath) {
+    RenderTexture? previous = RenderTexture.active;
+    try {
+      RenderTexture.active = source;
+      scratch.ReadPixels(new Rect(0, 0, scratch.width, scratch.height), 0, 0, false);
+      scratch.Apply(false);
+      File.WriteAllBytes(filePath, scratch.EncodeToJPG(75));
+    } catch (Exception ex) {
+      Log.Warning($"pickle: frame readback failed for {filePath}: {ex.Message}");
+    } finally {
+      RenderTexture.active = previous;
+    }
+  }
+
   private System.Collections.IEnumerator CaptureFrameCoroutine(string filePath, int maxWidth) {
     yield return new WaitForEndOfFrame();
 
@@ -200,19 +228,29 @@ public class PickleDriver : MonoBehaviour {
       }
 
       Texture2D scratch = frameScratch;
-      AsyncGPUReadback.Request(scaled, 0, TextureFormat.RGB24, request => {
-        if (request.hasError) {
-          return;
-        }
 
-        try {
-          scratch.LoadRawTextureData(request.GetData<byte>());
-          scratch.Apply(false);
-          File.WriteAllBytes(filePath, scratch.EncodeToJPG(75));
-        } catch (Exception ex) {
-          Log.Warning($"pickle: frame readback failed for {filePath}: {ex.Message}");
-        }
-      });
+      // Software rendering has no async readback, so fall back to pulling the pixels on
+      // this thread. Slower, but it is the difference between a film and nothing.
+      if (SystemInfo.supportsAsyncGPUReadback) {
+        RenderTexture source = scaled;
+        AsyncGPUReadback.Request(scaled, 0, TextureFormat.RGB24, request => {
+          if (request.hasError) {
+            WarnFrameReadbackOnce();
+            ReadFrameSynchronously(source, scratch, filePath);
+            return;
+          }
+
+          try {
+            scratch.LoadRawTextureData(request.GetData<byte>());
+            scratch.Apply(false);
+            File.WriteAllBytes(filePath, scratch.EncodeToJPG(75));
+          } catch (Exception ex) {
+            Log.Warning($"pickle: frame readback failed for {filePath}: {ex.Message}");
+          }
+        });
+      } else {
+        ReadFrameSynchronously(scaled, scratch, filePath);
+      }
     } catch (Exception ex) {
       Log.Warning($"pickle: failed to capture frame to {filePath}: {ex.Message}");
     } finally {
