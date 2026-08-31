@@ -26,7 +26,7 @@ jobs:
           distribution: zulu
 
       - name: Cache Sonar packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
@@ -34,7 +34,7 @@ jobs:
 
       - name: Cache Sonar scanner
         id: cache-sonar-scanner
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}/scanner
           key: ${{ runner.os }}-sonar-scanner

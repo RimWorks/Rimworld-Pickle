@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Feature, Scenario, Selection, Snapshot } from "./types";
+import { readTheme, writeTheme } from "./theme";
 import { Tree } from "./Tree";
 import { Detail } from "./Detail";
 import { Logo } from "./Logo";
@@ -23,14 +24,14 @@ export function Report() {
     return data ? (firstFailure(data.features) ?? firstScenario(data.features)) : null;
   });
   const [theme, setTheme] = useState<string>(
-    () => localStorage.getItem("pickle-theme") ?? "dim",
+    () => readTheme() ?? "dim",
   );
 
   const toggleTheme = () => {
     const next = theme === "dim" ? "winter" : "dim";
     setTheme(next);
     document.documentElement.dataset.theme = next;
-    localStorage.setItem("pickle-theme", next);
+    writeTheme(next);
   };
 
   if (!report) {

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { translator } from "./types";
+import { readTheme, writeTheme } from "./theme";
 import type { Feature, Scenario, Selection, Snapshot } from "./types";
 import { Tree } from "./Tree";
 import { Detail } from "./Detail";
@@ -14,13 +15,13 @@ export function App() {
   const [selected, setSelected] = useState<Selection | null>(() => readHash());
   const [aborting, setAborting] = useState(false);
   const [theme, setTheme] = useState<string>(
-    () => localStorage.getItem("pickle-theme") ?? THEMES.dark,
+    () => readTheme() ?? THEMES.dark,
   );
   const wasRunning = useRef(false);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem("pickle-theme", theme);
+    writeTheme(theme);
   }, [theme]);
 
   useEffect(() => {

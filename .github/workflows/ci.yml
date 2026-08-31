@@ -54,7 +54,7 @@ jobs:
         run: npm run build
 
       # The mod embeds these as resources, so the C# job needs them.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dashboard-dist
           path: Dashboard/dist
@@ -113,7 +113,7 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: dashboard-dist
           path: Dashboard/dist
@@ -161,7 +161,7 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: dashboard-dist
           path: Dashboard/dist
@@ -203,7 +203,8 @@ jobs:
           docker pull -q "$GAME_IMAGE"
           echo "pulled in $((SECONDS - start))s"
 
-          # The image runs as uid 1000, so the report directory has to be writable by it.
+          # The container writes its reports here as root, so the runner has to be able
+          # to read them back afterwards.
           mkdir -p "$PWD/pickle-reports"
           chmod 777 "$PWD/pickle-reports"
 
@@ -298,7 +299,8 @@ jobs:
 
           if [[ "$url" == https://* ]]; then
             echo "::notice title=Pickle report::${url}"
-            echo "**[Open the report](${url})** - failures carry screenshots." \
+            # GitHub may strip target; it degrades to a normal link if so.
+            echo "<a href=\"${url}\" target=\"_blank\" rel=\"noopener\"><strong>Open the report</strong></a> - failures carry screenshots." \
               >> "$GITHUB_STEP_SUMMARY"
           else
             echo "docbin upload did not return a url: $out"
@@ -306,7 +308,7 @@ jobs:
 
       - name: Upload the report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pickle-report-${{ matrix.backends }}
           path: pickle-reports/
