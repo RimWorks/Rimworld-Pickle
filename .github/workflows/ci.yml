@@ -12,9 +12,9 @@ on:
         type: boolean
         default: true
       film:
-        description: Record filmed scenarios. Slower, and frame readback is unreliable headless.
+        description: Record filmed scenarios. Adds roughly a fifth to the run.
         type: boolean
-        default: false
+        default: true
       suite-filter:
         description: Passed to -pickle-run. Empty runs the whole suite.
         type: string
@@ -193,9 +193,9 @@ jobs:
           # On every run except a dispatch that opts out. The URL is random and dies with
           # the job, and the dashboard only ever shows run progress.
           LIVE_DASHBOARD: ${{ github.event_name != 'workflow_dispatch' || inputs.live-dashboard }}
-          # Filming costs about a fifth of the run and its frame readback is unreliable
-          # under software rendering, so it is opt in rather than the default here.
-          FILM_SECONDS: ${{ inputs.film && '60' || '0' }}
+          # On unless a dispatch turns it off. Filming adds about a fifth to the run and
+          # every report then carries its own video.
+          FILM_SECONDS: ${{ github.event_name == 'workflow_dispatch' && !inputs.film && '0' || '60' }}
           SUITE_FILTER: ${{ inputs.suite-filter }}
         run: |
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
