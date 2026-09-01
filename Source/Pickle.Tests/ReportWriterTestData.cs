@@ -30,11 +30,12 @@ internal static class ReportWriterTestData {
                     new StepResult("Given", "I am on the login page", StepStatus.Passed, 100),
                     new StepResult("When", "I log in with bad credentials", StepStatus.Failed, 300, JUnitFailureMessage),
                 ],
-                400,
-                JUnitFailureMessage,
-                ["log line 1", "log line 2"],
-                [("screenshot", "/tmp/login-fail.png"), ("note", "some note")],
-                [("PlayerState", "hp=10")]),
+                400) {
+              FailureMessage = JUnitFailureMessage,
+              LogTail = ["log line 1", "log line 2"],
+              Attachments = [("screenshot", "/tmp/login-fail.png"), ("note", "some note")],
+              StateDumps = [("PlayerState", "hp=10")],
+            },
 
             new ScenarioResult(
                 "guest checkout",

@@ -70,15 +70,16 @@ public class BillSteps {
   [When("I wait for bill {string} to finish", TimeoutSeconds = 125f)]
   public async Task WaitForBill(PickleContext ctx, string recipeDefName) {
     RecipeDef recipe = DefLookup.Require<RecipeDef>(recipeDefName);
-    ThingDef? product = recipe.products?.FirstOrDefault()?.thingDef;
-    ctx.Require(product != null, $"recipe '{recipeDefName}' makes no thing, so nothing can be counted");
+    ThingDef? maybeProduct = recipe.products?.FirstOrDefault()?.thingDef;
+    ctx.Require(maybeProduct != null, $"recipe '{recipeDefName}' makes no thing, so nothing can be counted");
+    ThingDef product = maybeProduct!;
 
     Map map = MapLookup.RequireMap(ctx);
-    int before = CountOf(map, product!);
+    int before = CountOf(map, product);
 
     await ctx.AssertEventually(
-        () => CountOf(map, product!) > before,
-        () => $"no {product!.defName} was made; the map held {before} before and {CountOf(map, product!)} after",
+        () => CountOf(map, product) > before,
+        () => $"no {product.defName} was made; the map held {before} before and {CountOf(map, product)} after",
         120f);
   }
 

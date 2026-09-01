@@ -77,7 +77,7 @@ public class StepTable {
   }
 
   private Regex CompilePattern(string pattern) {
-    if (pattern.StartsWith("^")) {
+    if (pattern.Length > 0 && pattern[0] == '^') {
       return new Regex(pattern, RegexOptions.Compiled, RegexTimeout);
     }
 

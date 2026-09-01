@@ -155,8 +155,9 @@ public class MessagesNdjsonWriterTests {
                 new TagSet([]),
                 ScenarioOutcome.Failed,
                 [new StepResult("When", "it fails", StepStatus.Failed, 10, failureMessage)],
-                10,
-                failureMessage),
+                10) {
+              FailureMessage = failureMessage,
+            },
         ];
 
     string ndjson = MessagesNdjsonWriter.Write(results);

@@ -183,6 +183,31 @@ public class PickleDriver : MonoBehaviour {
         "This is expected without a real GPU; run with -pickle-max-film-seconds=0 there.");
   }
 
+  // Software rendering has no async readback, so fall back to pulling the pixels on
+  // this thread. Slower, but it is the difference between a film and nothing.
+  private static void ReadFrame(RenderTexture source, Texture2D scratch, string filePath) {
+    if (!SystemInfo.supportsAsyncGPUReadback) {
+      ReadFrameSynchronously(source, scratch, filePath);
+      return;
+    }
+
+    AsyncGPUReadback.Request(source, 0, TextureFormat.RGB24, request => {
+      if (request.hasError) {
+        WarnFrameReadbackOnce();
+        ReadFrameSynchronously(source, scratch, filePath);
+        return;
+      }
+
+      try {
+        scratch.LoadRawTextureData(request.GetData<byte>());
+        scratch.Apply(false);
+        File.WriteAllBytes(filePath, scratch.EncodeToJPG(75));
+      } catch (Exception ex) {
+        Log.Warning($"pickle: frame readback failed for {filePath}: {ex.Message}");
+      }
+    });
+  }
+
   private static void ReadFrameSynchronously(RenderTexture source, Texture2D scratch, string filePath) {
     RenderTexture? previous = RenderTexture.active;
     try {
@@ -229,28 +254,7 @@ public class PickleDriver : MonoBehaviour {
 
       Texture2D scratch = frameScratch;
 
-      // Software rendering has no async readback, so fall back to pulling the pixels on
-      // this thread. Slower, but it is the difference between a film and nothing.
-      if (SystemInfo.supportsAsyncGPUReadback) {
-        RenderTexture source = scaled;
-        AsyncGPUReadback.Request(scaled, 0, TextureFormat.RGB24, request => {
-          if (request.hasError) {
-            WarnFrameReadbackOnce();
-            ReadFrameSynchronously(source, scratch, filePath);
-            return;
-          }
-
-          try {
-            scratch.LoadRawTextureData(request.GetData<byte>());
-            scratch.Apply(false);
-            File.WriteAllBytes(filePath, scratch.EncodeToJPG(75));
-          } catch (Exception ex) {
-            Log.Warning($"pickle: frame readback failed for {filePath}: {ex.Message}");
-          }
-        });
-      } else {
-        ReadFrameSynchronously(scaled, scratch, filePath);
-      }
+      ReadFrame(scaled, scratch, filePath);
     } catch (Exception ex) {
       Log.Warning($"pickle: failed to capture frame to {filePath}: {ex.Message}");
     } finally {

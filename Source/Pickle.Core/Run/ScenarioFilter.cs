@@ -16,7 +16,7 @@ public static class ScenarioFilter {
   /// <c>path:line</c>, or <c>::name</c> to match a scenario in any feature.
   /// </summary>
   public static bool Matches(string modName, string? sourcePath, ScenarioPlan scenario, string term) {
-    if (term.StartsWith("@", StringComparison.Ordinal)) {
+    if (term.Length > 0 && term[0] == '@') {
       return scenario.Tags.Contains(term);
     }
 

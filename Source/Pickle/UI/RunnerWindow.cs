@@ -43,7 +43,6 @@ public class RunnerWindow : Window {
   private readonly HashSet<(string SourcePath, int ScenarioIndex)> deselectedScenarios = [];
   private RunPill? activePill;
   private bool restoreWindowAfterRun;
-  private (string SourcePath, int ScenarioIndex)? selected;
 
   public RunnerWindow() {
     optionalTitle = "Pickle_RunnerTitle".Translate();
@@ -114,10 +113,7 @@ public class RunnerWindow : Window {
       .Distinct()
       .OrderBy(t => t, StringComparer.OrdinalIgnoreCase);
 
-  internal (string SourcePath, int ScenarioIndex)? Selected {
-    get => selected;
-    set => selected = value;
-  }
+  internal (string SourcePath, int ScenarioIndex)? Selected { get; set; }
 
   // Preserved for RunnerWindowSmoke.cs, which relies on a full unconditional run.
   internal int ParsedFeaturesCount => parsedFeatures.Count;
@@ -176,11 +172,11 @@ public class RunnerWindow : Window {
     scenario = null!;
     scenarioIndex = -1;
 
-    if (selected == null) {
+    if (Selected == null) {
       return false;
     }
 
-    (string sourcePath, int index) = selected.Value;
+    (string sourcePath, int index) = Selected.Value;
     int running = 0;
 
     foreach ((DiscoveredSuite candidateSuite, FeaturePlan candidatePlan) in parsedFeatures) {
@@ -456,7 +452,7 @@ public class RunnerWindow : Window {
     Find.WindowStack.TryRemove(card, doCloseSound: false);
 
     if (card.Decision == BreakCardDecision.OpenInResults) {
-      selected = (info.SourcePath ?? string.Empty, info.ScenarioIndex);
+      Selected = (info.SourcePath ?? string.Empty, info.ScenarioIndex);
       session?.RequestCancel();
     } else if (card.Decision == BreakCardDecision.Abort) {
       session?.RequestCancel();
@@ -464,13 +460,13 @@ public class RunnerWindow : Window {
   }
 
   private void SelectFirstFailureIfNoneSelected() {
-    if (selected != null) {
+    if (Selected != null) {
       return;
     }
 
     foreach (KeyValuePair<(string SourcePath, int ScenarioIndex), ScenarioResult> entry in results) {
       if (entry.Value.Outcome == ScenarioOutcome.Failed) {
-        selected = entry.Key;
+        Selected = entry.Key;
         return;
       }
     }

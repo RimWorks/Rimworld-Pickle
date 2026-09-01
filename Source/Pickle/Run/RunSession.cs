@@ -303,11 +303,12 @@ public class RunSession {
             scenario.Tags,
             outcome,
             stepResults,
-            scenarioTimer.ElapsedMilliseconds,
-            failureMsg,
-            LogWatch.ErrorsSinceArmed,
-            attachmentsWithScreenshot,
-            stateDumps);
+            scenarioTimer.ElapsedMilliseconds) {
+          FailureMessage = failureMsg,
+          LogTail = LogWatch.ErrorsSinceArmed,
+          Attachments = attachmentsWithScreenshot,
+          StateDumps = stateDumps,
+        };
       }
 
       return new ScenarioResult(
@@ -316,10 +317,11 @@ public class RunSession {
           scenario.Tags,
           outcome,
           stepResults,
-          scenarioTimer.ElapsedMilliseconds,
-          failureMsg,
-          LogWatch.ErrorsSinceArmed,
-          ctx.Attachments);
+          scenarioTimer.ElapsedMilliseconds) {
+        FailureMessage = failureMsg,
+        LogTail = LogWatch.ErrorsSinceArmed,
+        Attachments = ctx.Attachments,
+      };
     } catch (Exception ex) {
       scenarioTimer.Stop();
 
@@ -339,11 +341,12 @@ public class RunSession {
           scenario.Tags,
           ScenarioOutcome.Failed,
           stepResults,
-          scenarioTimer.ElapsedMilliseconds,
-          ex.Message,
-          LogWatch.ErrorsSinceArmed,
-          attachmentsWithScreenshot,
-          stateDumps);
+          scenarioTimer.ElapsedMilliseconds) {
+        FailureMessage = ex.Message,
+        LogTail = LogWatch.ErrorsSinceArmed,
+        Attachments = attachmentsWithScreenshot,
+        StateDumps = stateDumps,
+      };
     } finally {
       film?.Finish();
       PickleRunMode.Current = modeBeforeScenario;
@@ -668,11 +671,12 @@ public class RunSession {
         scenario.Tags,
         ScenarioOutcome.Failed,
         stepResults,
-        scenarioTimer.ElapsedMilliseconds,
-        $"Log.Error during scenario: {errorMsg}",
-        LogWatch.ErrorsSinceArmed,
-        BuildAttachmentsWithScreenshot(ctx, screenshotPath),
-        stateDumps);
+        scenarioTimer.ElapsedMilliseconds) {
+      FailureMessage = $"Log.Error during scenario: {errorMsg}",
+      LogTail = LogWatch.ErrorsSinceArmed,
+      Attachments = BuildAttachmentsWithScreenshot(ctx, screenshotPath),
+      StateDumps = stateDumps,
+    };
   }
 
   // Only a real failure pauses, and only when a human is watching. An autorun has

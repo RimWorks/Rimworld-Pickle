@@ -70,7 +70,7 @@ public static class StepSkeletonGenerator {
       if (sanitized.Length > 0) {
         sb.Append(char.ToUpperInvariant(sanitized[0]));
         if (sanitized.Length > 1) {
-          sb.Append(sanitized.Substring(1));
+          sb.Append(sanitized, 1, sanitized.Length - 1);
         }
       }
     }

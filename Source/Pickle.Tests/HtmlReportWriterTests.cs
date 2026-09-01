@@ -89,8 +89,9 @@ public class HtmlReportWriterTests {
                 new Core.Model.TagSet([]),
                 ScenarioOutcome.Failed,
                 [new StepResult("Then", "boom", StepStatus.Failed, 1, "</script><script>alert(1)</script>")],
-                1,
-                "</script><script>alert(1)</script>"),
+                1) {
+              FailureMessage = "</script><script>alert(1)</script>",
+            },
         ];
 
     string html = HtmlReportWriter.Write(results, "failed", Template);
