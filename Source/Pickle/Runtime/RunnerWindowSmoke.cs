@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using RimWorks.Pickle.Runtime;
 using RimWorks.Pickle.UI;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
@@ -30,13 +31,13 @@ public static class RunnerWindowSmoke {
 
       int failedCount = window.FailedResultsCount;
       if (failedCount > 0) {
-        Log.Error($"pickle: runner window smoke failed: {failedCount} scenarios failed");
+        Log.Error("pickle: runner window smoke failed: {FailedCount} scenarios failed", [failedCount]);
         return;
       }
 
-      Log.Message("pickle: runner window smoke passed");
+      Log.Info("pickle: runner window smoke passed");
     } catch (Exception ex) {
-      Log.Error($"pickle: runner window smoke failed with exception: {ex}");
+      Log.Error(ex, "pickle: runner window smoke failed with exception");
     }
   }
 }

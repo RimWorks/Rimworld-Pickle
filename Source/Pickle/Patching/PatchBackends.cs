@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Patching;
 
@@ -44,7 +45,7 @@ public static class PatchBackends {
     }
 
     if (found.Count == 0) {
-      Log.Warning("pickle: no patching backend found yet; patch attribution is off for this run.");
+      Log.Warn("pickle: no patching backend found yet; patch attribution is off for this run.");
       return;
     }
 
@@ -54,10 +55,10 @@ public static class PatchBackends {
       try {
         backend.ApplyEarly();
         PatchAttribution.Arm();
-        Log.Message($"pickle: early hooks applied via {backend.Name}");
+        Log.Info("pickle: early hooks applied via {Backend}", [backend.Name]);
         return;
       } catch (Exception ex) {
-        Log.Error($"pickle: {backend.Name} backend failed to apply early patches: {ex}");
+        Log.Error(ex, $"pickle: {backend.Name} backend failed to apply early patches");
       }
     }
 
@@ -83,14 +84,19 @@ public static class PatchBackends {
       try {
         backend.Apply();
       } catch (Exception ex) {
-        Log.Error($"pickle: {backend.Name} backend failed to apply patches: {ex}");
+        Log.Error(ex, $"pickle: {backend.Name} backend failed to apply patches");
         continue;
       }
 
       string others = string.Join(", ", Registered.Where(r => r.Backend != backend).Select(r => r.Backend.Name));
-      Log.Message(others.Length == 0
-          ? $"pickle: patched via {backend.Name}"
-          : $"pickle: patched via {backend.Name} (priority {priority}); idle: {others}");
+      if (others.Length == 0) {
+        Log.Info("pickle: patched via {Backend}", [backend.Name]);
+      } else {
+        Log.Info(
+            "pickle: patched via {Backend} (priority {Priority}); idle: {Others}",
+            [backend.Name, priority, others]);
+      }
+
       return;
     }
 
@@ -114,7 +120,7 @@ public static class PatchBackends {
       try {
         into.Add(((IPatchBackend)Activator.CreateInstance(type)!, PriorityOf(type)));
       } catch (Exception ex) {
-        Log.Warning($"pickle: could not create backend {type.Name}: {ex.Message}");
+        Log.Warn(ex, $"pickle: could not create backend {type.Name}");
       }
     }
   }

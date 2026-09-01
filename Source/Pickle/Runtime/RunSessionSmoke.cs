@@ -12,6 +12,7 @@ using RimWorks.Pickle.Core.Run;
 using RimWorks.Pickle.Core.Steps;
 using RimWorks.Pickle.Run;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
@@ -50,7 +51,7 @@ Feature: Run Session Smoke Test
       List<ScenarioResult> results = await session.RunFeature(plan, "Pickle");
 
       if (results.Count != 3) {
-        Log.Error($"pickle: run session smoke failed: expected 3 scenarios, got {results.Count}");
+        Log.Error("pickle: run session smoke failed: expected 3 scenarios, got {Count}", [results.Count]);
         return;
       }
 
@@ -58,12 +59,16 @@ Feature: Run Session Smoke Test
       ScenarioResult second = results[1];
 
       if (first.Outcome != ScenarioOutcome.Passed) {
-        Log.Error($"pickle: run session smoke failed: first scenario outcome is {first.Outcome}, expected Passed");
+        Log.Error(
+            "pickle: run session smoke failed: first scenario outcome is {Outcome}, expected Passed",
+            [first.Outcome]);
         return;
       }
 
       if (second.Outcome != ScenarioOutcome.Failed) {
-        Log.Error($"pickle: run session smoke failed: second scenario outcome is {second.Outcome}, expected Failed");
+        Log.Error(
+            "pickle: run session smoke failed: second scenario outcome is {Outcome}, expected Failed",
+            [second.Outcome]);
         return;
       }
 
@@ -77,19 +82,24 @@ Feature: Run Session Smoke Test
       string failureMessage = second.FailureMessage ?? string.Empty;
       if (failureMessage.Length == 0 || !failureMessage.Contains("deliberate smoke failure")) {
         Log.Error(
-            $"pickle: run session smoke failed: second scenario failure message should name the assert, got: {second.FailureMessage}");
+            "pickle: run session smoke failed: second scenario failure message should name "
+            + "the assert, got: {FailureMessage}",
+            [second.FailureMessage]);
         return;
       }
 
       ScenarioResult third = results[2];
       if (third.Outcome != ScenarioOutcome.Passed) {
-        Log.Error($"pickle: run session smoke failed: fluent scenario outcome is {third.Outcome}, expected Passed ({third.FailureMessage})");
+        Log.Error(
+            "pickle: run session smoke failed: fluent scenario outcome is {Outcome}, "
+            + "expected Passed ({FailureMessage})",
+            [third.Outcome, third.FailureMessage]);
         return;
       }
 
-      Log.Message("pickle: run session smoke passed");
+      Log.Info("pickle: run session smoke passed");
     } catch (Exception ex) {
-      Log.Error($"pickle: run session smoke failed: {ex}");
+      Log.Error(ex, "pickle: run session smoke failed");
     }
   }
 }

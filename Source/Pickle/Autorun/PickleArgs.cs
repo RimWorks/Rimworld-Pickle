@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using RimWorks.Pickle.Run;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Autorun;
 
@@ -74,13 +75,13 @@ public sealed class PickleArgs {
   private static PickleArgsConfig? LoadConfig(string path) {
     try {
       if (!File.Exists(path)) {
-        Log.Warning($"pickle: config file not found: {path}");
+        Log.Warn("pickle: config file not found: {Path}", [path]);
         return null;
       }
 
       return PickleArgsConfig.Parse(File.ReadAllText(path));
     } catch (Exception ex) {
-      Log.Error($"pickle: failed to read config {path}: {ex.Message}");
+      Log.Error(ex, $"pickle: failed to read config {path}");
       return null;
     }
   }

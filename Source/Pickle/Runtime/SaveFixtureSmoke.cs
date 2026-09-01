@@ -5,6 +5,7 @@ using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Fixtures;
 using RimWorks.Pickle.UI;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
@@ -12,9 +13,9 @@ public static class SaveFixtureSmoke {
   public static async Task Run() {
     try {
       await RunAsync(PickleDriver.Instance);
-      Log.Message("pickle: save fixture smoke passed");
+      Log.Info("pickle: save fixture smoke passed");
     } catch (Exception ex) {
-      Log.Error("pickle: save fixture smoke failed: " + ex);
+      Log.Error(ex, "pickle: save fixture smoke failed");
     }
   }
 
@@ -58,6 +59,8 @@ public static class SaveFixtureSmoke {
     // It has to be loadable, or it is not a fixture.
     await FixtureLoader.LoadFixture(written, driver);
 
-    Log.Message($"pickle: save fixture wrote {info.Length} bytes to {written} and reloaded it");
+    Log.Info(
+        "pickle: save fixture wrote {Bytes} bytes to {Path} and reloaded it",
+        [info.Length, written]);
   }
 }

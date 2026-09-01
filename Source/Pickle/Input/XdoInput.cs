@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using UnityEngine;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Input;
 
@@ -55,12 +56,12 @@ public static class XdoInput {
     foreach (string line in output.Split('\n')) {
       string trimmed = line.Trim();
       if (trimmed.Length > 0 && ulong.TryParse(trimmed, out _)) {
-        Log.Message($"pickle: xdotool targeting game window {trimmed}");
+        Log.Info("pickle: xdotool targeting game window {Window}", [trimmed]);
         return trimmed;
       }
     }
 
-    Log.Warning("pickle: xdotool could not find the RimWorld window; falling back to screen coordinates");
+    Log.Warn("pickle: xdotool could not find the RimWorld window; falling back to screen coordinates");
     return null;
   }
 
@@ -128,7 +129,7 @@ public static class XdoInput {
     }
 
     if (stderr.Length > 0) {
-      Log.Warning($"pickle: xdotool {arguments} succeeded but wrote to stderr: {stderr}");
+      Log.Warn("pickle: xdotool {Arguments} succeeded but wrote to stderr: {Stderr}", [arguments, stderr]);
     }
   }
 

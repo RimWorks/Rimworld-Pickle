@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using RimWorks.Pickle.Evidence;
 using RimWorks.Pickle.Runtime;
 using UnityEngine;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Autorun;
 
@@ -60,14 +62,14 @@ public static class AutorunBootstrap {
       if (onError != null) {
         onError(msg);
       } else {
-        Log.Error(msg);
+        Log.Error("{Message}", [msg]);
       }
     }
   }
 
   private static async Task RunAutorun(PickleArgs args, string reportDir) {
-    Log.Message($"pickle: autorun report dir = {reportDir}");
-    Log.Message($"pickle: autorun seed = {args.Seed}");
+    Log.Info("pickle: autorun report dir = {ReportDir}", [reportDir]);
+    Log.Info("pickle: autorun seed = {Seed}", [args.Seed]);
 
     List<ScenarioResult> accumulated = new();
     int exitCode;
@@ -90,7 +92,7 @@ public static class AutorunBootstrap {
 
       exitCode = accumulated.Any(r => r.Outcome == ScenarioOutcome.Failed) ? 1 : 0;
     } catch (Exception ex) {
-      Log.Error($"pickle: autorun infrastructure error: {ex}");
+      Log.Error(ex, "pickle: autorun infrastructure error");
       exitCode = 2;
     } finally {
       AutorunState.IsAutorunning = false;
@@ -107,7 +109,7 @@ public static class AutorunBootstrap {
       _ => "infrastructure-error",
     });
 
-    Log.Message($"pickle: autorun exit code = {exitCode}");
+    Log.Info("pickle: autorun exit code = {ExitCode}", [exitCode]);
     Quit(exitCode);
   }
 
@@ -118,18 +120,22 @@ public static class AutorunBootstrap {
     }
 
     if (!FilmEncoder.Available) {
-      Log.Warning($"pickle: {films.Count} scenario(s) were filmed but ffmpeg is not on the PATH; frames were kept");
+      Log.Warn(
+          "pickle: {Count} scenario(s) were filmed but ffmpeg is not on the PATH; frames were kept",
+          [films.Count]);
       return;
     }
 
-    Log.Message($"pickle: encoding {films.Count} film(s) before exit");
+    Log.Info("pickle: encoding {Count} film(s) before exit", [films.Count]);
     for (int i = 0; i < films.Count; i++) {
       (string dir, double fps) = films[i];
-      Log.Message($"pickle: encoding film {i + 1}/{films.Count} at {fps:0.#} fps");
+      Log.Info(
+          "pickle: encoding film {Index}/{Count} at {Fps} fps",
+          [i + 1, films.Count, fps.ToString("0.#", CultureInfo.InvariantCulture)]);
       FilmEncoder.TryEncode(dir, fps);
     }
 
-    Log.Message($"pickle: encoded {films.Count} film(s)");
+    Log.Info("pickle: encoded {Count} film(s)", [films.Count]);
   }
 
   // Environment.Exit does not end the process under Unity's Mono, so a passing run

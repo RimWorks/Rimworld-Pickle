@@ -8,6 +8,7 @@ using RimWorks.Pickle.Core.Fixtures;
 using RimWorks.Pickle.Fixtures;
 using RimWorks.Pickle.Runtime;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle;
 
@@ -16,9 +17,9 @@ public static class FixtureSmoke {
     PickleDriver driver = PickleDriver.Instance;
     try {
       await RunAsync(driver);
-      Log.Message("pickle: fixture smoke passed");
+      Log.Info("pickle: fixture smoke passed");
     } catch (Exception ex) {
-      Log.Error("pickle: fixture smoke failed: " + ex);
+      Log.Error(ex, "pickle: fixture smoke failed");
     }
   }
 

@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using RimWorks.Pickle.Input;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
@@ -41,7 +42,7 @@ internal static class TagClickSmoke {
 
       try {
         if (!XdoInput.Available) {
-          Log.Warning("pickle: tag click smoke skipped - xdotool not available");
+          Log.Warn("pickle: tag click smoke skipped - xdotool not available");
           TagStore.SessionActive = false;
           Find.WindowStack.TryRemove(testWindow);
           return;
@@ -50,7 +51,7 @@ internal static class TagClickSmoke {
         await ctx.Click("pickle-smoke:btn");
         await driver.WaitFrames(2);
       } catch (InvalidOperationException clickEx) {
-        Log.Error($"pickle: tag click smoke failed - Click threw exception: {clickEx.Message}");
+        Log.Error(clickEx, "pickle: tag click smoke failed - Click threw exception");
         TagStore.SessionActive = false;
         Find.WindowStack.TryRemove(testWindow);
         return;
@@ -71,7 +72,9 @@ internal static class TagClickSmoke {
         return;
       } catch (InvalidOperationException missEx) {
         if (!missEx.Message.Contains("pickle-smoke:does-not-exist")) {
-          Log.Error($"pickle: tag click smoke failed - error message missing tag name: {missEx.Message}");
+          Log.Error(
+              "pickle: tag click smoke failed - error message missing tag name: {Message}",
+              [missEx.Message]);
           TagStore.SessionActive = false;
           Find.WindowStack.TryRemove(testWindow);
           return;
@@ -79,7 +82,9 @@ internal static class TagClickSmoke {
 
         if (!missEx.Message.Contains("pickle-smoke:btn")) {
           Log.Error(
-              $"pickle: tag click smoke failed - error message missing known tag 'pickle-smoke:btn': {missEx.Message}");
+              "pickle: tag click smoke failed - error message missing known tag "
+              + "'pickle-smoke:btn': {Message}",
+              [missEx.Message]);
           TagStore.SessionActive = false;
           Find.WindowStack.TryRemove(testWindow);
           return;
@@ -89,9 +94,9 @@ internal static class TagClickSmoke {
       Find.WindowStack.TryRemove(testWindow);
       TagStore.SessionActive = false;
 
-      Log.Message("pickle: tag click smoke passed");
+      Log.Info("pickle: tag click smoke passed");
     } catch (Exception ex) {
-      Log.Error($"pickle: tag click smoke failed with exception: {ex}");
+      Log.Error(ex, "pickle: tag click smoke failed with exception");
       TagStore.SessionActive = false;
     }
   }

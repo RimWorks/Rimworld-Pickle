@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
@@ -17,6 +18,7 @@ using RimWorks.Pickle.Evidence;
 using RimWorks.Pickle.Fixtures;
 using RimWorks.Pickle.Runtime;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Run;
 
@@ -115,7 +117,7 @@ public class RunSession {
       // skipped rather than failed.
       string? missingMod = RunOutcomes.MissingRequirement(scenario.Tags, IsModPresent);
       if (missingMod != null) {
-        Verse.Log.Message($"pickle: skipping '{scenario.Name}', '{missingMod}' is not loaded");
+        Log.Info("pickle: skipping '{Scenario}', '{MissingMod}' is not loaded", [scenario.Name, missingMod]);
       }
 
       if (missingMod != null || RunOutcomes.ShouldSkip(scenario.Tags, includeWip)) {
@@ -152,7 +154,9 @@ public class RunSession {
     int failedCount = results.Count(r => r.Outcome == ScenarioOutcome.Failed);
     int skippedCount = results.Count(r => r.Outcome == ScenarioOutcome.Skipped);
 
-    Verse.Log.Message($"pickle: run finished: {passedCount} passed, {failedCount} failed, {skippedCount} skipped");
+    Log.Info(
+        "pickle: run finished: {Passed} passed, {Failed} failed, {Skipped} skipped",
+        [passedCount, failedCount, skippedCount]);
 
     return results;
   }
@@ -166,8 +170,14 @@ public class RunSession {
       _ => "skipped",
     };
 
-    Verse.Log.Message(
-        $"pickle: {outcome} in {result.DurationMs:F0}ms: {result.FeatureName}: {result.ScenarioName}");
+    Log.Info(
+        "pickle: {Outcome} in {DurationMs}ms: {Feature}: {Scenario}",
+        [
+            outcome,
+            result.DurationMs.ToString("F0", CultureInfo.InvariantCulture),
+            result.FeatureName,
+            result.ScenarioName,
+        ]);
   }
 
   private static Task InvokeDelegateBinding(PickleContext ctx, Delegate @delegate, IReadOnlyList<object?> args) {
@@ -247,20 +257,15 @@ public class RunSession {
     PickleRunMode.Mode modeBeforeScenario = PickleRunMode.Current;
 
     try {
-      // Not Rand.PushState: Root.Update drains the stack whenever a step awaits past a
-      // frame, so the matching PopState throws. Seed reseeds the same stream instead.
-      // Above Arm on purpose: the setter logs an error when nothing has pushed a state,
-      // and Pickle never does, so arming first would fail the scenario on RimWorld's own
-      // complaint.
+      // not PushState: Root.Update drains the stack when a step awaits past a frame.
+      // above Arm because the setter logs an error when nothing has pushed a state.
       Rand.Seed = scenarioSeed;
       LogWatch.Arm();
 
       await RunBeforeHooks(ctx, scenario.Tags);
 
-      // no frame before the first step: a scenario usually opens by loading a fixture, so
-      // a frame taken here shows the world the previous scenario left behind
-      // Fast mode drives sixty ticks a frame, so a long wait costs almost no real time
-      // and films almost nothing. @watch trades run time for a real recording.
+      // fast mode drives sixty ticks a frame and films almost nothing, so @watch trades
+      // run time for a real recording.
       if (scenario.Tags.Contains(WatchTag)) {
         PickleRunMode.Current = PickleRunMode.Mode.Watch;
       }
@@ -628,7 +633,7 @@ public class RunSession {
       List<KeyValuePair<Type, object>> instances = [.. scenarioInstanceCache];
       stateDumps = StateDumpCollector.Collect(instances);
     } catch (Exception ex) {
-      Log.Warning($"pickle: error capturing evidence: {ex.Message}");
+      Log.Warn(ex, "pickle: error capturing evidence");
     }
 
     return (screenshotPath, stateDumps);

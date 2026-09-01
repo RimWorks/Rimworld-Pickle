@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using RimWorks.Pickle.Input;
 using UnityEngine;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
@@ -26,7 +27,7 @@ public static class WidgetCaptureSmoke {
 
       if (!found) {
         string knownTags = string.Join(", ", TagStore.KnownTags);
-        Log.Error($"pickle: widget capture smoke failed: btn:OK not found. known tags: {knownTags}");
+        Log.Error("pickle: widget capture smoke failed: btn:OK not found. known tags: {KnownTags}", [knownTags]);
         dialog.Close(false);
         return;
       }
@@ -43,7 +44,7 @@ public static class WidgetCaptureSmoke {
       try {
         await ctx.Click("btn:OK");
       } catch (Exception clickEx) {
-        Log.Error($"pickle: widget capture smoke failed: ctx.Click(\"btn:OK\") threw: {clickEx}");
+        Log.Error(clickEx, "pickle: widget capture smoke failed: ctx.Click(\"btn:OK\") threw");
         dialog.Close(false);
         return;
       }
@@ -55,9 +56,9 @@ public static class WidgetCaptureSmoke {
         return;
       }
 
-      Log.Message("pickle: widget capture smoke passed");
+      Log.Info("pickle: widget capture smoke passed");
     } catch (Exception ex) {
-      Log.Error($"pickle: widget capture smoke failed with exception: {ex}");
+      Log.Error(ex, "pickle: widget capture smoke failed with exception");
     }
   }
 }

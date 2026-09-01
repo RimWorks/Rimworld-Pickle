@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
@@ -9,9 +10,9 @@ public static class PumpSmoke {
     PickleContext ctx = new PickleContext();
     try {
       await RunAsync(ctx);
-      Log.Message("pickle: pump smoke passed");
+      Log.Info("pickle: pump smoke passed");
     } catch (Exception ex) {
-      Log.Error(ex.ToString());
+      Log.Error(ex, "pickle: pump smoke failed");
     }
   }
 

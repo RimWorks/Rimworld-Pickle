@@ -6,6 +6,7 @@ using System.Threading;
 using RimWorks.Pickle.Evidence;
 using RimWorks.Pickle.Run;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Web;
 
@@ -61,10 +62,10 @@ public static class PickleHttpServer {
       Thread worker = new Thread(Serve) { IsBackground = true, Name = "pickle-http" };
       worker.Start();
 
-      Log.Message($"pickle: dashboard on http://0.0.0.0:{port}/");
+      Log.Info("pickle: dashboard on http://0.0.0.0:{Port}/", [port]);
     } catch (Exception ex) {
       running = false;
-      Log.Error($"pickle: dashboard failed to start on port {port}: {ex.Message}");
+      Log.Error(ex, $"pickle: dashboard failed to start on port {port}");
     }
   }
 
@@ -92,7 +93,7 @@ public static class PickleHttpServer {
       try {
         Route(context);
       } catch (Exception ex) {
-        Log.Error($"pickle: dashboard request failed: {ex.Message}");
+        Log.Error(ex, "pickle: dashboard request failed");
       } finally {
         try {
           context.Response.Close();

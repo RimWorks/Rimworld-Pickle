@@ -15,6 +15,7 @@ using RimWorks.Pickle.Core.Steps;
 using RimWorks.Pickle.Run;
 using RimWorks.Pickle.Web;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
@@ -75,18 +76,18 @@ public static class SuiteRunner {
       }
 
       if (totalFailed == 0) {
-        Log.Message("pickle: suite passed");
+        Log.Info("pickle: suite passed");
       } else {
-        Log.Message("pickle: suite failed");
+        Log.Info("pickle: suite failed");
         foreach ((string name, string? message) in failedScenarios) {
-          Log.Error($"pickle: failed: {name}");
+          Log.Error("pickle: failed: {Name}", [name]);
           if (!string.IsNullOrEmpty(message)) {
-            Log.Error($"  {message}");
+            Log.Error("  {Message}", [message]);
           }
         }
       }
     } catch (Exception ex) {
-      Log.Error($"pickle: suite runner error: {ex.Message}\n{ex.StackTrace}");
+      Log.Error(ex, "pickle: suite runner error");
       throw;
     }
 
@@ -125,7 +126,7 @@ public static class SuiteRunner {
           FeaturePlan plan = GherkinAdapter.Adapt(gherkinDoc, featureFile);
           parsed.Add((suite, plan));
         } catch (Exception ex) {
-          Log.Error($"pickle: failed to parse {Path.GetFileName(featureFile)}: {ex.Message}");
+          Log.Error(ex, $"pickle: failed to parse {Path.GetFileName(featureFile)}");
         }
       }
     }
@@ -157,7 +158,7 @@ public static class SuiteRunner {
           Assembly loaded = Assembly.LoadFrom(stepsDll);
           assemblies.Add(loaded);
         } catch (Exception ex) {
-          Log.Warning($"pickle: failed to load steps dll {Path.GetFileName(stepsDll)}: {ex.Message}");
+          Log.Warn(ex, $"pickle: failed to load steps dll {Path.GetFileName(stepsDll)}");
         }
       }
     }

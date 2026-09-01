@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Evidence;
 
@@ -24,8 +25,9 @@ public static class FilmEncoder {
   public static string? TryEncode(string frameDirectory, double framesPerSecond) {
     string ffmpeg = ResolveFfmpeg();
     if (ffmpeg.Length == 0) {
-      Log.Warning(
-          $"pickle: no ffmpeg on PATH, so {frameDirectory} keeps its frames and gets no video.");
+      Log.Warn(
+          "pickle: no ffmpeg on PATH, so {FrameDirectory} keeps its frames and gets no video.",
+          [frameDirectory]);
       return null;
     }
 
@@ -52,7 +54,7 @@ public static class FilmEncoder {
       string errors = process.StandardError.ReadToEnd();
 
       if (!process.WaitForExit(TimeoutMs) || process.ExitCode != 0) {
-        Log.Warning($"pickle: ffmpeg could not encode {frameDirectory}: {Tail(errors)}");
+        Log.Warn("pickle: ffmpeg could not encode {FrameDirectory}: {Errors}", [frameDirectory, Tail(errors)]);
         return null;
       }
 
@@ -63,7 +65,7 @@ public static class FilmEncoder {
       PurgeFrames(frameDirectory);
       return output;
     } catch (Exception ex) {
-      Log.Warning($"pickle: ffmpeg failed for {frameDirectory}: {ex.Message}");
+      Log.Warn(ex, $"pickle: ffmpeg failed for {frameDirectory}");
       return null;
     }
   }
@@ -76,7 +78,7 @@ public static class FilmEncoder {
         File.Delete(frame);
       }
     } catch (Exception ex) {
-      Log.Warning($"pickle: kept frames in {frameDirectory}: {ex.Message}");
+      Log.Warn(ex, $"pickle: kept frames in {frameDirectory}");
     }
   }
 

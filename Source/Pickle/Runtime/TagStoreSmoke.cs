@@ -5,6 +5,7 @@ using RimWorks.Pickle.Input;
 using RimWorks.Pickle.Patching;
 using UnityEngine;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
@@ -63,7 +64,9 @@ internal static class TagStoreSmoke {
 
       if (!TagStore.KnownTags.Any(t => t == OneTag) || !TagStore.KnownTags.Any(t => t == DupTag)) {
         string knownTagsList = string.Join(", ", TagStore.KnownTags);
-        Log.Error($"pickle: tag store smoke failed - KnownTags missing expected tags: {knownTagsList}");
+        Log.Error(
+            "pickle: tag store smoke failed - KnownTags missing expected tags: {KnownTags}",
+            [knownTagsList]);
         return;
       }
 
@@ -75,9 +78,9 @@ internal static class TagStoreSmoke {
         return;
       }
 
-      Log.Message("pickle: tag store smoke passed");
+      Log.Info("pickle: tag store smoke passed");
     } catch (Exception ex) {
-      Log.Error($"pickle: tag store smoke failed with exception: {ex}");
+      Log.Error(ex, "pickle: tag store smoke failed with exception");
     }
   }
 }
