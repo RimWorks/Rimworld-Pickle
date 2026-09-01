@@ -27,7 +27,9 @@ public static class PickleDebugActions {
     _ = RunSessionSmoke.Run();
   }
 
-  [DebugAction("Pickle", "runner window", allowedGameStates = AllowedGameStates.PlayingOnMap)]
+  // no state bits means no requirement. IsAllowedInCurrentGameState ANDs every bit set,
+  // so Entry | PlayingOnMap would demand both at once and never show.
+  [DebugAction("Pickle", "runner window", allowedGameStates = AllowedGameStates.Invalid)]
   private static void RunnerWindowDebugAction() {
     PickleDriver.EnsureExists();
     Find.WindowStack.Add(RunnerWindow.Instance);
@@ -58,10 +60,9 @@ public static class PickleDebugActions {
     TagOverlay.Enabled = !TagOverlay.Enabled;
   }
 
-  // Void, not async Task: RimWorld binds every debug action with
-  // Delegate.CreateDelegate(typeof(Action)), and one that cannot bind aborts the whole
-  // menu build, for every mod, not just this one.
-  [DebugAction("Pickle", "run suite", allowedGameStates = AllowedGameStates.PlayingOnMap)]
+  // void, not async Task: Delegate.CreateDelegate(typeof(Action)) cannot bind a Task and
+  // one that fails aborts the menu build for every mod.
+  [DebugAction("Pickle", "run suite", allowedGameStates = AllowedGameStates.Invalid)]
   private static void RunSuiteDebugAction() {
     PickleDriver.EnsureExists();
     _ = RunSuite();
