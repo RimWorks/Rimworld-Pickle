@@ -176,7 +176,6 @@ dotnet_diagnostic.SA1615.severity = error
 dotnet_diagnostic.SA1618.severity = error
 
 # DISABLED: rules that conflict with the house style
-dotnet_diagnostic.S1135.severity = none # TODO(reason) is the house style for a tracked shortcut
 dotnet_diagnostic.SA0001.severity = none # XML comment analysis disabled — noise when GenerateDocumentationFile is off (app mods)
 dotnet_diagnostic.SA1623.severity = none # Property documentation doesnt need to start with Gets
 dotnet_diagnostic.SA1633.severity = none # file header — banned
@@ -428,3 +427,9 @@ dotnet_diagnostic.S2325.severity = none # ctx.Require is public API; static woul
 [Source/Pickle.Core/Run/ScenarioFilter.cs]
 dotnet_diagnostic.CA1846.severity = none # AsSpan overload of int.TryParse is not in net472
 dotnet_diagnostic.CA2249.severity = none # Contains with a StringComparison is not in net472
+
+# TODO(reason) is the house style for a tracked shortcut, so flagging every TODO fights the
+# convention that documents them. Needs a path in the section header: a bare [*.cs] loses to
+# the severity the sonar scanner injects at that same level.
+[Source/**.cs]
+dotnet_diagnostic.S1135.severity = none # TODO comments are required, not debt
