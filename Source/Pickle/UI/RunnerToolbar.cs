@@ -3,6 +3,7 @@ using RimWorks.Pickle.Runtime;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.UI;
 
@@ -103,7 +104,7 @@ public static class RunnerToolbar {
         UseShellExecute = true,
       });
     } catch (System.Exception ex) {
-      Log.Warning($"pickle: could not open report dir {dir}: {ex.Message}");
+      Log.Warn("pickle: could not open report dir {Dir}: {Error}", [dir, ex.Message]);
     }
 
     Messages.Message("Pickle_ReportDirMessage".Translate(dir), MessageTypeDefOf.NeutralEvent, false);

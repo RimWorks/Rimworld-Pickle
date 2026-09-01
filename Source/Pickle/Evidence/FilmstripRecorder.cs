@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using RimWorks.Pickle.Runtime;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Evidence;
 
@@ -89,9 +90,10 @@ public sealed class FilmstripRecorder {
     if (capped || clock.Elapsed.TotalSeconds >= MaxSeconds) {
       if (!capped) {
         capped = true;
-        Verse.Log.Warning(
-            $"pickle: '{scenarioName}' passed {MaxSeconds}s, so its film stops there. " +
-            "Raise it with -pickle-max-film-seconds.");
+        Log.Warn(
+            "pickle: '{Scenario}' passed {MaxSeconds}s, so its film stops there. " +
+            "Raise it with -pickle-max-film-seconds.",
+            [scenarioName, MaxSeconds]);
       }
 
       return;

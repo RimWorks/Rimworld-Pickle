@@ -5,6 +5,7 @@ using RimWorks.Pickle.Autorun;
 using RimWorks.Pickle.Runtime;
 using UnityEngine;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Evidence;
 
@@ -34,7 +35,9 @@ public static class ScreenshotCapture {
     }
 
     string fallback = Path.Combine(Path.GetTempPath(), "pickle-reports", "screenshots");
-    Log.Warning($"pickle: cannot write evidence to {preferred}; using {fallback} instead");
+    Log.Warn(
+        "pickle: cannot write evidence to {Preferred}; using {Fallback} instead",
+        [preferred, fallback]);
     TryCreate(fallback);
     resolvedDir = fallback;
     return resolvedDir;

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using RimWorks.Pickle.Autorun;
 using RimWorks.Pickle.Runtime;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Fixtures;
 
@@ -77,7 +78,7 @@ public static class FixtureLoader {
         File.Delete(path);
       }
     } catch {
-      Log.Warning("pickle: failed to delete temporary save file: " + path);
+      Log.Warn("pickle: failed to delete temporary save file: {Path}", [path]);
     }
   }
 }

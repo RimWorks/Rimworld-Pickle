@@ -5,6 +5,7 @@ using RimWorks.Pickle.Core.Discovery;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.UI;
 
@@ -91,7 +92,7 @@ public class SaveFixtureDialog : Window {
 
       Messages.Message("Pickle_SavedFixtureTo".Translate(target), MessageTypeDefOf.TaskCompletion, false);
     } catch (Exception ex) {
-      Log.Error($"pickle: save fixture failed: {ex}");
+      Log.Error(ex, "pickle: save fixture failed");
       Messages.Message("Pickle_SaveFixtureFailed".Translate(), MessageTypeDefOf.RejectInput, false);
     } finally {
       try {

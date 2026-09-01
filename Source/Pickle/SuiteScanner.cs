@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using RimWorks.Pickle.Core.Discovery;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle;
 
@@ -29,7 +30,9 @@ public static class SuiteScanner {
       int fixtureCount = suite.FixtureFiles.Count;
       int stepsCount = suite.StepsDlls.Count;
 
-      Log.Message($"pickle: suite {suite.ModName}: {featureCount} [{featureList}] {fixtureCount} fixture(s) {stepsCount} steps dll(s)");
+      Log.Info(
+          "pickle: suite {ModName}: {FeatureCount} [{FeatureList}] {FixtureCount} fixture(s) {StepsCount} steps dll(s)",
+          [suite.ModName, featureCount, featureList, fixtureCount, stepsCount]);
     }
   }
 }

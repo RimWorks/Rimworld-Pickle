@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using RimWorks.Pickle.Core.Steps;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle;
 
@@ -65,7 +66,9 @@ public static class StepScanner {
       return assembly.GetTypes();
     } catch (ReflectionTypeLoadException ex) {
       string reasons = string.Join("; ", ex.LoaderExceptions.Select(e => e?.Message ?? "unknown"));
-      Log.Warning($"pickle: {assembly.GetName().Name} has unloadable types, skipping them: {reasons}");
+      Log.Warn(
+          "pickle: {Assembly} has unloadable types, skipping them: {Reasons}",
+          [assembly.GetName().Name, reasons]);
       return ex.Types.Where(t => t != null).ToArray()!;
     }
   }

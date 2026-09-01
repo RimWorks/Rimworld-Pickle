@@ -3,6 +3,7 @@ using System.Reflection;
 using LudeonTK;
 using UnityEngine;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Input;
 
@@ -110,7 +111,9 @@ public static class EventSynth {
 
       // Diagnostic only. hotControl is backed by native code, so reading it after each
       // pass is the only way to see whether MouseDown grabbed control.
-      Log.Message($"pickle: event synth debug kind={kind} action={action} hotControl={GUIUtility.hotControl}");
+      Log.Info(
+          "pickle: event synth debug kind={Kind} action={Action} hotControl={HotControl}",
+          [kind, action, GUIUtility.hotControl]);
 
       pendingAction = null;
       pendingKind = null;

@@ -4,6 +4,7 @@ using LudeonTK;
 using RimWorks.Pickle.Input;
 using RimWorks.Pickle.UI;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
@@ -70,7 +71,7 @@ public static class PickleDebugActions {
     try {
       await SuiteRunner.Run();
     } catch (Exception ex) {
-      Log.Error(ex.ToString());
+      Log.Error(ex, "pickle: run suite debug action failed");
     }
   }
 }
