@@ -1,7 +1,10 @@
 import { translator } from "./types";
 import type { Snapshot } from "./types";
 
-export const post = (url: string) => fetch(url, { method: "POST" }).catch(() => {});
+// Resolved against our own origin so a path out of the snapshot can never aim the
+// request at another host.
+export const post = (path: string) =>
+  fetch(new URL(path, window.location.origin), { method: "POST" }).catch(() => {});
 
 export function Toolbar({ snap }: Readonly<{ snap: Snapshot }>) {
   const t = translator(snap);
