@@ -43,6 +43,25 @@ public class WorldSteps {
     GenSpawn.Spawn(thing, new IntVec3(x, 0, z), map, WipeMode.Vanish);
   }
 
+  // The colonist step only makes colonists. An anomaly entity, an animal or a raider is a
+  // PawnKindDef, and nothing could spawn one until now.
+  [When("I spawn a {string} pawn at \\({int}, {int}\\)")]
+  public void SpawnPawn(PickleContext ctx, string kindDefName, int x, int z) {
+    Map map = RequireMap(ctx);
+    PawnKindDef kind = DefLookup.Require<PawnKindDef>(kindDefName);
+    IntVec3 cell = new IntVec3(x, 0, z);
+
+    ctx.Require(
+        cell.InBounds(map),
+        $"cell ({x}, {z}) is outside the map, which is {map.Size.x} by {map.Size.z}");
+
+    Faction? faction = kind.defaultFactionDef == null
+        ? null
+        : Find.FactionManager.FirstFactionOfDef(kind.defaultFactionDef);
+    Pawn pawn = PawnGenerator.GeneratePawn(kind, faction);
+    GenSpawn.Spawn(pawn, cell, map);
+  }
+
   [Given("research {string} is finished")]
   public void ResearchFinished(PickleContext ctx, string defName) {
     ResearchProjectDef project = RequireResearchProjectDef(defName);

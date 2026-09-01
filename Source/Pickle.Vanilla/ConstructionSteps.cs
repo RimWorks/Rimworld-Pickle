@@ -31,6 +31,35 @@ public class ConstructionSteps {
         () => $"no blueprint for '{defName}' landed at {DescribeBare(map, cells, def)}");
   }
 
+  // Goes through the real Designator_Build rather than placing the blueprint directly, so a
+  // mod's own placement rules and their rejection reasons get exercised.
+  [When("I use the build designator for {string} at \\({int}, {int}\\)")]
+  public async Task DesignateWithDesignator(PickleContext ctx, string defName, int x, int z) {
+    Map map = MapLookup.RequireMap(ctx);
+    ThingDef def = DefLookup.Require<ThingDef>(defName);
+    IntVec3 cell = new IntVec3(x, 0, z);
+    MapLookup.RequireInBounds(ctx, map, cell);
+    ctx.Require(def.BuildableByPlayer, $"'{defName}' is not something the player can build");
+
+    Designator_Build designator = new Designator_Build(def);
+    if (def.MadeFromStuff) {
+      designator.SetStuffDef(GenStuff.DefaultStuffFor(def));
+    }
+
+    AcceptanceReport report = designator.CanDesignateCell(cell);
+    ctx.Require(
+        report.Accepted,
+        $"the build designator for '{defName}' refuses ({x}, {z}): " +
+        $"{(report.Reason.NullOrEmpty() ? "no reason given" : report.Reason)}");
+
+    designator.DesignateSingleCell(cell);
+
+    await ctx.AssertEventually(
+        () => BlueprintFor(map, cell, def) != null,
+        () => $"the designator accepted ({x}, {z}) but left no blueprint for '{defName}'; " +
+            $"the cell holds {MapLookup.DescribeCell(map, cell)}");
+  }
+
   [Then("a blueprint for {string} is at \\({int}, {int}\\)")]
   public void AssertBlueprint(PickleContext ctx, string defName, int x, int z) {
     Map map = MapLookup.RequireMap(ctx);

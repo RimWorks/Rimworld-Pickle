@@ -21,6 +21,21 @@ Feature: dlc steps
   Scenario: the monolith reports its study knowledge
     Then the "VoidMonolith" at (191, 117) study knowledge is above -1
 
+  @requires:Ideology
+  Scenario: a ritual can be started
+    Given a colonist "Host" exists
+    And a "RitualSpot" is built at (138, 168)
+    When I start ritual "RoleChange"
+    Then a ritual "RoleChange" is running
+
+  @requires:Anomaly
+  Scenario: an entity can be held on a platform
+    Given a "HoldingPlatform" is built at (137, 168)
+    Then the platform at (137, 168) is empty
+    When I spawn a "Fingerspike" pawn at (138, 166)
+    And I contain "Fingerspike" on the platform at (137, 168)
+    Then the platform at (137, 168) holds "Fingerspike"
+
   @requires:NoSuchModIsInstalled
   Scenario: a scenario for a mod nobody has is skipped
     Then the engine is alive

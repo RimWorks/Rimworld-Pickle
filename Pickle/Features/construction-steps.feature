@@ -11,6 +11,10 @@ Feature: construction steps
     When I create a stockpile from (150, 160) to (152, 162)
     Then a stockpile covers (151, 161)
 
+  Scenario: the build designator places a blueprint
+    When I use the build designator for "Wall" at (143, 150)
+    Then a blueprint for "Wall" is at (143, 150)
+
   @slow
   Scenario: a colonist builds what was designated
     Given a colonist "Builder" exists

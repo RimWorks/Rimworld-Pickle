@@ -79,6 +79,7 @@ with `ctx.Set<T>()` still points at the old game and needs setting again.
 | `a colonist {string} exists` | Finds the named colonist, or spawns one |
 | `{int} {string} is spawned at the stockpile` | Spawns items into the first stockpile |
 | `a {string} is built at ({int}, {int})` | Places a finished building at a map cell |
+| `I spawn a {string} pawn at ({int}, {int})` | Spawns any `PawnKindDef`: an animal, a raider, or an anomaly entity |
 | `research {string} is finished` | Marks a research project complete |
 | `game speed is {word}` | Sets the speed: `paused`, `normal`, `fast`, `superfast`, `ultrafast` |
 
@@ -274,11 +275,16 @@ fixture is one of those tiles.
 | --- | --- |
 | `the ideo has precept {string}` | Checks a precept on the player ideo |
 | `the ideo has no precept {string}` | Checks a precept is absent |
+| `I start ritual {string}` | Starts a ritual directly, skipping the begin dialog |
+| `a ritual {string} is running` | Checks a ritual lord is active on the map |
 | `I give {string} the title {string}` | Grants an Empire title. No rewards, no letter |
 | `{string} has title {string}` | Checks a pawn holds a title |
 | `{string} psylink level is {int}` | Checks psylink level |
 | `the {string} at ({int}, {int}) is studiable` | Checks the thing can be studied now |
 | `the {string} at ({int}, {int}) study knowledge is above {float}` | Reads knowledge gained so far |
+| `I contain {string} on the platform at ({int}, {int})` | Puts a spawned entity on a holding platform |
+| `the platform at ({int}, {int}) holds {string}` | Checks which entity a platform holds |
+| `the platform at ({int}, {int}) is empty` | Checks a platform holds nothing |
 
 **Tag a DLC scenario with `@requires:`.** Pickle skips a scenario tagged
 `@requires:Ideology` when Ideology is not loaded. Without the tag the scenario fails, which
@@ -289,17 +295,24 @@ The tag matches a mod name or a `packageId`, so `@requires:Royalty` and
 expansions.
 
 A failed precept check lists every precept the ideo holds. That is how you learn the real
-name of one, because a generated ideo picks its own.
+name of one, because a generated ideo picks its own. A failed ritual start does the same for
+rituals and marks the startable ones. A ritual with no target filter runs only from an
+obligation the game raises. No step can start one, and `Festival` is such a ritual.
 
 ## Zones and construction
 
 | Step | Does |
 | --- | --- |
 | `I designate a {string} from ({int}, {int}) to ({int}, {int})` | Places blueprints over a rectangle |
+| `I use the build designator for {string} at ({int}, {int})` | Places one blueprint through the real `Designator_Build` |
 | `a blueprint for {string} is at ({int}, {int})` | Checks a blueprint stands at a cell |
 | `I create a stockpile from ({int}, {int}) to ({int}, {int})` | Makes a stockpile zone |
 | `a stockpile covers ({int}, {int})` | Checks a cell is in a stockpile |
 | `I wait for the {string} at ({int}, {int}) to be built` | Waits for the real building to appear |
+
+`I designate` places blueprints itself. `I use the build designator` goes through the real
+`Designator_Build`, so a mod's own placement rules run and a refusal reports the game's
+reason. Prefer the designator when you test whether a colonist may build there at all.
 
 `a {string} is built at ({int}, {int})` places a finished building. It never exercises a
 blueprint, a frame, or the hauling and construction jobs. `I designate` places what the
