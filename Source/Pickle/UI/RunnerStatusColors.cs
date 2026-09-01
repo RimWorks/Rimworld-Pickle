@@ -41,21 +41,4 @@ public static class RunnerStatusColors {
   public static void DrawDot(Vector2 center, Color color, float size = 8f) {
     Widgets.DrawBoxSolid(new Rect(center.x - (size / 2f), center.y - (size / 2f), size, size), color);
   }
-
-  // Widgets.Label clips at the Rect edge instead of ellipsizing, which reads as broken.
-  // Trim to the widest prefix that fits.
-  public static string Ellipsize(string text, float maxWidth) {
-    if (Text.CalcSize(text).x <= maxWidth) {
-      return text;
-    }
-
-    for (int length = text.Length - 1; length > 0; length--) {
-      string candidate = text[..length] + "…";
-      if (Text.CalcSize(candidate).x <= maxWidth) {
-        return candidate;
-      }
-    }
-
-    return "…";
-  }
 }

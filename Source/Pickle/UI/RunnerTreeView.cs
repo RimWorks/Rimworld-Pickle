@@ -4,15 +4,16 @@ using System.Linq;
 using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Core.Model;
 using RimWorks.Pickle.Core.Run;
+using RimWorks.Pickle.Core.Ui;
+using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.Sound;
 
 namespace RimWorks.Pickle.UI;
 
-/// <summary>
-/// Left-pane tree with tri-state checkboxes that derive from their scenario children.
-/// Indices are numbered as RunAsync numbers them, so a row matches its stored result.
-/// </summary>
+/// <summary>Left-pane tree with tri-state checkboxes that derive from their scenario children.
+/// Indices are numbered as RunAsync numbers them, so a row matches its stored result.</summary>
 public static class RunnerTreeView {
   private const float ModRowHeight = 26f;
   private const float FeatureRowHeight = 22f;
@@ -24,10 +25,43 @@ public static class RunnerTreeView {
   private const float FeatureCheckboxSize = 18f;
   private const float ScenarioCheckboxSize = 16f;
 
+  // Rebuilt on Layout only. IMGUI replays DoWindowContents once per queued event, and
+  // every pass of a frame has to see the same rows or control ids stop lining up.
+  private static readonly List<Row> Rows = [];
+  private static readonly List<float> RowTops = [];
+
+  // GenText.Truncate measures the font per character on every miss, so each label
+  // width gets its own cache; a pane resize drops all three.
+  private static readonly Dictionary<string, string> ModTruncation = [];
+  private static readonly Dictionary<string, string> FeatureTruncation = [];
+  private static readonly Dictionary<string, string> ScenarioTruncation = [];
+
+  private static float contentHeight;
+  private static int visibleFirst;
+  private static int visibleLast;
+  private static int lastWidthKey = -1;
+
+  private enum RowKind {
+    Mod,
+    Feature,
+    Scenario,
+  }
+
   public static void Draw(Rect outRect, RunnerWindow window) {
-    Dictionary<FeaturePlan, int> startIndices = ComputeStartIndices(window);
-    float contentHeight = MeasureHeight(window);
+    if (Event.current.type == EventType.Layout) {
+      RebuildRows(window);
+    }
+
     Rect viewRect = new Rect(0f, 0f, outRect.width - 16f, contentHeight);
+
+    // The truncation caches key on the string alone, so a new width invalidates them.
+    int widthKey = Mathf.RoundToInt(viewRect.width);
+    if (widthKey != lastWidthKey) {
+      ModTruncation.Clear();
+      FeatureTruncation.Clear();
+      ScenarioTruncation.Clear();
+      lastWidthKey = widthKey;
+    }
 
     Vector2 scroll = window.TreeScroll;
     Widgets.BeginScrollView(outRect, ref scroll, viewRect);
@@ -37,7 +71,40 @@ public static class RunnerTreeView {
     // into the row below instead of clipping, corrupting the whole tree.
     Text.WordWrap = false;
 
+    // Picked on Layout only. A range that moved mid-frame would change how many controls
+    // draw, shifting the scrollbar's ids out from under an active drag.
+    if (Event.current.type == EventType.Layout) {
+      (visibleFirst, visibleLast) = RowRange.Visible(RowTops, contentHeight, scroll.y, outRect.height);
+    }
+
+    int first = Math.Min(visibleFirst, Rows.Count);
+    int last = Math.Min(visibleLast, Rows.Count);
+    for (int i = first; i < last; i++) {
+      Row row = Rows[i];
+      Rect rowRect = new Rect(0f, RowTops[i], viewRect.width, row.Height);
+      switch (row.Kind) {
+        case RowKind.Mod:
+          DrawModRow(rowRect, window, row.ModName, row.ModScenarioCount, row.ModFeatures!);
+          break;
+        case RowKind.Feature:
+          DrawFeatureRow(rowRect, window, row.Plan!, row.Index);
+          break;
+        default:
+          DrawScenarioRow(rowRect, window, row.Plan!, row.Scenario!, row.Index);
+          break;
+      }
+    }
+
+    Text.WordWrap = true;
+    Widgets.EndScrollView();
+  }
+
+  private static void RebuildRows(RunnerWindow window) {
+    Rows.Clear();
+    RowTops.Clear();
     float y = 0f;
+
+    Dictionary<FeaturePlan, int> startIndices = ComputeStartIndices(window);
     foreach (IGrouping<string, (DiscoveredSuite Suite, FeaturePlan Plan)> group in window.ParsedFeatures.GroupBy(f => f.Suite.ModName)) {
       List<(DiscoveredSuite Suite, FeaturePlan Plan)> features = [.. group.Where(f => FeatureHasVisibleScenario(window, f.Suite, f.Plan))];
 
@@ -48,49 +115,38 @@ public static class RunnerTreeView {
       // Uses the unfiltered group so the mod checkbox always covers every scenario. A search
       // that hides rows should not shrink what select-all means.
       List<(FeaturePlan Plan, int StartIndex)> modFeatures = [.. group.Select(f => (f.Plan, startIndices[f.Plan]))];
-      int modScenarioCount = group.Sum(f => f.Plan.Scenarios.Count);
-      DrawModRow(new Rect(0f, y, viewRect.width, ModRowHeight), window, group.Key, modScenarioCount, modFeatures);
-      y += ModRowHeight;
+      y = AddRow(
+          new Row {
+            Kind = RowKind.Mod,
+            Height = ModRowHeight,
+            ModName = group.Key,
+            ModScenarioCount = group.Sum(f => f.Plan.Scenarios.Count),
+            ModFeatures = modFeatures,
+          },
+          y);
 
       foreach ((DiscoveredSuite suite, FeaturePlan plan) in features) {
         int startIndex = startIndices[plan];
-        DrawFeatureRow(new Rect(0f, y, viewRect.width, FeatureRowHeight), window, plan, startIndex);
-        y += FeatureRowHeight;
+        y = AddRow(new Row { Kind = RowKind.Feature, Height = FeatureRowHeight, Plan = plan, Index = startIndex }, y);
 
         for (int i = 0; i < plan.Scenarios.Count; i++) {
           ScenarioPlan scenario = plan.Scenarios[i];
-          int scenarioIndex = startIndex + i;
           if (!IsScenarioVisible(window, suite, plan, scenario)) {
             continue;
           }
 
-          DrawScenarioRow(new Rect(0f, y, viewRect.width, ScenarioRowHeight), window, plan, scenario, scenarioIndex);
-          y += ScenarioRowHeight;
+          y = AddRow(new Row { Kind = RowKind.Scenario, Height = ScenarioRowHeight, Plan = plan, Scenario = scenario, Index = startIndex + i }, y);
         }
       }
     }
 
-    Text.WordWrap = true;
-    Widgets.EndScrollView();
+    contentHeight = y;
   }
 
-  private static float MeasureHeight(RunnerWindow window) {
-    float height = 0f;
-    foreach (IGrouping<string, (DiscoveredSuite Suite, FeaturePlan Plan)> group in window.ParsedFeatures.GroupBy(f => f.Suite.ModName)) {
-      List<(DiscoveredSuite Suite, FeaturePlan Plan)> features = [.. group.Where(f => FeatureHasVisibleScenario(window, f.Suite, f.Plan))];
-
-      if (features.Count == 0) {
-        continue;
-      }
-
-      height += ModRowHeight;
-      foreach ((DiscoveredSuite suite, FeaturePlan plan) in features) {
-        height += FeatureRowHeight;
-        height += plan.Scenarios.Count(s => IsScenarioVisible(window, suite, plan, s)) * ScenarioRowHeight;
-      }
-    }
-
-    return height;
+  private static float AddRow(Row row, float y) {
+    Rows.Add(row);
+    RowTops.Add(y);
+    return y + row.Height;
   }
 
   private static Dictionary<FeaturePlan, int> ComputeStartIndices(RunnerWindow window) {
@@ -130,7 +186,7 @@ public static class RunnerTreeView {
 
     MultiCheckboxState state = ComputeCheckState(window, modFeatures);
     Rect checkRect = new Rect(rect.x + ModIndent, rect.y + ((rect.height - ModCheckboxSize) / 2f), ModCheckboxSize, ModCheckboxSize);
-    MultiCheckboxState newState = Widgets.CheckboxMulti(checkRect, state);
+    MultiCheckboxState newState = CheckboxMultiIdFree(checkRect, state);
     if (newState != state) {
       bool selected = newState == MultiCheckboxState.On;
       foreach ((FeaturePlan plan, int startIndex) in modFeatures) {
@@ -140,7 +196,7 @@ public static class RunnerTreeView {
 
     Rect labelRect = new Rect(checkRect.xMax + 6f, rect.y, rect.width - checkRect.xMax - 90f, rect.height);
     Text.Anchor = TextAnchor.MiddleLeft;
-    Widgets.Label(labelRect, RunnerStatusColors.Ellipsize(modName, labelRect.width));
+    Widgets.Label(labelRect, modName.Truncate(labelRect.width, ModTruncation));
 
     Text.Font = GameFont.Tiny;
     GUI.color = RunnerStatusColors.Muted;
@@ -157,7 +213,7 @@ public static class RunnerTreeView {
 
     MultiCheckboxState state = ComputeCheckState(window, plan, startIndex);
     Rect checkRect = new Rect(rect.x + FeatureIndent, rect.y + ((rect.height - FeatureCheckboxSize) / 2f), FeatureCheckboxSize, FeatureCheckboxSize);
-    MultiCheckboxState newState = Widgets.CheckboxMulti(checkRect, state);
+    MultiCheckboxState newState = CheckboxMultiIdFree(checkRect, state);
     if (newState != state) {
       SetScenariosSelected(window, plan, startIndex, newState == MultiCheckboxState.On);
     }
@@ -183,7 +239,7 @@ public static class RunnerTreeView {
     float labelX = dotX + 12f;
     Rect labelRect = new Rect(labelX, rect.y, rect.width - (labelX - rect.x) - 100f, rect.height);
     Text.Anchor = TextAnchor.MiddleLeft;
-    Widgets.Label(labelRect, RunnerStatusColors.Ellipsize(plan.Name, labelRect.width));
+    Widgets.Label(labelRect, plan.Name.Truncate(labelRect.width, FeatureTruncation));
 
     Text.Font = GameFont.Tiny;
     GUI.color = failed > 0 ? RunnerStatusColors.FailedText : RunnerStatusColors.Muted;
@@ -210,10 +266,11 @@ public static class RunnerTreeView {
 
     Rect checkRect = new Rect(rect.x + ScenarioIndent, rect.y + ((rect.height - ScenarioCheckboxSize) / 2f), ScenarioCheckboxSize, ScenarioCheckboxSize);
     bool selected = window.IsScenarioSelected(sourcePath, scenarioIndex);
-    bool newSelected = selected;
-    Widgets.Checkbox(checkRect.position, ref newSelected, ScenarioCheckboxSize);
-    if (newSelected != selected) {
-      window.SetScenarioSelected(sourcePath, scenarioIndex, newSelected);
+    Widgets.CheckboxDraw(checkRect.x, checkRect.y, selected, disabled: false, ScenarioCheckboxSize);
+    MouseoverSounds.DoRegion(checkRect);
+    if (ClickedIdFree(checkRect)) {
+      window.SetScenarioSelected(sourcePath, scenarioIndex, !selected);
+      PlayCheckboxSound(!selected);
     }
 
     float dotX = checkRect.xMax + 10f;
@@ -222,7 +279,7 @@ public static class RunnerTreeView {
     float labelX = dotX + 10f;
     Rect labelRect = new Rect(labelX, rect.y, rect.width - (labelX - rect.x) - 70f, rect.height);
     Text.Anchor = TextAnchor.MiddleLeft;
-    Widgets.Label(labelRect, RunnerStatusColors.Ellipsize(scenario.Name, labelRect.width));
+    Widgets.Label(labelRect, scenario.Name.Truncate(labelRect.width, ScenarioTruncation));
 
     if (hasResult) {
       Text.Font = GameFont.Tiny;
@@ -236,9 +293,47 @@ public static class RunnerTreeView {
 
     Text.Anchor = TextAnchor.UpperLeft;
 
-    if (Widgets.ButtonInvisible(rect)) {
+    MouseoverSounds.DoRegion(rect);
+    if (ClickedIdFree(rect)) {
       window.Selected = (sourcePath, scenarioIndex);
     }
+  }
+
+  // Widgets' buttons and checkboxes allocate an IMGUI control id each; culling makes the row
+  // count move with the scroll, which would shift the scrollbar's ids mid-drag. No ids here.
+  private static bool ClickedIdFree(Rect rect) {
+    if (Event.current.type != EventType.MouseDown || Event.current.button != 0 || !Mouse.IsOver(rect)) {
+      return false;
+    }
+
+    Event.current.Use();
+    return true;
+  }
+
+  private static MultiCheckboxState CheckboxMultiIdFree(Rect rect, MultiCheckboxState state) {
+    Texture2D tex = state switch {
+      MultiCheckboxState.On => Widgets.CheckboxOnTex,
+      MultiCheckboxState.Off => Widgets.CheckboxOffTex,
+      _ => Widgets.CheckboxPartialTex,
+    };
+
+    MouseoverSounds.DoRegion(rect);
+    GUI.color = Mouse.IsOver(rect) ? GenUI.MouseoverColor : Color.white;
+    GUI.DrawTexture(rect, tex);
+    GUI.color = Color.white;
+
+    if (!ClickedIdFree(rect)) {
+      return state;
+    }
+
+    // Off goes to On; On or Partial go to Off, matching Widgets.CheckboxMulti.
+    MultiCheckboxState next = state == MultiCheckboxState.Off ? MultiCheckboxState.On : MultiCheckboxState.Off;
+    PlayCheckboxSound(next == MultiCheckboxState.On);
+    return next;
+  }
+
+  private static void PlayCheckboxSound(bool on) {
+    (on ? SoundDefOf.Checkbox_TurnedOn : SoundDefOf.Checkbox_TurnedOff).PlayOneShotOnCamera();
   }
 
   private static void SetScenariosSelected(RunnerWindow window, FeaturePlan plan, int startIndex, bool selected) {
@@ -302,5 +397,24 @@ public static class RunnerTreeView {
     }
 
     return ran > 0 ? $"{ran}/{total}" : "not run";
+  }
+
+  // One flat draw entry; Kind picks which of the three shapes is populated.
+  private sealed class Row {
+    public RowKind Kind { get; set; }
+
+    public float Height { get; set; }
+
+    public string ModName { get; set; } = string.Empty;
+
+    public int ModScenarioCount { get; set; }
+
+    public List<(FeaturePlan Plan, int StartIndex)>? ModFeatures { get; set; }
+
+    public FeaturePlan? Plan { get; set; }
+
+    public ScenarioPlan? Scenario { get; set; }
+
+    public int Index { get; set; }
   }
 }
