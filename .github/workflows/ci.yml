@@ -78,6 +78,11 @@ jobs:
           reporter: github-pr-check
           fail_on_error: true
 
+      # A step nobody documented is a step nobody can find, so the catalogue is a build
+      # requirement rather than a nicety.
+      - name: Step docs
+        run: python3 .github/scripts/check-step-docs.py
+
   links:
     name: links
     runs-on: ubuntu-latest
