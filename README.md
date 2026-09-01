@@ -3,7 +3,7 @@
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=RimWorks_Rimworld-Pickle&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=RimWorks_Rimworld-Pickle)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=RimWorks_Rimworld-Pickle&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=RimWorks_Rimworld-Pickle)
 
-<img src="About/ModIcon.png" alt="Pickle icon" width="96" align="right">
+<img src="https://raw.githubusercontent.com/RimWorks/Rimworld-Pickle/main/About/ModIcon.png" alt="Pickle icon" width="96" align="right">
 
 Pickle runs [Gherkin](https://cucumber.io/docs/gherkin/) scenarios inside a live
 RimWorld session. Your tests click the real UI, wait on real game state, and assert
@@ -11,7 +11,7 @@ against the running simulation.
 
 It is a test runner for mod authors, not a mod for players.
 
-![Pickle preview card](About/Preview.png)
+![Pickle preview card](https://raw.githubusercontent.com/RimWorks/Rimworld-Pickle/main/About/Preview.png)
 
 ## Install
 
