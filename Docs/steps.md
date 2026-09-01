@@ -217,6 +217,8 @@ the step reports whether a doctor could take the job and whether the map had a m
 | `{string} opinion of {string} is {int}` | Checks an exact opinion |
 | `{string} opinion of {string} is above {int}` | Checks the opinion is higher |
 | `{string} opinion of {string} is below {int}` | Checks the opinion is lower |
+| `I remember {string} opinion of {string}` | Records an opinion so a later step can compare against it |
+| `{string} opinion of {string} rose` | Checks the opinion is higher than the remembered one, which holds the pawn's random traits constant |
 | `{string} and {string} are {string}` | Checks whether two pawns hold a relation def |
 | `I make {string} and {string} {string}` | Adds a direct relation between two pawns |
 

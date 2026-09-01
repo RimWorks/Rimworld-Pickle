@@ -20,6 +20,7 @@ Feature: thought steps
   Scenario: a relation can be made and read back
     Given a colonist "Wed" exists
     And a colonist "Lock" exists
+    And I remember "Wed" opinion of "Lock"
     When I make "Wed" and "Lock" "Spouse"
     Then "Wed" and "Lock" are "Spouse"
-    And "Wed" opinion of "Lock" is above 0
+    And "Wed" opinion of "Lock" rose

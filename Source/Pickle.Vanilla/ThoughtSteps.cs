@@ -69,6 +69,32 @@ public class ThoughtSteps {
     AssertOpinionThat(ctx, nickname, otherNickname, actual => actual == expected, $"should be {expected}");
   }
 
+  // Net opinion sums the relation with whatever traits the pawn rolled, and a random pair
+  // can cancel a relation exactly. Reading before and after holds the traits constant.
+  [Given("I remember {string} opinion of {string}")]
+  public void RememberOpinion(PickleContext ctx, string nickname, string otherNickname) {
+    Pawn pawn = PawnLookup.RequireLiving(nickname);
+    Pawn other = PawnLookup.RequireLiving(otherNickname);
+
+    ctx.Require(pawn.relations != null, $"pawn '{nickname}' has no relations tracker");
+    ctx.Set(new RememberedOpinion(nickname, otherNickname, pawn.relations!.OpinionOf(other)));
+  }
+
+  [Then("{string} opinion of {string} rose")]
+  public void AssertOpinionRose(PickleContext ctx, string nickname, string otherNickname) {
+    RememberedOpinion before = RequireRemembered(ctx, nickname, otherNickname);
+    Pawn pawn = PawnLookup.RequireLiving(nickname);
+    Pawn other = PawnLookup.RequireLiving(otherNickname);
+
+    int actual = pawn.relations!.OpinionOf(other);
+    bool rose = actual > before.Value;
+
+    ctx.Assert(
+        rose,
+        rose ? null : $"'{nickname}' opinion of '{otherNickname}' should have risen from " +
+            $"{before.Value}; actual {actual}. {pawn.relations.OpinionExplanation(other)}");
+  }
+
   [Then("{string} opinion of {string} is above {int}")]
   public void AssertOpinionAbove(PickleContext ctx, string nickname, string otherNickname, int bound) {
     AssertOpinionThat(ctx, nickname, otherNickname, actual => actual > bound, $"should be above {bound}");
@@ -182,5 +208,40 @@ public class ThoughtSteps {
   private static string DescribeRelations(Pawn pawn, Pawn other) {
     List<string> names = [.. PawnRelationUtility.GetRelations(pawn, other).Select(r => r.defName)];
     return names.Count == 0 ? "they hold no relation to each other" : $"relations: {string.Join(", ", names)}";
+  }
+
+  private static RememberedOpinion RequireRemembered(
+      PickleContext ctx, string nickname, string otherNickname) {
+    RememberedOpinion? before = null;
+    try {
+      before = ctx.Get<RememberedOpinion>();
+    } catch (InvalidOperationException) {
+      // nothing remembered, reported below with the step that was missed
+    }
+
+    ctx.Require(
+        before != null,
+        $"no opinion was remembered, so there is nothing to compare against. " +
+        $"use 'I remember \"{nickname}\" opinion of \"{otherNickname}\"' first");
+    ctx.Require(
+        before!.Of == nickname && before.About == otherNickname,
+        $"the remembered opinion was '{before.Of}' of '{before.About}', " +
+        $"not '{nickname}' of '{otherNickname}'");
+
+    return before;
+  }
+
+  private sealed class RememberedOpinion {
+    public RememberedOpinion(string of, string about, int value) {
+      Of = of;
+      About = about;
+      Value = value;
+    }
+
+    public string Of { get; }
+
+    public string About { get; }
+
+    public int Value { get; }
   }
 }
