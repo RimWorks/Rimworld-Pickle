@@ -18,10 +18,6 @@ public class HarmonyBackend : IPatchBackend {
 
   public string Name => "Harmony";
 
-  public static void LogErrorPostfix(string text) {
-    PickleHooks.AfterLogError(text);
-  }
-
   public static void UIRootOnGUIPrefix() {
     PickleHooks.BeforeUIRootOnGUI();
   }
@@ -61,10 +57,6 @@ public class HarmonyBackend : IPatchBackend {
 
   public void Apply() {
     HarmonyLib.Harmony harmony = new HarmonyLib.Harmony("rimworks.pickle");
-
-    harmony.Patch(
-        typeof(Log).GetMethod("Error", [typeof(string)]),
-        postfix: Handler(nameof(LogErrorPostfix)));
 
     harmony.Patch(
         typeof(UIRoot).GetMethod(nameof(UIRoot.UIRootOnGUI)),

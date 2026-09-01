@@ -19,10 +19,6 @@ public class ConcordBackend : IPatchBackend {
 
   public string Name => "Concord";
 
-  public static void AfterLogError(string text) {
-    PickleHooks.AfterLogError(text);
-  }
-
   public static void BeforeUIRootOnGUI() {
     PickleHooks.BeforeUIRootOnGUI();
   }
@@ -61,11 +57,6 @@ public class ConcordBackend : IPatchBackend {
   }
 
   public void Apply() {
-    Patcher.Patch(
-        typeof(Log).GetMethod("Error", [typeof(string)]),
-        Injection(nameof(AfterLogError)),
-        At.Tail);
-
     Patcher.Patch(
         typeof(UIRoot).GetMethod(nameof(UIRoot.UIRootOnGUI)),
         Injection(nameof(BeforeUIRootOnGUI)),

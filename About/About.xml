@@ -7,8 +7,16 @@
     <li>1.6</li>
   </supportedVersions>
   <description>In-game BDD testing for RimWorld mods. Runs Gherkin scenarios inside a live session: they click the real UI, wait on real game state, and assert against the running simulation. Needs Harmony or Concord.</description>
+  <modDependencies>
+    <li>
+      <packageId>RimWorks.RimLogging</packageId>
+      <displayName>RimLogging</displayName>
+      <steamWorkshopUrl>steam://url/CommunityFilePage/3733484696</steamWorkshopUrl>
+    </li>
+  </modDependencies>
   <loadAfter>
     <li>brrainz.harmony</li>
     <li>concordlib.concord</li>
+    <li>RimWorks.RimLogging</li>
   </loadAfter>
 </ModMetaData>

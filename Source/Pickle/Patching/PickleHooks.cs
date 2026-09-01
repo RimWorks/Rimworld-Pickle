@@ -18,10 +18,6 @@ public static class PickleHooks {
   /// </summary>
   public static Action? DuringUIRootOnGUI { get; set; }
 
-  public static void AfterLogError(string text) {
-    LogWatch.RecordError(text);
-  }
-
   public static void BeforeUIRootOnGUI() {
     EventSynth.BeforeUIRootOnGUI();
   }
