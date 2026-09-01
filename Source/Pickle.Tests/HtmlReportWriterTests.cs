@@ -100,6 +100,36 @@ public class HtmlReportWriterTests {
     Assert.Equal(1, CountOccurrences(html, "</script>"));
   }
 
+  [Fact]
+  public void Film_frames_link_the_strip_when_no_video_was_encoded() {
+    using TempFilmDir dir = new TempFilmDir(withVideo: false);
+
+    JsonElement attachment = FilmAttachment(dir, readBytes: null);
+
+    Assert.Equal("film-frames", attachment.GetProperty("name").GetString());
+    Assert.Equal("screenshots/film/a-scenario/0000.jpg", attachment.GetProperty("content").GetString());
+  }
+
+  [Fact]
+  public void An_encoded_film_is_inlined_so_a_shared_report_still_plays() {
+    using TempFilmDir dir = new TempFilmDir(withVideo: true);
+
+    JsonElement attachment = FilmAttachment(dir, readBytes: _ => [1, 2, 3]);
+
+    Assert.Equal("film-video", attachment.GetProperty("name").GetString());
+    Assert.StartsWith("data:video/webm;base64,", attachment.GetProperty("content").GetString());
+  }
+
+  [Fact]
+  public void An_unreadable_film_keeps_a_relative_path_rather_than_breaking_the_player() {
+    using TempFilmDir dir = new TempFilmDir(withVideo: true);
+
+    JsonElement attachment = FilmAttachment(dir, readBytes: _ => null);
+
+    Assert.Equal("film-video", attachment.GetProperty("name").GetString());
+    Assert.Equal("screenshots/film/a-scenario/film.webm", attachment.GetProperty("content").GetString());
+  }
+
   private static int CountOccurrences(string haystack, string needle) {
     int count = 0;
     int at = haystack.IndexOf(needle, System.StringComparison.Ordinal);
@@ -117,5 +147,47 @@ public class HtmlReportWriterTests {
       System.Func<string, byte[]?>? readBytes = null) {
     string json = HtmlReportWriter.BuildPayload(results, exitReason, readBytes);
     return JsonDocument.Parse(json.Replace("<\\/", "</")).RootElement;
+  }
+
+  private static JsonElement FilmAttachment(TempFilmDir dir, System.Func<string, byte[]?>? readBytes) {
+    List<ScenarioResult> results =
+    [
+        new ScenarioResult(
+                "filmed",
+                "Film",
+                new Core.Model.TagSet([]),
+                ScenarioOutcome.Failed,
+                [new StepResult("Then", "it fails", StepStatus.Failed, 1)],
+                1) {
+              Attachments = [("film-frames", System.IO.Path.Combine(dir.Path, "0000.jpg"))],
+            },
+        ];
+
+    return Payload(results, readBytes: readBytes)
+        .GetProperty("features")[0]
+        .GetProperty("scenarios")[0]
+        .GetProperty("attachments")[0];
+  }
+
+  // BuildAttachment probes the disk for film.webm beside the frames, so the branches only
+  // separate when the file really is or is not there.
+  private sealed class TempFilmDir : System.IDisposable {
+    private readonly string root;
+
+    public TempFilmDir(bool withVideo) {
+      root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
+      Path = System.IO.Path.Combine(root, "screenshots", "film", "a-scenario");
+      System.IO.Directory.CreateDirectory(Path);
+      System.IO.File.WriteAllBytes(System.IO.Path.Combine(Path, "0000.jpg"), [0]);
+      if (withVideo) {
+        System.IO.File.WriteAllBytes(System.IO.Path.Combine(Path, "film.webm"), [0]);
+      }
+    }
+
+    public string Path { get; }
+
+    public void Dispose() {
+      System.IO.Directory.Delete(root, recursive: true);
+    }
   }
 }
