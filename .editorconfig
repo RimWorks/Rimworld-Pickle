@@ -386,3 +386,49 @@ dotnet_diagnostic.SA1401.severity = none # field must be private — def fields 
 dotnet_diagnostic.SA1307.severity = none # field must begin uppercase — TYD key binds by camelCase name
 dotnet_diagnostic.SA1310.severity = none # field must not contain underscore — some def fields use them
 
+
+# Pickle reaches into RimWorld's private internals on purpose: there is no public API for
+# reading the patch tree, the letter stack, the debug action list, or Unity's input queue.
+# S3011 (accessibility bypass) is the whole job in these four files.
+[Source/Pickle/Patching/PatchAttribution.cs]
+dotnet_diagnostic.S3011.severity = none # reads Harmony's and Concord's private patch registries
+
+[Source/Pickle/Input/EventSynth.cs]
+dotnet_diagnostic.S3011.severity = none # pushes synthetic events into Unity's private input queue
+
+[Source/Pickle.Vanilla/NotificationSteps.cs]
+dotnet_diagnostic.S3011.severity = none # reads the private letter and message stacks
+
+[Source/Pickle.Vanilla/DevModeSteps.cs]
+dotnet_diagnostic.S3011.severity = none # invokes private dev-mode debug actions
+
+# LoadFrom is correct here: the game hands us a mod's own directory and the step assembly
+# is not on any probing path, so Load cannot find it.
+[Source/Pickle/Runtime/SuiteRunner.cs]
+dotnet_diagnostic.S3885.severity = none # loads a mod's step dll from a game-supplied path
+
+[Source/Pickle/UI/RunnerWindow.cs]
+dotnet_diagnostic.S3885.severity = none # same, from the runner window's rescan
+
+[Source/Pickle/Patching/MissingBackendNotice.cs]
+dotnet_diagnostic.S1075.severity = none # the Workshop links are the message, not configuration
+
+[Source/Pickle/Web/PickleHttpServer.cs]
+dotnet_diagnostic.S5332.severity = none # loopback dashboard for a local game process, no cert to serve
+
+[Source/Pickle/Runtime/EvidenceSteps.cs]
+dotnet_diagnostic.S3400.severity = none # a [PickleStateDump] hook must be a method, reflection finds it
+
+[Source/Pickle/PickleContext.cs]
+dotnet_diagnostic.S2325.severity = none # ctx.Require is public API; static would break every step
+
+# Pickle.Core also targets net472, which has neither the span overloads nor
+# string.Contains(string, StringComparison).
+[Source/Pickle.Core/Run/ScenarioFilter.cs]
+dotnet_diagnostic.CA1846.severity = none # AsSpan overload of int.TryParse is not in net472
+dotnet_diagnostic.CA2249.severity = none # Contains with a StringComparison is not in net472
+
+# TODO comments are required by CLAUDE.md for a deliberate shortcut, so flagging them
+# would fight the convention that documents them.
+[*.cs]
+dotnet_diagnostic.S1135.severity = none # TODO(reason) is the house style for a tracked shortcut
