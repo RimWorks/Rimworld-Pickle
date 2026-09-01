@@ -54,8 +54,11 @@ jobs:
             /d:sonar.token="$SONAR_TOKEN" \
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.exclusions="Dashboard/dist/**,Dashboard/node_modules/**,Styles/**,artifacts/**,**/bin/**,**/obj/**" \
-            /d:sonar.coverage.exclusions="Source/Pickle/**,Source/Pickle.Vanilla/**,Source/Pickle.Patches.*/**,Source/Pickle.Ref/**,Dashboard/**" \
-            /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/**/coverage.opencover.xml"
+            /d:sonar.coverage.exclusions="Source/Pickle/**,Source/Pickle.Vanilla/**,Source/Pickle.Patches.*/**,Source/Pickle.Ref/**,Dashboard/**,.github/**" \
+            /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/**/coverage.opencover.xml" \
+            /d:sonar.issue.ignore.multicriteria="todo" \
+            /d:sonar.issue.ignore.multicriteria.todo.ruleKey="csharpsquid:S1135" \
+            /d:sonar.issue.ignore.multicriteria.todo.resourceKey="**/*.cs"
           dotnet build Pickle.slnx -c Release
           dotnet test Pickle.slnx -c Release --no-build \
             --collect:"XPlat Code Coverage;Format=opencover" \
