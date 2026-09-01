@@ -19,10 +19,11 @@ gh_api() {
   local url="$1"
 
   if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    curl -sSfL -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+    curl -sSfL --proto '=https' --proto-redir '=https' \
+      -H "Authorization: Bearer ${GITHUB_TOKEN}" \
       -H "X-GitHub-Api-Version: 2022-11-28" "$url"
   else
-    curl -sSfL "$url"
+    curl -sSfL --proto '=https' --proto-redir '=https' "$url"
   fi
 }
 
@@ -48,7 +49,7 @@ print(match[0]["browser_download_url"])')" || {
     exit 1
   }
 
-  curl -sSfL "$url" -o "$tmp/mod.zip"
+  curl -sSfL --proto '=https' --proto-redir '=https' "$url" -o "$tmp/mod.zip"
   unzip -qo "$tmp/mod.zip" -d "$tmp/x"
 
   inner="$(find "$tmp/x" -mindepth 1 -maxdepth 1 -type d -print -quit)"
