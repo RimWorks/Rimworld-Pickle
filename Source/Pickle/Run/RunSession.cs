@@ -239,6 +239,8 @@ public class RunSession {
       scenarioSeed = parsedSeed;
     }
 
+    ctx.ScenarioSeed = scenarioSeed;
+
     List<StepResult> stepResults = new();
     currentStepResults = stepResults;
     FilmstripRecorder? film = null;
@@ -247,6 +249,9 @@ public class RunSession {
     try {
       // Not Rand.PushState: Root.Update drains the stack whenever a step awaits past a
       // frame, so the matching PopState throws. Seed reseeds the same stream instead.
+      // Above Arm on purpose: the setter logs an error when nothing has pushed a state,
+      // and Pickle never does, so arming first would fail the scenario on RimWorld's own
+      // complaint.
       Rand.Seed = scenarioSeed;
       LogWatch.Arm();
 

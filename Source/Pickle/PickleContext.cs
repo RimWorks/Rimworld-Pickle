@@ -16,6 +16,10 @@ public class PickleContext {
 
   public IReadOnlyList<(string Name, string Content)> Attachments => attachments;
 
+  // Rand is one global stream the running game also draws from, so a step that needs a
+  // reproducible draw has to reseed right before it rather than trust the scenario seed.
+  public int ScenarioSeed { get; internal set; }
+
   internal object? WaitScope { get; set; }
 
   public void Assert(bool condition, string? label = null) {

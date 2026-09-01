@@ -16,6 +16,12 @@ public class WorldSteps {
     }
 
     Map map = RequireMap(ctx);
+
+    // The scenario seed has moved on by now: the game draws from the same global stream
+    // every tick. Reseeding here is what makes the same scenario build the same pawn. The
+    // nickname varies it so two colonists do not come out identical.
+    Rand.Seed = Gen.HashCombineInt(ctx.ScenarioSeed, GenText.StableStringHash(nickname));
+
     Pawn pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
     pawn.Name = new NameTriple(nickname, nickname, nickname);
     GenSpawn.Spawn(pawn, FindSpawnCell(ctx, map), map, WipeMode.Vanish);
