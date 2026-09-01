@@ -428,8 +428,7 @@ dotnet_diagnostic.S2325.severity = none # ctx.Require is public API; static woul
 dotnet_diagnostic.CA1846.severity = none # AsSpan overload of int.TryParse is not in net472
 dotnet_diagnostic.CA2249.severity = none # Contains with a StringComparison is not in net472
 
-# TODO(reason) is the house style for a tracked shortcut, so flagging every TODO fights the
-# convention that documents them. Needs a path in the section header: a bare [*.cs] loses to
-# the severity the sonar scanner injects at that same level.
-[Source/**.cs]
-dotnet_diagnostic.S1135.severity = none # TODO comments are required, not debt
+# TODO(reason) is the house style for a tracked shortcut, so flagging one is noise. The
+# section has to name the exact file: sonar ignores a glob like [*.cs] or [Source/**.cs].
+[Source/Pickle/Autorun/AutorunBootstrap.cs]
+dotnet_diagnostic.S1135.severity = none # the O(n^2) report rewrite is tracked, not forgotten
