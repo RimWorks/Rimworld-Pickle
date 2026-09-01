@@ -42,6 +42,26 @@ public static class DevModeSteps {
     Invoke(ctx, name, category);
   }
 
+  // Drives RimWorld's own graph build. One [DebugAction] whose return type cannot bind to
+  // Action aborts InitActions, and then no mod's actions register, not just the culprit's.
+  [Then("the debug actions menu builds")]
+  public static void DebugActionsMenuBuilds(PickleContext ctx) {
+    ResetNodeGraph();
+
+    try {
+      Dialog_Debug.TrySetupNodeGraph();
+    } catch (Exception ex) {
+      ctx.Assert(false, $"the debug menu could not be built: {ex.Message}{DescribeUnbindable()}");
+      return;
+    }
+
+    DebugActionNode? actions = Dialog_Debug.rootNode?.children
+        .FirstOrDefault(child => child.label == "Actions");
+    bool built = actions != null && actions.children.Count > 0;
+
+    ctx.Assert(built, built ? null : $"the debug menu built no populated Actions node{DescribeUnbindable()}");
+  }
+
   private static void Invoke(PickleContext ctx, string name, string? category) {
     string where = category == null ? $"'{name}'" : $"'{name}' in category '{category}'";
     (string Name, string Category, MethodInfo Method) action = AllActions().FirstOrDefault(a =>
@@ -91,5 +111,37 @@ public static class DevModeSteps {
         }
       }
     }
+  }
+
+  // TrySetupNodeGraph returns early once rootNode exists, and its roots dictionary refuses a
+  // second Add, so both have to be cleared before the graph will really rebuild.
+  private static void ResetNodeGraph() {
+    Dialog_Debug.rootNode = null;
+    FieldInfo? roots = typeof(Dialog_Debug).GetField("roots", BindingFlags.Static | BindingFlags.NonPublic);
+    (roots?.GetValue(null) as System.Collections.IDictionary)?.Clear();
+  }
+
+  // Names the assembly at fault, because the mod that breaks the menu is usually not the
+  // one whose actions you noticed were missing.
+  private static string DescribeUnbindable() {
+    List<string> offenders =
+    [
+        .. AllActions()
+            .Where(a => !CanBindToAction(a.Method))
+            .Select(a =>
+                $"{a.Method.DeclaringType?.Assembly.GetName().Name}: " +
+                $"{a.Method.DeclaringType?.FullName}.{a.Method.Name} returns {a.Method.ReturnType.Name}"),
+    ];
+
+    return offenders.Count == 0
+        ? string.Empty
+        : ". These cannot bind to Action: " + string.Join("; ", offenders);
+  }
+
+  private static bool CanBindToAction(MethodInfo method) {
+    Type returned = method.ReturnType;
+    return returned == typeof(void)
+        || returned == typeof(DebugActionNode)
+        || returned == typeof(List<DebugActionNode>);
   }
 }

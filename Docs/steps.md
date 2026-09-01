@@ -470,6 +470,7 @@ presses work without one. See [running tests](running.md).
 | `dev mode is enabled` | Turns on developer mode |
 | `god mode is enabled` | Turns on developer mode and god mode |
 | `god mode is disabled` | Turns off god mode |
+| `the debug actions menu builds` | Builds RimWorld's debug action graph and fails when any mod's `[DebugAction]` cannot bind, which would hide every mod's actions |
 | `I trigger debug action {string}` | Runs a debug action by name |
 | `I trigger debug action {string} in category {string}` | Runs a debug action from one category |
 
