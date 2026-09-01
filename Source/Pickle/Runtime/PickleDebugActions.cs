@@ -57,9 +57,16 @@ public static class PickleDebugActions {
     TagOverlay.Enabled = !TagOverlay.Enabled;
   }
 
+  // Void, not async Task: RimWorld binds every debug action with
+  // Delegate.CreateDelegate(typeof(Action)), and one that cannot bind aborts the whole
+  // menu build, for every mod, not just this one.
   [DebugAction("Pickle", "run suite", allowedGameStates = AllowedGameStates.PlayingOnMap)]
-  private static async Task RunSuiteDebugAction() {
+  private static void RunSuiteDebugAction() {
     PickleDriver.EnsureExists();
+    _ = RunSuite();
+  }
+
+  private static async Task RunSuite() {
     try {
       await SuiteRunner.Run();
     } catch (Exception ex) {
