@@ -230,12 +230,16 @@ jobs:
           [[ -n "$SUITE_FILTER" ]] && run_arg="-pickle-run=$SUITE_FILTER"
           echo "running: $run_arg"
 
-          # The game image carries no encoder, so a static one is mounted in when a
-          # filmed run actually needs it.
+          # The game image carries no encoder, so one is mounted in when a filmed run
+          # actually needs it. A download that fails costs the videos, not the run:
+          # FilmEncoder keeps the frames and says so when nothing is on the PATH.
           ffmpeg_mount=()
           if [[ "$FILM_SECONDS" != "0" ]]; then
-            .github/scripts/fetch-ffmpeg.sh "$RUNNER_TEMP/ffmpeg"
-            ffmpeg_mount=(-v "$RUNNER_TEMP/ffmpeg:/usr/local/bin/ffmpeg:ro")
+            if .github/scripts/fetch-ffmpeg.sh "$RUNNER_TEMP/ffmpeg"; then
+              ffmpeg_mount=(-v "$RUNNER_TEMP/ffmpeg:/usr/local/bin/ffmpeg:ro")
+            else
+              echo "::warning title=Pickle film::no ffmpeg, so this run keeps frames and gets no videos"
+            fi
           fi
 
           # Redirected rather than piped, so $! stays the container and its exit code
