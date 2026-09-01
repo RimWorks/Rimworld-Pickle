@@ -17,6 +17,7 @@ using RimWorks.Pickle.Runtime;
 using RimWorks.Pickle.Web;
 using UnityEngine;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.UI;
 
@@ -261,18 +262,25 @@ public class RunnerWindow : Window {
 
   // RunFeature's filter sees no index, so this rebuilds one from call order. It is called
   // once per scenario in plan order, so position lines up.
+  // Keyed on the plan, not call order. A counter drifts whenever the filter is called
+  // more than once for a scenario, and past the end every index reads as selected.
   private static Func<ScenarioPlan, bool>? BuildScenarioFilter(
-      string sourcePath, int featureStartIndex, Func<string, int, bool>? isScenarioSelected) {
+      string sourcePath,
+      int featureStartIndex,
+      IReadOnlyList<ScenarioPlan> scenarios,
+      Func<string, int, bool>? isScenarioSelected) {
     if (isScenarioSelected == null) {
       return null;
     }
 
-    int position = 0;
-    return _ => {
-      bool included = isScenarioSelected(sourcePath, featureStartIndex + position);
-      position++;
-      return included;
-    };
+    Dictionary<ScenarioPlan, int> positions = new Dictionary<ScenarioPlan, int>();
+    for (int i = 0; i < scenarios.Count; i++) {
+      positions[scenarios[i]] = i;
+    }
+
+    return scenario =>
+        positions.TryGetValue(scenario, out int position)
+        && isScenarioSelected(sourcePath, featureStartIndex + position);
   }
 
   private static Assembly? FindVanillaAssembly() {
@@ -293,7 +301,7 @@ public class RunnerWindow : Window {
           assemblies.Add(loadedAsm);
         }
       } catch (Exception ex) {
-        Log.Error($"pickle: failed to load steps dll {stepsDll}: {ex.Message}");
+        Log.Error(ex, $"pickle: failed to load steps dll {stepsDll}");
       }
     }
   }
@@ -314,7 +322,7 @@ public class RunnerWindow : Window {
           FeaturePlan plan = GherkinAdapter.Adapt(gherkinDoc, featureFile);
           parsedFeatures.Add((suite, plan));
         } catch (Exception ex) {
-          Log.Error($"pickle: failed to parse {Path.GetFileName(featureFile)}: {ex.Message}");
+          Log.Error(ex, $"pickle: failed to parse {Path.GetFileName(featureFile)}");
         }
       }
     }
@@ -394,7 +402,7 @@ public class RunnerWindow : Window {
           continue;
         }
 
-        Func<ScenarioPlan, bool>? scenarioFilter = BuildScenarioFilter(sourcePath, featureStartIndex, isScenarioSelected);
+        Func<ScenarioPlan, bool>? scenarioFilter = BuildScenarioFilter(sourcePath, featureStartIndex, plan.Scenarios, isScenarioSelected);
 
         // Results land per scenario rather than per feature so the dashboard's
         // tree fills in live instead of a whole feature at a time.
@@ -419,8 +427,24 @@ public class RunnerWindow : Window {
 
       LastRunAt = DateTime.Now;
       SelectFirstFailureIfNoneSelected();
+
+      // Back to the main menu so the next run starts clean. Break on failure means the world
+      // the failure left is the thing you want to look at, so that case stays loaded.
+      if (!BreakOnFailureState.Enabled && !session.CancelRequested
+          && Current.ProgramState == ProgramState.Playing) {
+        GenScene.GoToMainMenu();
+
+        // Waited, not ExecuteWhenFinished: that fires before the menu scene swaps, so the
+        // window it adds is wiped by the load that follows.
+        try {
+          await PickleDriver.Instance.WaitUntil(() => Current.ProgramState == ProgramState.Entry, 60f);
+          RestoreAfterMainMenu();
+        } catch (TimeoutException) {
+          Log.Warn("pickle: the main menu never came up, so the runner window stayed closed");
+        }
+      }
     } catch (Exception ex) {
-      Log.Error($"pickle: runner window run failed: {ex}");
+      Log.Error(ex, "pickle: runner window run failed");
     } finally {
       IsRunning = false;
       ActiveSession = null;
@@ -435,6 +459,13 @@ public class RunnerWindow : Window {
       if (restoreWindowAfterRun && !Find.WindowStack.IsOpen(this)) {
         Find.WindowStack.Add(this);
       }
+    }
+  }
+
+  // The scene change clears the window stack, so the runner is added back after it lands.
+  private void RestoreAfterMainMenu() {
+    if (restoreWindowAfterRun && Find.WindowStack != null && !Find.WindowStack.IsOpen(this)) {
+      Find.WindowStack.Add(this);
     }
   }
 
