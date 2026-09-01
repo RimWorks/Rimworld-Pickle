@@ -22,9 +22,8 @@ public static class FixtureLoader {
   }
 
   /// <summary>
-  /// Saves the running game and loads it straight back, so a scenario can assert that
-  /// state survived the trip. Errors thrown while scribing are left in the log on
-  /// purpose; the caller decides whether they fail the step.
+  /// Saves the running game and loads it back, so a scenario can assert state survived.
+  /// Scribe errors are left in the log on purpose: the caller decides if they fail the step.
   /// </summary>
   public static async Task SaveAndReload(string saveName, PickleDriver driver, object? scope, bool keepSave) {
     string savePath = GenFilePaths.FilePathForSavedGame(saveName);

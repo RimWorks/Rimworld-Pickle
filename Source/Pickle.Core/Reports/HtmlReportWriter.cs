@@ -96,12 +96,8 @@ public static class HtmlReportWriter {
   private static string BuildAttachment(
       (string Name, string Content) attachment,
       Func<string, byte[]?>? readAttachmentBytes) {
-    // Attachment content is a path on disk. The report has to stand alone, so an
-    // image becomes a data URI and anything unreadable falls back to the path.
-    // Film frames are linked, not inlined. A strip is dozens of full size frames, and
-    // base64 would push the report past what a browser will happily open.
-    // film-frames points at frame zero. The video is encoded after the run, so the
-    // report looks for it beside that frame rather than expecting an attachment.
+    // images inline as data URIs so the report stands alone. film frames stay linked:
+    // base64 of a whole strip pushes the file past what a browser will open.
     if (attachment.Name == "film-frames") {
       string dir = Path.GetDirectoryName(attachment.Content) ?? string.Empty;
       string folder = Path.GetFileName(dir);
