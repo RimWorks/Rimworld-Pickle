@@ -387,6 +387,7 @@ dotnet_diagnostic.SA1307.severity = none # field must begin uppercase — TYD ke
 dotnet_diagnostic.SA1310.severity = none # field must not contain underscore — some def fields use them
 
 
+# One exact file per section. Sonar ignores globs like [*.cs] and drops the rule silently.
 # Pickle reaches into RimWorld's private internals on purpose: there is no public API for
 # reading the patch tree, the letter stack, the debug action list, or Unity's input queue.
 # S3011 (accessibility bypass) is the whole job in these four files.
