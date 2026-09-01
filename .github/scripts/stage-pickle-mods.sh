@@ -15,15 +15,18 @@ mkdir -p "$MODS_DIR" "$CONFIG_DIR"
 
 # Anonymous API calls allow 60 an hour per IP, which a three way matrix on a shared
 # runner address can exhaust. A token raises it and costs nothing in Actions.
+# A redirect must stay on https, so a downgraded hop cannot swap what we download.
+https_only=(--proto '=https' --proto-redir '=https')
+
 gh_api() {
   local url="$1"
 
   if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    curl -sSfL --proto '=https' --proto-redir '=https' \
+    curl -sSfL "${https_only[@]}" \
       -H "Authorization: Bearer ${GITHUB_TOKEN}" \
       -H "X-GitHub-Api-Version: 2022-11-28" "$url"
   else
-    curl -sSfL --proto '=https' --proto-redir '=https' "$url"
+    curl -sSfL "${https_only[@]}" "$url"
   fi
 }
 
@@ -49,7 +52,7 @@ print(match[0]["browser_download_url"])')" || {
     exit 1
   }
 
-  curl -sSfL --proto '=https' --proto-redir '=https' "$url" -o "$tmp/mod.zip"
+  curl -sSfL "${https_only[@]}" "$url" -o "$tmp/mod.zip"
   unzip -qo "$tmp/mod.zip" -d "$tmp/x"
 
   inner="$(find "$tmp/x" -mindepth 1 -maxdepth 1 -type d -print -quit)"
