@@ -8,7 +8,7 @@ PORT="${1:-27750}"
 CLOUDFLARED="${RUNNER_TEMP:-/tmp}/cloudflared"
 LOG="${RUNNER_TEMP:-/tmp}/cloudflared.log"
 
-if ! curl -sSfL -o "$CLOUDFLARED" \
+if ! curl -sSfL --proto '=https' --proto-redir '=https' -o "$CLOUDFLARED" \
   https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64; then
   echo "::warning title=Pickle dashboard::could not download cloudflared"
   exit 1
