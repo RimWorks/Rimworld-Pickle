@@ -128,9 +128,8 @@ function firstFailure(features: Feature[]): Selection | null {
 
 function firstScenario(features: Feature[]): Selection | null {
   for (const feature of features) {
-    for (const scenario of feature.scenarios) {
-      return { path: feature.path, index: scenario.index };
-    }
+    const scenario = feature.scenarios[0];
+    if (scenario) return { path: feature.path, index: scenario.index };
   }
   return null;
 }
