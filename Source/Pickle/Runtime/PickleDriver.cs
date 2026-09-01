@@ -7,6 +7,7 @@ using RimWorks.Pickle.Input;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
@@ -69,6 +70,13 @@ public class PickleDriver : MonoBehaviour {
     if (Current.Game == null) {
       return new PickleWait(new InvalidOperationException(
           "PickleDriver.WaitTicks: no game is running (Current.Game is null); this wait would never complete."));
+    }
+
+    // Watch mode waits on the game's own tick loop, and a save loads paused, so the wait
+    // would sit there until the step timed out. ForcePaused is not ours to override.
+    if (PickleRunMode.Current != PickleRunMode.Mode.Fast
+        && Find.TickManager.Paused && !Find.TickManager.ForcePaused) {
+      Find.TickManager.CurTimeSpeed = TimeSpeed.Normal;
     }
 
     PendingWait wait = new PendingWait(PendingWaitKind.Ticks) {
@@ -167,18 +175,14 @@ public class PickleDriver : MonoBehaviour {
     }
   }
 
-  // CaptureScreenshotIntoRenderTexture keeps the frame on the GPU and AsyncGPUReadback
-  // pulls it back without stalling, which is what makes filming a live run possible.
-  // ReadPixels blocks until the GPU catches up and cannot keep that rate.
-  // Software rendering has no working async readback, so a filmed run silently produced
-  // nothing. Say it once rather than per frame.
+  // software rendering has no async readback, so a filmed run makes nothing. say it once.
   private static void WarnFrameReadbackOnce() {
     if (warnedFrameReadback) {
       return;
     }
 
     warnedFrameReadback = true;
-    Log.Warning(
+    Log.Warn(
         "pickle: the GPU refused a frame readback, so filming captured nothing. " +
         "This is expected without a real GPU; run with -pickle-max-film-seconds=0 there.");
   }
@@ -203,7 +207,7 @@ public class PickleDriver : MonoBehaviour {
         scratch.Apply(false);
         File.WriteAllBytes(filePath, scratch.EncodeToJPG(75));
       } catch (Exception ex) {
-        Log.Warning($"pickle: frame readback failed for {filePath}: {ex.Message}");
+        Log.Warn(ex, $"pickle: frame readback failed for {filePath}");
       }
     });
   }
@@ -216,7 +220,7 @@ public class PickleDriver : MonoBehaviour {
       scratch.Apply(false);
       File.WriteAllBytes(filePath, scratch.EncodeToJPG(75));
     } catch (Exception ex) {
-      Log.Warning($"pickle: frame readback failed for {filePath}: {ex.Message}");
+      Log.Warn(ex, $"pickle: frame readback failed for {filePath}");
     } finally {
       RenderTexture.active = previous;
     }
@@ -256,7 +260,7 @@ public class PickleDriver : MonoBehaviour {
 
       ReadFrame(scaled, scratch, filePath);
     } catch (Exception ex) {
-      Log.Warning($"pickle: failed to capture frame to {filePath}: {ex.Message}");
+      Log.Warn(ex, $"pickle: failed to capture frame to {filePath}");
     } finally {
       if (scaled != null) {
         RenderTexture.ReleaseTemporary(scaled);
@@ -279,7 +283,7 @@ public class PickleDriver : MonoBehaviour {
 
       File.WriteAllBytes(filePath, pngData);
     } catch (Exception ex) {
-      Log.Warning($"pickle: failed to capture screenshot to {filePath}: {ex.Message}");
+      Log.Warn(ex, $"pickle: failed to capture screenshot to {filePath}");
     }
 
     if (wait == null) {
@@ -302,7 +306,7 @@ public class PickleDriver : MonoBehaviour {
       try {
         action();
       } catch (Exception ex) {
-        Log.Error($"pickle: posted action threw: {ex}");
+        Log.Error(ex, "pickle: posted action threw");
       }
     }
 
@@ -311,7 +315,7 @@ public class PickleDriver : MonoBehaviour {
     try {
       FrameHook?.Invoke();
     } catch (Exception ex) {
-      Log.Error($"pickle: frame hook threw: {ex}");
+      Log.Error(ex, "pickle: frame hook threw");
     }
 
     ScanWaits();
@@ -356,7 +360,9 @@ public class PickleDriver : MonoBehaviour {
     // Regression alarm for the bug this type exists to fix: resuming step
     // code off the main thread would crash on its next Unity/Verse call.
     if (Thread.CurrentThread.ManagedThreadId != mainThreadId) {
-      Log.Error($"pickle: PickleDriver continuation invoked off the main thread (thread={Thread.CurrentThread.ManagedThreadId}, expected={mainThreadId})");
+      Log.Error(
+          "pickle: PickleDriver continuation invoked off the main thread (thread={Thread}, expected={Expected})",
+          [Thread.CurrentThread.ManagedThreadId, mainThreadId]);
     }
 
     continuation();
