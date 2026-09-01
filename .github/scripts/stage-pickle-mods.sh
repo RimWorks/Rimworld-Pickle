@@ -10,6 +10,7 @@ CONFIG_DIR="${3:?config dir}"
 
 HARMONY_REPO="${HARMONY_REPO:-pardeike/HarmonyRimWorld}"
 CONCORD_REPO="${CONCORD_REPO:-ConcordLib/RimWorld}"
+RIMLOGGING_REPO="${RIMLOGGING_REPO:-RimWorks/rimworld-logging-framework}"
 
 mkdir -p "$MODS_DIR" "$CONFIG_DIR"
 
@@ -67,6 +68,12 @@ stage_harmony() {
   stage_release_zip "$HARMONY_REPO" "HarmonyMod" "$MODS_DIR/Harmony"
 }
 
+# Pickle declares RimLogging in modDependencies, so it is required on every backend combo,
+# not just one. LogWatch reads its pipeline, so a run without it records no errors at all.
+stage_rimlogging() {
+  stage_release_zip "$RIMLOGGING_REPO" "RimLogging-" "$MODS_DIR/RimLogging"
+}
+
 # CONCORD_MOD_DIR points at an already downloaded copy, such as the workshop item.
 stage_concord() {
   if [[ -n "${CONCORD_MOD_DIR:-}" ]]; then
@@ -93,12 +100,15 @@ if [[ "$BACKENDS" == "harmony" || "$BACKENDS" == "both" ]]; then
 "
 fi
 
+stage_rimlogging
+
 ACTIVE="${ACTIVE}ludeon.rimworld
 ludeon.rimworld.royalty
 ludeon.rimworld.ideology
 ludeon.rimworld.biotech
 ludeon.rimworld.anomaly
 ludeon.rimworld.odyssey
+rimworks.rimlogging
 rimworks.pickle"
 
 cat > "$CONFIG_DIR/ModsConfig.xml" <<EOF
