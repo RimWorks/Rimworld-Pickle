@@ -13,7 +13,7 @@ A step class carries `[PickleSteps]`. Each step method carries `[Given]`, `[When
 Every step method takes a `PickleContext` first.
 
 ```csharp
-using Pickle;
+using RimWorks.Pickle;
 
 [PickleSteps]
 public class GreeterSteps {

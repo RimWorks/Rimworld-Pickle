@@ -1,35 +1,17 @@
 # Pickle
 
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=RimWorks_Rimworld-Pickle&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=RimWorks_Rimworld-Pickle)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=RimWorks_Rimworld-Pickle&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=RimWorks_Rimworld-Pickle)
+
+<img src="About/ModIcon.png" alt="Pickle icon" width="96" align="right">
+
 Pickle runs [Gherkin](https://cucumber.io/docs/gherkin/) scenarios inside a live
 RimWorld session. Your tests click the real UI, wait on real game state, and assert
 against the running simulation.
 
 It is a test runner for mod authors, not a mod for players.
 
-## Example
-
-```gherkin
-Feature: drafting
-  Scenario: a drafted colonist waits for combat
-    Given the save "test-colony" is loaded
-    Given a colonist "Soldier" exists
-    When I draft "Soldier"
-    And I wait 30 ticks
-    Then "Soldier" is drafted
-    And "Soldier" has job "Wait_Combat"
-```
-
-The steps behind those lines are plain C#:
-
-```csharp
-[PickleSteps]
-public class DraftingSteps {
-  [When("I draft {string}")]
-  public void Draft(PickleContext ctx, string nickname) {
-    PawnLookup.RequireLiving(nickname).drafter!.Drafted = true;
-  }
-}
-```
+![Pickle preview card](About/Preview.png)
 
 ## Install
 
@@ -59,8 +41,33 @@ package from a steps project:
 ```
 
 The package holds a compile-time reference assembly only. `ExcludeAssets="runtime"`
-keeps it out of your output, because the Pickle mod supplies the real `Pickle.dll` at
+keeps it out of your output, because the Pickle mod supplies the real `RimWorks.Pickle.dll` at
 run time. See the [authoring guide](https://github.com/RimWorks/Rimworld-Pickle/blob/main/Docs/authoring.md).
+
+## Example
+
+```gherkin
+Feature: drafting
+  Scenario: a drafted colonist waits for combat
+    Given the save "test-colony" is loaded
+    Given a colonist "Soldier" exists
+    When I draft "Soldier"
+    And I wait 30 ticks
+    Then "Soldier" is drafted
+    And "Soldier" has job "Wait_Combat"
+```
+
+The steps behind those lines are plain C#:
+
+```csharp
+[PickleSteps]
+public class DraftingSteps {
+  [When("I draft {string}")]
+  public void Draft(PickleContext ctx, string nickname) {
+    PawnLookup.RequireLiving(nickname).drafter!.Drafted = true;
+  }
+}
+```
 
 ## Documentation
 
@@ -74,7 +81,7 @@ run time. See the [authoring guide](https://github.com/RimWorks/Rimworld-Pickle/
 | [Reports](https://github.com/RimWorks/Rimworld-Pickle/blob/main/Docs/reports.md) | What each run writes, and what a failure captures |
 | [Releasing](https://github.com/RimWorks/Rimworld-Pickle/blob/main/Docs/releasing.md) | How a release is cut and published |
 
-## Building Pickle
+## Contributing
 
 ```
 npm --prefix Dashboard ci && npm --prefix Dashboard run build

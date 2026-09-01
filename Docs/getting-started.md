@@ -44,7 +44,7 @@ project.
 ```
 
 Set `ExcludeAssets="runtime"`. The package ships a compile-time stub with the same
-assembly identity as the real `Pickle.dll`. The Pickle mod loads the real one at run
+assembly identity as the real `RimWorks.Pickle.dll`. The Pickle mod loads the real one at run
 time. A copy of the stub in your output would shadow it.
 
 `MyMod.dll` resolves the same way. RimWorld loads it before Pickle loads your steps
