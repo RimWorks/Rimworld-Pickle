@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Pickle.Core.Discovery;
+using RimWorks.Pickle.Core.Discovery;
 using Verse;
 
-namespace Pickle;
+namespace RimWorks.Pickle;
 
 public static class SuiteScanner {
   public static List<DiscoveredSuite> DiscoverSuites() {

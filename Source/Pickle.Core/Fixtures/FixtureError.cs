@@ -1,4 +1,4 @@
-namespace Pickle.Core.Fixtures;
+namespace RimWorks.Pickle.Core.Fixtures;
 
 public enum FixtureErrorKind {
   NotFound,

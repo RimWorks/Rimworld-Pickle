@@ -1,6 +1,6 @@
 using System;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 internal enum PendingWaitKind {
   Ticks,

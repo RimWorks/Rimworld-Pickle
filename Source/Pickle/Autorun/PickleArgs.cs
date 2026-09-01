@@ -1,9 +1,9 @@
 using System;
 using System.IO;
-using Pickle.Run;
+using RimWorks.Pickle.Run;
 using Verse;
 
-namespace Pickle.Autorun;
+namespace RimWorks.Pickle.Autorun;
 
 /// <summary>
 /// Parses the -pickle-* command line flags. An explicit flag wins over the same field

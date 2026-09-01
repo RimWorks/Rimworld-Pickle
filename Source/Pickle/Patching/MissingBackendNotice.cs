@@ -1,6 +1,6 @@
 using Verse;
 
-namespace Pickle.Patching;
+namespace RimWorks.Pickle.Patching;
 
 /// <summary>
 /// Warns when Pickle loaded with no patching library. modDependencies is a flat AND

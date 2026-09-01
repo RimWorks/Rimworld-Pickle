@@ -6,7 +6,7 @@ using LudeonTK;
 using RimWorld;
 using Verse;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 /// <summary>
 /// Dev mode toggles and debug actions. A debug action is a static method tagged with

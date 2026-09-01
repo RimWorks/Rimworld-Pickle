@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Pickle.Core.Run;
+using RimWorks.Pickle.Core.Run;
 
-namespace Pickle.Core.Reports;
+namespace RimWorks.Pickle.Core.Reports;
 
 public static class MessagesNdjsonWriter {
   private const string MetaLine =

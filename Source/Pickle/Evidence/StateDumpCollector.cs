@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Pickle.Evidence;
+namespace RimWorks.Pickle.Evidence;
 
 public static class StateDumpCollector {
   public static List<(string Source, string Content)> Collect(

@@ -4,12 +4,12 @@ using System.Text.RegularExpressions;
 using CucumberExpressions;
 using Gherkin;
 using Gherkin.Ast;
-using Pickle.Core.Discovery;
-using Pickle.Patching;
-using Pickle.Web;
+using RimWorks.Pickle.Core.Discovery;
+using RimWorks.Pickle.Patching;
+using RimWorks.Pickle.Web;
 using Verse;
 
-namespace Pickle;
+namespace RimWorks.Pickle;
 
 public class PickleMod : Mod {
   public PickleMod(ModContentPack content) : base(content) {

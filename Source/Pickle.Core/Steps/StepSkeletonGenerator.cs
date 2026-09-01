@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Pickle.Core.Steps;
+namespace RimWorks.Pickle.Core.Steps;
 
 public static class StepSkeletonGenerator {
   private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);

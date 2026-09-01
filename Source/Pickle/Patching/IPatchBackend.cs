@@ -1,4 +1,4 @@
-namespace Pickle.Patching;
+namespace RimWorks.Pickle.Patching;
 
 /// <summary>
 /// One patching library. A backend expresses Pickle's hooks in its own terms, so the

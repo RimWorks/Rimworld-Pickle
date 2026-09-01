@@ -1,4 +1,4 @@
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 [PickleEntry]
 public static class SmokeFluentEntry {

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using Pickle.Core.Run;
+using RimWorks.Pickle.Core.Run;
 
-namespace Pickle.Autorun;
+namespace RimWorks.Pickle.Autorun;
 
 /// <summary>
 /// Polls on a ThreadPool timer, so it still fires when the main thread wedges and

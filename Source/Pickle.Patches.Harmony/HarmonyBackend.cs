@@ -1,10 +1,10 @@
 using System.Xml;
 using HarmonyLib;
-using Pickle.Patching;
+using RimWorks.Pickle.Patching;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Patches.Harmony;
+namespace RimWorks.Pickle.Patches.Harmony;
 
 /// <summary>
 /// Pickle's hooks expressed as Harmony patches. Registered at the lower priority,

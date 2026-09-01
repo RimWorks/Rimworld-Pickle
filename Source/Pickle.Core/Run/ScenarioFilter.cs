@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Pickle.Core.Model;
+using RimWorks.Pickle.Core.Model;
 
-namespace Pickle.Core.Run;
+namespace RimWorks.Pickle.Core.Run;
 
 /// <summary>
 /// Decides which scenarios a run includes. A filter is a comma separated list of terms

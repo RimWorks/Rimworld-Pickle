@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Pickle.Input;
-using Pickle.Runtime;
+using RimWorks.Pickle.Input;
+using RimWorks.Pickle.Runtime;
 using UnityEngine;
 
-namespace Pickle;
+namespace RimWorks.Pickle;
 
 public class PickleContext {
   private readonly List<AssertRecord> asserts = [];

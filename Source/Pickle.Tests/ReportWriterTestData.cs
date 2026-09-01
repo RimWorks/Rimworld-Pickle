@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Pickle.Core.Model;
-using Pickle.Core.Run;
+using RimWorks.Pickle.Core.Model;
+using RimWorks.Pickle.Core.Run;
 
-namespace Pickle.Tests;
+namespace RimWorks.Pickle.Tests;
 
 internal static class ReportWriterTestData {
   public const string JUnitFailureMessage = "a < b && c > d \"quoted\"";

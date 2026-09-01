@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using RimWorld;
 using Verse;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 /// <summary>Blueprints and stockpile zones, so a scenario exercises real construction jobs.</summary>
 [PickleSteps]

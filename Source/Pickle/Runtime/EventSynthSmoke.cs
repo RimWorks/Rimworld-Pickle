@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Pickle.Input;
+using RimWorks.Pickle.Input;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 public static class EventSynthSmoke {
   public static void Run() {

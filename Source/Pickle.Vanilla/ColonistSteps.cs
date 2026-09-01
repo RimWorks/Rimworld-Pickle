@@ -4,7 +4,7 @@ using System.Linq;
 using RimWorld;
 using Verse;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 /// <summary>Shapes a generated colonist, so a scenario never depends on a random roll.</summary>
 [PickleSteps]

@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 [PickleSteps]
 public class EngineSmokeSteps {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Pickle.Core.Model;
+namespace RimWorks.Pickle.Core.Model;
 
 public class TagSet : IReadOnlyCollection<string> {
   private readonly HashSet<string> tags;

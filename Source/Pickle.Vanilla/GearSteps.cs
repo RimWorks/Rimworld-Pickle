@@ -3,7 +3,7 @@ using System.Linq;
 using RimWorld;
 using Verse;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 /// <summary>Weapons and worn apparel, which the carrying steps cannot see.</summary>
 [PickleSteps]

@@ -1,7 +1,7 @@
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Input;
+namespace RimWorks.Pickle.Input;
 
 internal static class TagOverlay {
   public static bool Enabled { get; set; }

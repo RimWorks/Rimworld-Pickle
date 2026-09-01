@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Input;
+namespace RimWorks.Pickle.Input;
 
 internal static class TagStore {
   private static readonly Dictionary<string, TagEntry> Store = [];

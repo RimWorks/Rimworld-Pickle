@@ -6,7 +6,7 @@ using RimWorld;
 using Verse;
 using Verse.AI;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 /// <summary>
 /// Health, needs, skills, traits, and what a pawn is carrying. Most mods change one

@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Pickle.Core.Discovery;
-using Pickle.Core.Fixtures;
-using Pickle.Fixtures;
-using Pickle.Runtime;
+using RimWorks.Pickle.Core.Discovery;
+using RimWorks.Pickle.Core.Fixtures;
+using RimWorks.Pickle.Fixtures;
+using RimWorks.Pickle.Runtime;
 using Verse;
 
-namespace Pickle;
+namespace RimWorks.Pickle;
 
 public static class FixtureSmoke {
   public static async Task Run() {

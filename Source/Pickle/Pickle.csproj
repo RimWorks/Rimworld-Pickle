@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <AssemblyName>Pickle</AssemblyName>
-    <RootNamespace>Pickle</RootNamespace>
+    <AssemblyName>RimWorks.Pickle</AssemblyName>
+    <RootNamespace>RimWorks.Pickle</RootNamespace>
     <OutDir>$(MSBuildProjectDirectory)\..\..\Assemblies\</OutDir>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>

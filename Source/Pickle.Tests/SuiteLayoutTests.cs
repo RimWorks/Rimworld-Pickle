@@ -1,8 +1,8 @@
 using System.IO;
-using Pickle.Core.Discovery;
+using RimWorks.Pickle.Core.Discovery;
 using Xunit;
 
-namespace Pickle.Tests;
+namespace RimWorks.Pickle.Tests;
 
 public class SuiteLayoutTests {
   [Fact]

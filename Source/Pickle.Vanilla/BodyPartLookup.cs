@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Verse;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 internal static class BodyPartLookup {
   public static BodyPartRecord Require(Pawn pawn, string label) {

@@ -4,11 +4,11 @@ using System.IO;
 using System.Linq;
 using Gherkin;
 using Gherkin.Ast;
-using Pickle.Core;
-using Pickle.Core.Model;
+using RimWorks.Pickle.Core;
+using RimWorks.Pickle.Core.Model;
 using Xunit;
 
-namespace Pickle.Tests;
+namespace RimWorks.Pickle.Tests;
 
 public class GherkinAdapterTests {
   [Fact]

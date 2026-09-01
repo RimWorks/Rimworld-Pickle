@@ -1,8 +1,8 @@
-using Pickle.Run;
+using RimWorks.Pickle.Run;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.UI;
+namespace RimWorks.Pickle.UI;
 
 /// <summary>
 /// Top-right pill shown while the full window is collapsed. Reads live state off the

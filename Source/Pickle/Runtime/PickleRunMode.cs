@@ -1,4 +1,4 @@
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 /// <summary>
 /// Controls how wait steps advance time. Watch waits for the game's tick loop; Fast

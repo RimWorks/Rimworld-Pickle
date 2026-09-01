@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
-using Pickle.Core.Model;
-using Pickle.Core.Reports;
-using Pickle.Core.Run;
+using RimWorks.Pickle.Core.Model;
+using RimWorks.Pickle.Core.Reports;
+using RimWorks.Pickle.Core.Run;
 using Xunit;
 
-namespace Pickle.Tests;
+namespace RimWorks.Pickle.Tests;
 
 public class JUnitReportWriterTests {
   [Fact]

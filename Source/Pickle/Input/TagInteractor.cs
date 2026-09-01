@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using UnityEngine;
 
-namespace Pickle.Input;
+namespace RimWorks.Pickle.Input;
 
 internal static class TagInteractor {
   internal static bool TryResolve(string tag, out Rect rect, out string? error) {

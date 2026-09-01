@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Pickle.Core.Discovery;
+using RimWorks.Pickle.Core.Discovery;
 using RimWorld;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.UI;
+namespace RimWorks.Pickle.UI;
 
 /// <summary>
 /// Saves the running game into a mod's Pickle/Fixtures/. Saves to a scratch name first,

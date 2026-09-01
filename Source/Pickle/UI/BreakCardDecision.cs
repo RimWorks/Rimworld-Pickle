@@ -1,4 +1,4 @@
-namespace Pickle.UI;
+namespace RimWorks.Pickle.UI;
 
 public enum BreakCardDecision {
   Continue,

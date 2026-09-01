@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.UI;
+namespace RimWorks.Pickle.UI;
 
 /// <summary>
 /// Search box, tag chips, and mod picker. Chips are built from whatever tags the

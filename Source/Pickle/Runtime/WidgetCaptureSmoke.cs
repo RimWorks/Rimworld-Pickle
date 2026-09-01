@@ -1,10 +1,10 @@
 using System;
 using System.Threading.Tasks;
-using Pickle.Input;
+using RimWorks.Pickle.Input;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 public static class WidgetCaptureSmoke {
   public static void Run() {

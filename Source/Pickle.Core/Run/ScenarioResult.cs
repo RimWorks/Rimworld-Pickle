@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Pickle.Core.Model;
+using RimWorks.Pickle.Core.Model;
 
-namespace Pickle.Core.Run;
+namespace RimWorks.Pickle.Core.Run;
 
 public class ScenarioResult {
   public ScenarioResult(

@@ -1,6 +1,6 @@
 using Verse;
 
-namespace Pickle.Autorun;
+namespace RimWorks.Pickle.Autorun;
 
 /// <summary>
 /// Drops every window opened while autorun loads a fixture, so popups cannot block

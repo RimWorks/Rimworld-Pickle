@@ -1,6 +1,6 @@
 using System;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 /// <summary>
 /// How close a stat has to be to count as equal. A flat tolerance breaks on MarketValue

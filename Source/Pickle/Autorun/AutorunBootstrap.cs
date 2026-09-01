@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Pickle.Core.Reports;
-using Pickle.Core.Run;
-using Pickle.Evidence;
-using Pickle.Runtime;
+using RimWorks.Pickle.Core.Reports;
+using RimWorks.Pickle.Core.Run;
+using RimWorks.Pickle.Evidence;
+using RimWorks.Pickle.Runtime;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Autorun;
+namespace RimWorks.Pickle.Autorun;
 
 /// <summary>
 /// Entry point for -pickle-run. Waits for the main menu, runs the suite, then exits

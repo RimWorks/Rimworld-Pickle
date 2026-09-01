@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using RimWorld;
 using Verse;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 /// <summary>Which body part a hediff sits on, and the surgeries that put it there.</summary>
 [PickleSteps]

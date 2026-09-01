@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using RimWorld;
 using Verse;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 /// <summary>Weather, the calendar and temperature, which gate a lot of seasonal content.</summary>
 [PickleSteps]

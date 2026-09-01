@@ -1,6 +1,6 @@
-using Pickle.Core.Steps;
+using RimWorks.Pickle.Core.Steps;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 [PickleSteps]
 public class SmokeSteps {

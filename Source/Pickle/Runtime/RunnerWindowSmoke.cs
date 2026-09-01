@@ -1,10 +1,10 @@
 using System;
 using System.Threading.Tasks;
-using Pickle.Runtime;
-using Pickle.UI;
+using RimWorks.Pickle.Runtime;
+using RimWorks.Pickle.UI;
 using Verse;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 public static class RunnerWindowSmoke {
   public static void Run() {

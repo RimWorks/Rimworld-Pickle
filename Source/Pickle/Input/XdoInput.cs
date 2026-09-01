@@ -4,7 +4,7 @@ using System.Text;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Input;
+namespace RimWorks.Pickle.Input;
 
 /// <summary>
 /// XTEST input via xdotool is indistinguishable from a human mouse at the X11 level, so

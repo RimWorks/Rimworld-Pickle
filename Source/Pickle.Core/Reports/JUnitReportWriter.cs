@@ -4,9 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
-using Pickle.Core.Run;
+using RimWorks.Pickle.Core.Run;
 
-namespace Pickle.Core.Reports;
+namespace RimWorks.Pickle.Core.Reports;
 
 public static class JUnitReportWriter {
   public static string Write(IReadOnlyList<ScenarioResult> results) {

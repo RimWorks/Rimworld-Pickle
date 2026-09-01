@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using Verse;
 
-namespace Pickle.Autorun;
+namespace RimWorks.Pickle.Autorun;
 
 /// <summary>
 /// -pickle-report-dir wins, then /out/pickle-reports for the harness mount. The save

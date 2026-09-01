@@ -6,19 +6,19 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Gherkin;
 using Gherkin.Ast;
-using Pickle.Core;
-using Pickle.Core.Discovery;
-using Pickle.Core.Model;
-using Pickle.Core.Run;
-using Pickle.Core.Steps;
-using Pickle.Evidence;
-using Pickle.Run;
-using Pickle.Runtime;
-using Pickle.Web;
+using RimWorks.Pickle.Core;
+using RimWorks.Pickle.Core.Discovery;
+using RimWorks.Pickle.Core.Model;
+using RimWorks.Pickle.Core.Run;
+using RimWorks.Pickle.Core.Steps;
+using RimWorks.Pickle.Evidence;
+using RimWorks.Pickle.Run;
+using RimWorks.Pickle.Runtime;
+using RimWorks.Pickle.Web;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.UI;
+namespace RimWorks.Pickle.UI;
 
 /// <summary>
 /// Two-pane test runner: mod, feature and scenario tree on the left, the selected
@@ -280,13 +280,13 @@ public class RunnerWindow : Window {
   }
 
   private static Assembly? FindVanillaAssembly() {
-    Type? vanillaType = Type.GetType("Pickle.Vanilla.VanillaSteps, Pickle.Vanilla");
+    Type? vanillaType = Type.GetType("RimWorks.Pickle.Vanilla.VanillaSteps, RimWorks.Pickle.Vanilla");
     if (vanillaType != null) {
       return vanillaType.Assembly;
     }
 
     return AppDomain.CurrentDomain.GetAssemblies()
-        .FirstOrDefault(a => a.GetName().Name == "Pickle.Vanilla");
+        .FirstOrDefault(a => a.GetName().Name == "RimWorks.Pickle.Vanilla");
   }
 
   private static void AddStepsDlls(List<Assembly> assemblies, DiscoveredSuite suite) {

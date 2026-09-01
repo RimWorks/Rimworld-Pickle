@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using RimWorld;
 using Verse;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 /// <summary>
 /// Waits for a condition instead of a tick count. A fixed wait is a guess about how

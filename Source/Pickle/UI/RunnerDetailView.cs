@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Pickle.Core.Discovery;
-using Pickle.Core.Model;
-using Pickle.Core.Run;
+using RimWorks.Pickle.Core.Discovery;
+using RimWorks.Pickle.Core.Model;
+using RimWorks.Pickle.Core.Run;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.UI;
+namespace RimWorks.Pickle.UI;
 
 /// <summary>
 /// Right-pane scenario detail: steps, timings, and failure evidence. Steps come from

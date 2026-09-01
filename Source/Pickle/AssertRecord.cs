@@ -1,6 +1,6 @@
 using System;
 
-namespace Pickle;
+namespace RimWorks.Pickle;
 
 public sealed class AssertRecord {
   public AssertRecord(bool passed, string? label) {

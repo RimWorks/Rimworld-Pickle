@@ -33,7 +33,7 @@
 
     <!-- ref/, not lib/: assets under ref are compile-only, so a consumer never
          copies this stub next to the real Pickle.dll the mod loads. -->
-    <None Include="..\Pickle\obj\$(Configuration)\ref\Pickle.dll" Pack="true" PackagePath="ref/net472/" Visible="false" />
+    <None Include="..\Pickle\obj\$(Configuration)\ref\RimWorks.Pickle.dll" Pack="true" PackagePath="ref/net472/" Visible="false" />
     <None Include="_._" Pack="true" PackagePath="lib/net472/" Visible="false" Condition="Exists('_._')" />
   </ItemGroup>
 </Project>

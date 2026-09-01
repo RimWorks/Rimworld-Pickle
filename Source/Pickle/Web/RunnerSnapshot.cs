@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Pickle.Core.Discovery;
-using Pickle.Core.Model;
-using Pickle.Core.Run;
-using Pickle.Run;
-using Pickle.Runtime;
+using RimWorks.Pickle.Core.Discovery;
+using RimWorks.Pickle.Core.Model;
+using RimWorks.Pickle.Core.Run;
+using RimWorks.Pickle.Run;
+using RimWorks.Pickle.Runtime;
 
-namespace Pickle.Web;
+namespace RimWorks.Pickle.Web;
 
 /// <summary>
 /// Serializes the tree plus live run state for the dashboard. Built on the main thread

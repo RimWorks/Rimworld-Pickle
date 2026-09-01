@@ -1,4 +1,4 @@
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 /// <summary>
 /// Set by the break-on-failure toggle. RunSession reads it to decide whether a failed

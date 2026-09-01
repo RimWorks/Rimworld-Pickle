@@ -1,10 +1,10 @@
-using Pickle.Evidence;
-using Pickle.Runtime;
+using RimWorks.Pickle.Evidence;
+using RimWorks.Pickle.Runtime;
 using RimWorld;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.UI;
+namespace RimWorks.Pickle.UI;
 
 /// <summary>
 /// Top toolbar: run controls, watch/fast mode, break-on-failure toggle, and the

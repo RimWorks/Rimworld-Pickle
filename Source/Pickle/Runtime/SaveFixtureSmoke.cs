@@ -1,12 +1,12 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Pickle.Core.Discovery;
-using Pickle.Fixtures;
-using Pickle.UI;
+using RimWorks.Pickle.Core.Discovery;
+using RimWorks.Pickle.Fixtures;
+using RimWorks.Pickle.UI;
 using Verse;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 public static class SaveFixtureSmoke {
   public static async Task Run() {

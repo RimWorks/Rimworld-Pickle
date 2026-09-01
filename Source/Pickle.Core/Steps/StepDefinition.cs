@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Pickle.Core.Steps;
+namespace RimWorks.Pickle.Core.Steps;
 
 public class StepDefinition {
   public StepDefinition(string pattern, StepKind kind, string source, IReadOnlyList<Type> parameterTypes, object? binding = null, float? timeoutSeconds = null) {

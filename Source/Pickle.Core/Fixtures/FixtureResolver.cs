@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Pickle.Core.Discovery;
+using RimWorks.Pickle.Core.Discovery;
 
-namespace Pickle.Core.Fixtures;
+namespace RimWorks.Pickle.Core.Fixtures;
 
 public static class FixtureResolver {
   public static FixtureResolution Resolve(string fixtureName, string requestingModName, IReadOnlyList<DiscoveredSuite> suites) {

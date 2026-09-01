@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Pickle.Evidence;
-using Pickle.UI;
+using RimWorks.Pickle.Evidence;
+using RimWorks.Pickle.UI;
 using RimWorld;
 using Verse;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 [PickleSteps]
 public class UiSteps {

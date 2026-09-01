@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <AssemblyName>Pickle.Patches.Harmony</AssemblyName>
-    <RootNamespace>Pickle.Patches.Harmony</RootNamespace>
+    <AssemblyName>RimWorks.Pickle.Patches.Harmony</AssemblyName>
+    <RootNamespace>RimWorks.Pickle.Patches.Harmony</RootNamespace>
     <OutDir>$(MSBuildProjectDirectory)\..\..\Harmony\Assemblies\</OutDir>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>

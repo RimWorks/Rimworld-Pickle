@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Pickle.Core.Discovery;
-using Pickle.Core.Fixtures;
+using RimWorks.Pickle.Core.Discovery;
+using RimWorks.Pickle.Core.Fixtures;
 using Xunit;
 
-namespace Pickle.Tests;
+namespace RimWorks.Pickle.Tests;
 
 public class FixtureResolverTests {
   [Fact]

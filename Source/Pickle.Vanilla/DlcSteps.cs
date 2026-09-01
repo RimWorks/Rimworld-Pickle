@@ -6,7 +6,7 @@ using RimWorld;
 using Verse;
 using Verse.AI.Group;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 /// <summary>Ideology, Royalty and Anomaly state. Tag the scenario `@requires:` the dlc.</summary>
 [PickleSteps]

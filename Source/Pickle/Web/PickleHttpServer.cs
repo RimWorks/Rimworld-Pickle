@@ -3,11 +3,11 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
-using Pickle.Evidence;
-using Pickle.Run;
+using RimWorks.Pickle.Evidence;
+using RimWorks.Pickle.Run;
 using Verse;
 
-namespace Pickle.Web;
+namespace RimWorks.Pickle.Web;
 
 /// <summary>
 /// Serves the run dashboard over HTTP, in every launch mode including headless. The

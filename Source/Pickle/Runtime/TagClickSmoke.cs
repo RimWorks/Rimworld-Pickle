@@ -1,9 +1,9 @@
 using System;
 using System.Threading.Tasks;
-using Pickle.Input;
+using RimWorks.Pickle.Input;
 using Verse;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 internal static class TagClickSmoke {
   internal static async Task Run() {

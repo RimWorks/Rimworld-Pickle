@@ -1,7 +1,7 @@
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 internal class TagClickTestWindow : Window {
   public TagClickTestWindow() {

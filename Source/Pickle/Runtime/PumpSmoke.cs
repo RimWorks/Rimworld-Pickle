@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Verse;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 public static class PumpSmoke {
   public static async Task Run() {

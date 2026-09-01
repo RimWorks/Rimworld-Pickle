@@ -2,9 +2,9 @@ using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Pickle.Core.Steps;
+using RimWorks.Pickle.Core.Steps;
 
-namespace Pickle;
+namespace RimWorks.Pickle;
 
 public static class Pickle {
   [MethodImpl(MethodImplOptions.NoInlining)]

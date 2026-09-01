@@ -1,8 +1,8 @@
-using Pickle.Core.Run;
+using RimWorks.Pickle.Core.Run;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.UI;
+namespace RimWorks.Pickle.UI;
 
 /// <summary>
 /// Palette and status-dot drawing for the runner. RimWorld has no built-in

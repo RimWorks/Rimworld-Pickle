@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using CucumberExpressions;
 
-namespace Pickle;
+namespace RimWorks.Pickle;
 
 public class SimpleParameterTypeRegistry : IParameterTypeRegistry {
   /// <inheritdoc/>

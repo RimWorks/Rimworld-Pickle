@@ -1,4 +1,4 @@
-namespace Pickle.Core.Run;
+namespace RimWorks.Pickle.Core.Run;
 
 public class StepResult {
   public StepResult(string keyword, string text, StepStatus status, double durationMs, string? failureMessage = null) {

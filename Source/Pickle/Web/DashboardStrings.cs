@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Text;
-using Pickle.Core;
+using RimWorks.Pickle.Core;
 using Verse;
 
-namespace Pickle.Web;
+namespace RimWorks.Pickle.Web;
 
 /// <summary>
 /// The browser strings, taken from the same Languages files the in-game UI uses. One

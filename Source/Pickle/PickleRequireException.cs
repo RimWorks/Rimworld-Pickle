@@ -1,6 +1,6 @@
 using System;
 
-namespace Pickle;
+namespace RimWorks.Pickle;
 
 public class PickleRequireException : Exception {
   public PickleRequireException(string message) : base(message) {

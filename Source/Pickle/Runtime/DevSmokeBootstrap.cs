@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using UnityEngine.SceneManagement;
 using Verse;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 [StaticConstructorOnStartup]
 public static class DevSmokeBootstrap {

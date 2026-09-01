@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Verse;
 
-namespace Pickle;
+namespace RimWorks.Pickle;
 
 public static class LogWatch {
   private static readonly object Gate = new object();

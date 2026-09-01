@@ -1,11 +1,11 @@
 using System;
 using System.Threading.Tasks;
-using Pickle.Runtime;
+using RimWorks.Pickle.Runtime;
 using RimWorld;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 /// <summary>
 /// Camera control. A film is only useful if it points at the thing the scenario is

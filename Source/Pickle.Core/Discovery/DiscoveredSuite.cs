@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Pickle.Core.Discovery;
+namespace RimWorks.Pickle.Core.Discovery;
 
 public class DiscoveredSuite {
   public DiscoveredSuite(

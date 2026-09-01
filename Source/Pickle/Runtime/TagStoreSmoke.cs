@@ -1,12 +1,12 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Pickle.Input;
-using Pickle.Patching;
+using RimWorks.Pickle.Input;
+using RimWorks.Pickle.Patching;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 internal static class TagStoreSmoke {
   private const string OneTag = "pickle-smoke:one";

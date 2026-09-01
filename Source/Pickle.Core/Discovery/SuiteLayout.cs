@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace Pickle.Core.Discovery;
+namespace RimWorks.Pickle.Core.Discovery;
 
 public class SuiteLayout {
   private SuiteLayout(string pickleDir, string featuresDir, string fixturesDir, string assembliesDir) {

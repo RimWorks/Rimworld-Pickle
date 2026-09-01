@@ -1,10 +1,10 @@
 using System;
 using System.IO;
 using System.Linq;
-using Pickle.Core.Discovery;
+using RimWorks.Pickle.Core.Discovery;
 using Xunit;
 
-namespace Pickle.Tests;
+namespace RimWorks.Pickle.Tests;
 
 public class SuiteProbeTests {
   [Fact]

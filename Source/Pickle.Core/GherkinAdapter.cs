@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Gherkin.Ast;
-using Pickle.Core.Model;
+using RimWorks.Pickle.Core.Model;
 
-namespace Pickle.Core;
+namespace RimWorks.Pickle.Core;
 
 public static class GherkinAdapter {
   public static FeaturePlan Adapt(GherkinDocument doc, string? sourcePath) {

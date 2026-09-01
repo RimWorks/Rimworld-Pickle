@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Pickle.Core.Model;
-using Pickle.Core.Steps;
+using RimWorks.Pickle.Core.Model;
+using RimWorks.Pickle.Core.Steps;
 
-namespace Pickle.Core.Run;
+namespace RimWorks.Pickle.Core.Run;
 
 public static class RunOutcomes {
   private const string RequiresPrefix = "@requires:";

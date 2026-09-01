@@ -1,11 +1,11 @@
 using System.Reflection;
 using System.Xml;
 using Concord;
-using Pickle.Patching;
+using RimWorks.Pickle.Patching;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Patches.Concord;
+namespace RimWorks.Pickle.Patches.Concord;
 
 /// <summary>
 /// Pickle's hooks expressed as Concord injections. Registered above Harmony, so

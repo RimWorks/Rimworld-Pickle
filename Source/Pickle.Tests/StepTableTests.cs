@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Pickle.Core.Steps;
+using RimWorks.Pickle.Core.Steps;
 using Xunit;
 
-namespace Pickle.Tests;
+namespace RimWorks.Pickle.Tests;
 
 public class StepTableTests {
   [Fact]

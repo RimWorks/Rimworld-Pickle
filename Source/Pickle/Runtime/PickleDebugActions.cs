@@ -1,11 +1,11 @@
 using System;
 using System.Threading.Tasks;
 using LudeonTK;
-using Pickle.Input;
-using Pickle.UI;
+using RimWorks.Pickle.Input;
+using RimWorks.Pickle.UI;
 using Verse;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 public static class PickleDebugActions {
   [DebugAction("Pickle", "pump smoke", allowedGameStates = AllowedGameStates.PlayingOnMap)]

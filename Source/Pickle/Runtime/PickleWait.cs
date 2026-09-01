@@ -2,7 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 /// <summary>
 /// Awaitable returned by driver waits. PickleDriver.Update invokes the continuation

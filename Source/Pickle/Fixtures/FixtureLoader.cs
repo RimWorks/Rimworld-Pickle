@@ -1,11 +1,11 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Pickle.Autorun;
-using Pickle.Runtime;
+using RimWorks.Pickle.Autorun;
+using RimWorks.Pickle.Runtime;
 using Verse;
 
-namespace Pickle.Fixtures;
+namespace RimWorks.Pickle.Fixtures;
 
 public static class FixtureLoader {
   public static async Task LoadFixture(string resolvedRwsPath, PickleDriver driver, object? scope = null) {

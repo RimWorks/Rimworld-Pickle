@@ -1,11 +1,11 @@
 using System;
-using Pickle.Autorun;
-using Pickle.Input;
-using Pickle.UI;
+using RimWorks.Pickle.Autorun;
+using RimWorks.Pickle.Input;
+using RimWorks.Pickle.UI;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Patching;
+namespace RimWorks.Pickle.Patching;
 
 /// <summary>
 /// What Pickle wants at each patch site, with no patching library in the signatures.

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Verse;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 internal static class MapLookup {
   public static Map RequireMap(PickleContext ctx) {

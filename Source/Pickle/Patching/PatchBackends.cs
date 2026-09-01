@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Verse;
 
-namespace Pickle.Patching;
+namespace RimWorks.Pickle.Patching;
 
 /// <summary>
 /// Picks one backend and applies it. [StaticConstructorOnStartup] order is undefined, so

@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using Pickle.Core.Reports;
-using Pickle.Core.Run;
+using RimWorks.Pickle.Core.Reports;
+using RimWorks.Pickle.Core.Run;
 using Xunit;
 
-namespace Pickle.Tests;
+namespace RimWorks.Pickle.Tests;
 
 public class SummaryJsonWriterTests {
   [Fact]

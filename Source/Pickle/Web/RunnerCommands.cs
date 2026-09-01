@@ -1,7 +1,7 @@
-using Pickle.Runtime;
-using Pickle.UI;
+using RimWorks.Pickle.Runtime;
+using RimWorks.Pickle.UI;
 
-namespace Pickle.Web;
+namespace RimWorks.Pickle.Web;
 
 /// <summary>
 /// Dashboard commands, all marshalled onto the main thread through the driver pump.

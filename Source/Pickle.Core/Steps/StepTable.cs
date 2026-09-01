@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using CucumberExpressions;
 
-namespace Pickle.Core.Steps;
+namespace RimWorks.Pickle.Core.Steps;
 
 public class StepTable {
   private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);

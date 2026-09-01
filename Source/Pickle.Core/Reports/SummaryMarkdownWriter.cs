@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using Pickle.Core.Run;
+using RimWorks.Pickle.Core.Run;
 
-namespace Pickle.Core.Reports;
+namespace RimWorks.Pickle.Core.Reports;
 
 public static class SummaryMarkdownWriter {
   public static string Write(IReadOnlyList<ScenarioResult> results) {

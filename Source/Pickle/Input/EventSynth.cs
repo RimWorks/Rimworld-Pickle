@@ -4,7 +4,7 @@ using LudeonTK;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Input;
+namespace RimWorks.Pickle.Input;
 
 /// <summary>
 /// Key events reach the UI by reinvoking UIRootOnGUI. Clicks cannot: GUI.Window

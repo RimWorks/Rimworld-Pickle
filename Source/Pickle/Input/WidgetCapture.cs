@@ -1,7 +1,7 @@
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Input;
+namespace RimWorks.Pickle.Input;
 
 /// <summary>
 /// Records Widgets.ButtonText labels button labels into TagStore

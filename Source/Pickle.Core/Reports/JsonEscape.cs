@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Pickle.Core.Reports;
+namespace RimWorks.Pickle.Core.Reports;
 
 internal static class JsonEscape {
   public static string Quote(string value) {

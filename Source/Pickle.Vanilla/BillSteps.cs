@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using RimWorld;
 using Verse;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 /// <summary>Bills on a workbench, and the work priorities that decide who fills them.</summary>
 [PickleSteps]

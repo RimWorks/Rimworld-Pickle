@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Pickle.Core.Steps;
+using RimWorks.Pickle.Core.Steps;
 
-namespace Pickle;
+namespace RimWorks.Pickle;
 
 internal static class FluentRegistry {
   private static readonly List<StepDefinition> PendingDefinitions = [];

@@ -1,8 +1,8 @@
-using Pickle.Core.Run;
+using RimWorks.Pickle.Core.Run;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.UI;
+namespace RimWorks.Pickle.UI;
 
 /// <summary>
 /// Card shown when a step fails with break-on-failure armed. forcePause stops ticks

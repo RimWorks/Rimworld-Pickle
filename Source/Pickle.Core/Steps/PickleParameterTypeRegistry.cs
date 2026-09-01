@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using CucumberExpressions;
 
-namespace Pickle.Core.Steps;
+namespace RimWorks.Pickle.Core.Steps;
 
 public class PickleParameterTypeRegistry : IParameterTypeRegistry {
   private readonly Dictionary<string, IParameterType> parameterTypes = new();

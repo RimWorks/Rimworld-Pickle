@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <AssemblyName>Pickle.Core</AssemblyName>
-    <RootNamespace>Pickle.Core</RootNamespace>
+    <AssemblyName>RimWorks.Pickle.Core</AssemblyName>
+    <RootNamespace>RimWorks.Pickle.Core</RootNamespace>
     <TargetFrameworks>net472;net9.0</TargetFrameworks>
     <TargetFramework></TargetFramework>
   </PropertyGroup>

@@ -1,8 +1,8 @@
-using Pickle.Runtime;
-using Pickle.UI;
+using RimWorks.Pickle.Runtime;
+using RimWorks.Pickle.UI;
 using Verse;
 
-namespace Pickle.Web;
+namespace RimWorks.Pickle.Web;
 
 /// <summary>
 /// Creates the driver and seeds the tree once defs load. Doing it in PickleMod's

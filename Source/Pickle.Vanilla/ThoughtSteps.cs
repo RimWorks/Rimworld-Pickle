@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using RimWorld;
 using Verse;
 
-namespace Pickle.Vanilla;
+namespace RimWorks.Pickle.Vanilla;
 
 /// <summary>Individual thoughts, opinions and relations, which the mood total hides.</summary>
 [PickleSteps]

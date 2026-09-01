@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-namespace Pickle.Web;
+namespace RimWorks.Pickle.Web;
 
 // Minimal JSON writing. RimWorld ships no serializer and the payload shapes here
 // are fixed, so hand-writing beats taking a dependency.

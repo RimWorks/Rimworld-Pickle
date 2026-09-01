@@ -6,19 +6,19 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Pickle.Autorun;
-using Pickle.Core;
-using Pickle.Core.Discovery;
-using Pickle.Core.Fixtures;
-using Pickle.Core.Model;
-using Pickle.Core.Run;
-using Pickle.Core.Steps;
-using Pickle.Evidence;
-using Pickle.Fixtures;
-using Pickle.Runtime;
+using RimWorks.Pickle.Autorun;
+using RimWorks.Pickle.Core;
+using RimWorks.Pickle.Core.Discovery;
+using RimWorks.Pickle.Core.Fixtures;
+using RimWorks.Pickle.Core.Model;
+using RimWorks.Pickle.Core.Run;
+using RimWorks.Pickle.Core.Steps;
+using RimWorks.Pickle.Evidence;
+using RimWorks.Pickle.Fixtures;
+using RimWorks.Pickle.Runtime;
 using Verse;
 
-namespace Pickle.Run;
+namespace RimWorks.Pickle.Run;
 
 public class RunSession {
   // Arbitrary fixed constant so a run with no -pickle-seed is still deterministic

@@ -7,16 +7,16 @@ using System.Text;
 using System.Threading.Tasks;
 using Gherkin;
 using Gherkin.Ast;
-using Pickle.Core;
-using Pickle.Core.Discovery;
-using Pickle.Core.Model;
-using Pickle.Core.Run;
-using Pickle.Core.Steps;
-using Pickle.Run;
-using Pickle.Web;
+using RimWorks.Pickle.Core;
+using RimWorks.Pickle.Core.Discovery;
+using RimWorks.Pickle.Core.Model;
+using RimWorks.Pickle.Core.Run;
+using RimWorks.Pickle.Core.Steps;
+using RimWorks.Pickle.Run;
+using RimWorks.Pickle.Web;
 using Verse;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 public static class SuiteRunner {
   public static async Task<List<ScenarioResult>> Run(
@@ -139,12 +139,12 @@ public static class SuiteRunner {
             typeof(SuiteRunner).Assembly,
     };
 
-    Type? vanillaType = Type.GetType("Pickle.Vanilla.UiSteps, Pickle.Vanilla");
+    Type? vanillaType = Type.GetType("RimWorks.Pickle.Vanilla.UiSteps, RimWorks.Pickle.Vanilla");
     if (vanillaType != null) {
       assemblies.Add(vanillaType.Assembly);
     } else {
       foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies()) {
-        if (a.GetName().Name == "Pickle.Vanilla") {
+        if (a.GetName().Name == "RimWorks.Pickle.Vanilla") {
           assemblies.Add(a);
           break;
         }

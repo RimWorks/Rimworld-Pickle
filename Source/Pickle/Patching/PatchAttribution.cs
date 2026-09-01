@@ -5,7 +5,7 @@ using System.Xml;
 using System.Xml.XPath;
 using Verse;
 
-namespace Pickle.Patching;
+namespace RimWorks.Pickle.Patching;
 
 /// <summary>Records which mod patched which def, because RimWorld tracks neither.</summary>
 public static class PatchAttribution {

@@ -1,4 +1,4 @@
-namespace Pickle.Core.Run;
+namespace RimWorks.Pickle.Core.Run;
 
 public enum StepStatus {
   Passed,

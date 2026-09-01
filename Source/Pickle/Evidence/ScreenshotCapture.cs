@@ -1,12 +1,12 @@
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
-using Pickle.Autorun;
-using Pickle.Runtime;
+using RimWorks.Pickle.Autorun;
+using RimWorks.Pickle.Runtime;
 using UnityEngine;
 using Verse;
 
-namespace Pickle.Evidence;
+namespace RimWorks.Pickle.Evidence;
 
 public static class ScreenshotCapture {
   private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);

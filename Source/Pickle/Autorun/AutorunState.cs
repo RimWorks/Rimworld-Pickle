@@ -1,4 +1,4 @@
-namespace Pickle.Autorun;
+namespace RimWorks.Pickle.Autorun;
 
 /// <summary>
 /// Both flags must be true for a dialog to be dropped, so suppression applies only

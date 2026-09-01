@@ -1,4 +1,4 @@
-namespace Pickle.Core.Steps;
+namespace RimWorks.Pickle.Core.Steps;
 
 public class UndefinedStep : StepResolution {
   public UndefinedStep(string skeleton) {

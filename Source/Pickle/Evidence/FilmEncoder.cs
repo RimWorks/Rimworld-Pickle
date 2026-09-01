@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using Verse;
 
-namespace Pickle.Evidence;
+namespace RimWorks.Pickle.Evidence;
 
 /// <summary>
 /// Turns a folder of filmstrip frames into a webm, when ffmpeg is on the PATH. Nothing

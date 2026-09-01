@@ -3,12 +3,12 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using Pickle.Input;
+using RimWorks.Pickle.Input;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Verse;
 
-namespace Pickle.Runtime;
+namespace RimWorks.Pickle.Runtime;
 
 /// <summary>
 /// Runs the async step pump. Update resolves waits and invokes continuations directly,

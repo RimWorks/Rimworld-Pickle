@@ -4,9 +4,9 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Pickle.Core.Run;
+using RimWorks.Pickle.Core.Run;
 
-namespace Pickle.Core.Reports;
+namespace RimWorks.Pickle.Core.Reports;
 
 /// <summary>
 /// Fills the report bundle with a run's results, replacing a placeholder script tag.

@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Pickle.Core.Steps;
+using RimWorks.Pickle.Core.Steps;
 using Verse;
 
-namespace Pickle;
+namespace RimWorks.Pickle;
 
 public static class StepScanner {
   public static StepTable PopulateStepTable(IEnumerable<Assembly> assemblies) {

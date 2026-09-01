@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Pickle.Core.Steps;
+namespace RimWorks.Pickle.Core.Steps;
 
 public class AmbiguousStep : StepResolution {
   public AmbiguousStep(IReadOnlyList<StepDefinition> matches) {

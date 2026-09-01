@@ -1,7 +1,7 @@
 using System.IO;
 using System.Reflection;
 
-namespace Pickle.Web;
+namespace RimWorks.Pickle.Web;
 
 /// <summary>
 /// The two bundles Dashboard/ builds: the live page and the report template. Embedded,

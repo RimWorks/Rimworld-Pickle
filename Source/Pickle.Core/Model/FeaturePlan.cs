@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Pickle.Core.Model;
+namespace RimWorks.Pickle.Core.Model;
 
 public class FeaturePlan {
   public FeaturePlan(string name, TagSet tags, IReadOnlyList<ScenarioPlan> scenarios, string? sourcePath) {

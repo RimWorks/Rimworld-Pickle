@@ -1,6 +1,6 @@
 using System;
 
-namespace Pickle;
+namespace RimWorks.Pickle;
 
 [AttributeUsage(AttributeTargets.Method)]
 public class AfterScenarioAttribute : Attribute {
