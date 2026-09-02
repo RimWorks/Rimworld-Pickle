@@ -9,12 +9,14 @@ public class DiscoveredSuite {
       string writableFixturesDir,
       IReadOnlyList<string> featureFiles,
       IReadOnlyList<string> fixtureFiles,
+      IReadOnlyList<string> shadowedFixtures,
       IReadOnlyList<string> stepsDlls) {
     ModName = modName;
     FixturesDir = fixturesDir;
     WritableFixturesDir = writableFixturesDir;
     FeatureFiles = featureFiles;
     FixtureFiles = fixtureFiles;
+    ShadowedFixtures = shadowedFixtures;
     StepsDlls = stepsDlls;
   }
 
@@ -29,6 +31,9 @@ public class DiscoveredSuite {
   public IReadOnlyList<string> FeatureFiles { get; }
 
   public IReadOnlyList<string> FixtureFiles { get; }
+
+  /// <summary>Recorded fixtures that hide a committed one of the same name, one line each.</summary>
+  public IReadOnlyList<string> ShadowedFixtures { get; }
 
   public IReadOnlyList<string> StepsDlls { get; }
 }

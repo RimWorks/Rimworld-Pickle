@@ -14,19 +14,23 @@ public static class SuiteProbe {
     List<string> featureFiles = FindFiles(layout.FeaturesDir, "*.feature", SearchOption.AllDirectories);
     List<string> stepsDlls = FindFiles(layout.AssembliesDir, "*.dll", SearchOption.TopDirectoryOnly);
 
+    List<string> fixtureFiles = FindFixtures(layout, out List<string> shadowed);
+
     return new DiscoveredSuite(
         modName,
         layout.FixturesDir,
         layout.WritableFixturesDir,
         featureFiles,
-        FindFixtures(layout),
+        fixtureFiles,
+        shadowed,
         stepsDlls);
   }
 
   // Both directories, the writable one winning on a name clash: re-recording a fixture is how
   // you fix one, and the committed copy would otherwise keep shadowing the new file.
-  private static List<string> FindFixtures(SuiteLayout layout) {
+  private static List<string> FindFixtures(SuiteLayout layout, out List<string> shadowed) {
     Dictionary<string, string> byName = new(StringComparer.OrdinalIgnoreCase);
+    shadowed = [];
 
     foreach (string path in FindFiles(layout.FixturesDir, "*.rws", SearchOption.TopDirectoryOnly)) {
       byName[Path.GetFileNameWithoutExtension(path)] = path;
@@ -34,7 +38,12 @@ public static class SuiteProbe {
 
     if (layout.WritableFixturesDir != layout.FixturesDir) {
       foreach (string path in FindFiles(layout.WritableFixturesDir, "*.rws", SearchOption.TopDirectoryOnly)) {
-        byName[Path.GetFileNameWithoutExtension(path)] = path;
+        string name = Path.GetFileNameWithoutExtension(path);
+        if (byName.TryGetValue(name, out string committed)) {
+          shadowed.Add($"{name}: using {path}, ignoring {committed}");
+        }
+
+        byName[name] = path;
       }
     }
 

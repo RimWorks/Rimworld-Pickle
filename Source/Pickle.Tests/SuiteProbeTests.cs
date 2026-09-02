@@ -181,4 +181,49 @@ public class SuiteProbeTests {
       Directory.Delete(tempDir, true);
     }
   }
+
+  [Fact]
+  public void Probe_WhenARecordedFixtureShadowsACommittedOne_SaysSo() {
+    string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+    try {
+      string fixturesDir = Path.Combine(tempDir, "TestMod", "Pickle", "Fixtures");
+      string writableDir = Path.Combine(tempDir, "writable", "TestMod");
+      Directory.CreateDirectory(fixturesDir);
+      Directory.CreateDirectory(writableDir);
+
+      File.WriteAllText(Path.Combine(fixturesDir, "one-planet.rws"), string.Empty);
+      File.WriteAllText(Path.Combine(writableDir, "one-planet.rws"), string.Empty);
+      File.WriteAllText(Path.Combine(writableDir, "only-recorded.rws"), string.Empty);
+
+      SuiteLayout layout = SuiteLayout.FromModRoot(
+          Path.Combine(tempDir, "TestMod"), Path.Combine(tempDir, "writable"));
+      DiscoveredSuite? suite = SuiteProbe.Probe("TestMod", layout);
+
+      Assert.NotNull(suite);
+      string shadow = Assert.Single(suite.ShadowedFixtures);
+      Assert.Contains("one-planet", shadow);
+      Assert.Contains(writableDir, shadow);
+      Assert.Contains(fixturesDir, shadow);
+    } finally {
+      Directory.Delete(tempDir, true);
+    }
+  }
+
+  [Fact]
+  public void Probe_WithNoCollision_ReportsNoShadowing() {
+    string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+    try {
+      string fixturesDir = Path.Combine(tempDir, "TestMod", "Pickle", "Fixtures");
+      Directory.CreateDirectory(fixturesDir);
+      File.WriteAllText(Path.Combine(fixturesDir, "one-planet.rws"), string.Empty);
+
+      SuiteLayout layout = SuiteLayout.FromModRoot(Path.Combine(tempDir, "TestMod"));
+      DiscoveredSuite? suite = SuiteProbe.Probe("TestMod", layout);
+
+      Assert.NotNull(suite);
+      Assert.Empty(suite.ShadowedFixtures);
+    } finally {
+      Directory.Delete(tempDir, true);
+    }
+  }
 }

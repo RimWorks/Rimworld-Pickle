@@ -118,16 +118,19 @@ Pickle cannot count on the mod folder being writable. A Workshop install and a D
 container both mount it read-only, and the save then fails with nothing to show for the
 playthrough that produced it.
 
-So a recorded fixture is written under a writable root instead:
+Pickle tests the mod directory at startup and picks a location from the result:
 
-| Setting | Location |
+| Situation | Location |
 |---|---|
-| `-pickle-fixtures-dir=<path>` | `<path>/<mod folder name>/` |
-| Default | `<save data folder>/PickleFixtures/<mod folder name>/` |
+| `-pickle-fixtures-dir=<path>` given | `<path>/<mod folder name>/` |
+| Mod directory is writable | The mod's own `Pickle/Fixtures/`, unchanged |
+| Mod directory is read-only | `<save data folder>/PickleFixtures/<mod folder name>/`, and Pickle logs it |
 
-Pickle scans both that directory and the mod's own `Pickle/Fixtures/`, so a fixture works
-as soon as it is recorded. If both hold the same name, the recorded one wins: re-recording
-is how you replace a fixture, and the committed copy would otherwise keep shadowing it.
+When the fallback is in use, Pickle scans both that directory and the mod's own
+`Pickle/Fixtures/`, so a fixture works as soon as it is recorded. If both hold the same name
+the recorded one wins, because re-recording is how you replace a fixture. Pickle logs a
+warning naming both paths, since a stale recording that beats the committed copy passes on
+your machine and fails in CI.
 
 Copy the file into `Pickle/Fixtures/` and commit it when you are happy with it. That is
 where it belongs long term, and it is the copy other people get.
