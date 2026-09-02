@@ -31,8 +31,11 @@ public class SaveFixtureDialog : Window {
     absorbInputAroundWindow = true;
   }
 
+  // 210, not 160: the window margins and the title row take 79px before DoWindowContents
+  // sees the rect, and the Save button is the last thing laid out, so it is what clips.
+
   /// <inheritdoc/>
-  public override Vector2 InitialSize => new Vector2(480f, 160f + (suites.Count * RowHeight));
+  public override Vector2 InitialSize => new Vector2(480f, 210f + (suites.Count * RowHeight));
 
   /// <inheritdoc/>
   public override void DoWindowContents(Rect inRect) {
