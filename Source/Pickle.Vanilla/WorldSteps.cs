@@ -17,12 +17,17 @@ public class WorldSteps {
 
     Map map = RequireMap(ctx);
 
-    // reseeded here, not at scenario start: Rand is one stream the game draws from every tick
-    Rand.Seed = Gen.HashCombineInt(ctx.ScenarioSeed, GenText.StableStringHash(nickname));
+    // seeded here, not at scenario start: Rand is one stream the game draws from every tick.
+    // Pop puts the game's own stream back, so generating a pawn does not shift later rolls.
+    Rand.PushState(Gen.HashCombineInt(ctx.ScenarioSeed, GenText.StableStringHash(nickname)));
 
-    Pawn pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
-    pawn.Name = new NameTriple(nickname, nickname, nickname);
-    GenSpawn.Spawn(pawn, FindSpawnCell(ctx, map), map, WipeMode.Vanish);
+    try {
+      Pawn pawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Colonist, Faction.OfPlayer);
+      pawn.Name = new NameTriple(nickname, nickname, nickname);
+      GenSpawn.Spawn(pawn, FindSpawnCell(ctx, map), map, WipeMode.Vanish);
+    } finally {
+      Rand.PopState();
+    }
   }
 
   [Given("{int} {string} is spawned at the stockpile")]

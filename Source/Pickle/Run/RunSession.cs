@@ -257,9 +257,6 @@ public class RunSession {
     PickleRunMode.Mode modeBeforeScenario = PickleRunMode.Current;
 
     try {
-      // not PushState: Root.Update drains the stack when a step awaits past a frame.
-      // above Arm because the setter logs an error when nothing has pushed a state.
-      Rand.Seed = scenarioSeed;
       LogWatch.Arm();
 
       await RunBeforeHooks(ctx, scenario.Tags);
