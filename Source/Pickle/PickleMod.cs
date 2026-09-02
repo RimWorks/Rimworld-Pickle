@@ -57,6 +57,6 @@ public class PickleMod : Mod {
     List<DiscoveredSuite> suites = SuiteScanner.DiscoverSuites();
     SuiteScanner.LogSuites(suites);
 
-    PickleHttpServer.StartIfRequested();
+    PickleHttpServer.StartUnlessDisabled();
   }
 }

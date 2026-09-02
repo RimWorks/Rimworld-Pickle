@@ -21,10 +21,12 @@ you can inspect the colony that produced the failure.
 
 ## A browser
 
-Start RimWorld with `-pickle-http`, then open `http://localhost:27750`.
+The dashboard starts with the game and opens at `http://localhost:27750` in your
+default browser.
 
-The dashboard shows the same tree, the current step, and live counts. You can start and
-stop runs from it. Use `-pickle-http-port=N` to serve on another port.
+It shows the same tree, the current step, and live counts. You can start and stop runs
+from it. Use `-pickle-http-port=N` to serve on another port, `-pickle-no-browser` to
+skip the browser, or `-pickle-no-http` to turn the dashboard off.
 
 The dashboard reads its state over HTTP, so reloading a save does not disturb it. That
 makes it the only way to watch a headless run.

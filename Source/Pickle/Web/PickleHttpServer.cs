@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using RimWorks.Pickle.Evidence;
 using RimWorks.Pickle.Run;
+using UnityEngine;
 using Verse;
 using Log = RimWorks.RimLogging.Log;
 
@@ -37,15 +38,17 @@ public static class PickleHttpServer {
     snapshot = json;
   }
 
-  public static void StartIfRequested() {
-    bool bare = GenCommandLine.CommandLineArgPassed("-pickle-http");
-    bool valued = GenCommandLine.TryGetCommandLineArg("-pickle-http-port", out string portValue);
-    if (!bare && !valued) {
+  // On unless asked otherwise. The old -pickle-http is gone; RimWorld ignores an argument
+  // nothing reads, so a command line that still passes it keeps working.
+  public static void StartUnlessDisabled() {
+    if (GenCommandLine.CommandLineArgPassed("-pickle-no-http")) {
       return;
     }
 
+    bool valued = GenCommandLine.TryGetCommandLineArg("-pickle-http-port", out string portValue);
     int port = valued && int.TryParse(portValue, out int parsed) ? parsed : DefaultPort;
     Start(port);
+    OpenInBrowser(port);
   }
 
   public static void Start(int port) {
@@ -78,6 +81,22 @@ public static class PickleHttpServer {
       // shutting down anyway, and a listener that is already dead throws here
     }
     listener = null;
+  }
+
+  // Application.OpenURL picks the platform's own handler. Not on an autorun: that is CI or a
+  // container, where there is no browser and nobody to look at it.
+  private static void OpenInBrowser(int port) {
+    if (!running
+        || GenCommandLine.CommandLineArgPassed("-pickle-no-browser")
+        || GenCommandLine.CommandLineArgPassed("-pickle-run")) {
+      return;
+    }
+
+    try {
+      Application.OpenURL($"http://localhost:{port}/");
+    } catch (Exception ex) {
+      Log.Warn(ex, "pickle: could not open the dashboard in a browser");
+    }
   }
 
   private static void Serve() {
