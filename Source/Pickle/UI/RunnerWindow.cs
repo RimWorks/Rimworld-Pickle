@@ -57,10 +57,12 @@ public class RunnerWindow : Window {
   }
 
   // PreOpen always rebuilds windowRect from this property, overwriting anything the
-  // constructor set, so the size has to live here.
+  // constructor set, so the size has to live here. 0.8 leaves a tenth of the screen
+  // either side.
 
   /// <inheritdoc/>
-  public override Vector2 InitialSize => new Vector2(960f, 640f);
+  public override Vector2 InitialSize =>
+      new Vector2(Verse.UI.screenWidth * 0.8f, Verse.UI.screenHeight * 0.8f);
 
   // One runner per session, so a run started in the browser shows up in game. It exists
   // whether or not the window was ever opened.
