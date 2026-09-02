@@ -132,4 +132,53 @@ public class SuiteProbeTests {
       Directory.Delete(tempDir, true);
     }
   }
+
+  [Fact]
+  public void Probe_WithWritableRoot_FindsFixturesInBothDirs() {
+    string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+    try {
+      string fixturesDir = Path.Combine(tempDir, "TestMod", "Pickle", "Fixtures");
+      string writableDir = Path.Combine(tempDir, "writable", "TestMod");
+      Directory.CreateDirectory(fixturesDir);
+      Directory.CreateDirectory(writableDir);
+
+      File.WriteAllText(Path.Combine(fixturesDir, "committed.rws"), string.Empty);
+      File.WriteAllText(Path.Combine(writableDir, "recorded.rws"), string.Empty);
+
+      SuiteLayout layout = SuiteLayout.FromModRoot(
+          Path.Combine(tempDir, "TestMod"), Path.Combine(tempDir, "writable"));
+      DiscoveredSuite? suite = SuiteProbe.Probe("TestMod", layout);
+
+      Assert.NotNull(suite);
+      Assert.Equal(2, suite.FixtureFiles.Count);
+      Assert.Contains(Path.Combine(fixturesDir, "committed.rws"), suite.FixtureFiles);
+      Assert.Contains(Path.Combine(writableDir, "recorded.rws"), suite.FixtureFiles);
+    } finally {
+      Directory.Delete(tempDir, true);
+    }
+  }
+
+  [Fact]
+  public void Probe_WithSameNameInBothDirs_PrefersTheRecordedOne() {
+    string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+    try {
+      string fixturesDir = Path.Combine(tempDir, "TestMod", "Pickle", "Fixtures");
+      string writableDir = Path.Combine(tempDir, "writable", "TestMod");
+      Directory.CreateDirectory(fixturesDir);
+      Directory.CreateDirectory(writableDir);
+
+      File.WriteAllText(Path.Combine(fixturesDir, "one-planet.rws"), string.Empty);
+      File.WriteAllText(Path.Combine(writableDir, "one-planet.rws"), string.Empty);
+
+      SuiteLayout layout = SuiteLayout.FromModRoot(
+          Path.Combine(tempDir, "TestMod"), Path.Combine(tempDir, "writable"));
+      DiscoveredSuite? suite = SuiteProbe.Probe("TestMod", layout);
+
+      Assert.NotNull(suite);
+      Assert.Single(suite.FixtureFiles);
+      Assert.Equal(Path.Combine(writableDir, "one-planet.rws"), suite.FixtureFiles[0]);
+    } finally {
+      Directory.Delete(tempDir, true);
+    }
+  }
 }

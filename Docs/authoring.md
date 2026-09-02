@@ -112,6 +112,26 @@ fixtures for the state they capture, not for the test that uses them.
 To make a fixture, play until the game is in the state you want. Then open the runner
 and select **Save fixture**. Pick the target mod and a name.
 
+### Where a recorded fixture is written
+
+Pickle cannot count on the mod folder being writable. A Workshop install and a Docker
+container both mount it read-only, and the save then fails with nothing to show for the
+playthrough that produced it.
+
+So a recorded fixture is written under a writable root instead:
+
+| Setting | Location |
+|---|---|
+| `-pickle-fixtures-dir=<path>` | `<path>/<mod folder name>/` |
+| Default | `<save data folder>/PickleFixtures/<mod folder name>/` |
+
+Pickle scans both that directory and the mod's own `Pickle/Fixtures/`, so a fixture works
+as soon as it is recorded. If both hold the same name, the recorded one wins: re-recording
+is how you replace a fixture, and the committed copy would otherwise keep shadowing it.
+
+Copy the file into `Pickle/Fixtures/` and commit it when you are happy with it. That is
+where it belongs long term, and it is the copy other people get.
+
 ### A quickstart instead of a save
 
 If you use [Quickstarts](https://github.com/RimWorks/Quickstarts), a scenario can build

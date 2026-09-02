@@ -89,8 +89,8 @@ public class SaveFixtureDialog : Window {
         return;
       }
 
-      Directory.CreateDirectory(suite.FixturesDir);
-      string target = Path.Combine(suite.FixturesDir, name + ".rws");
+      Directory.CreateDirectory(suite.WritableFixturesDir);
+      string target = Path.Combine(suite.WritableFixturesDir, name + ".rws");
       File.Copy(scratch, target, overwrite: true);
 
       Messages.Message("Pickle_SavedFixtureTo".Translate(target), MessageTypeDefOf.TaskCompletion, false);

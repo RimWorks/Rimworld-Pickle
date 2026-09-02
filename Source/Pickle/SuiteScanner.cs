@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using RimWorks.Pickle.Core.Discovery;
+using RimWorks.Pickle.Fixtures;
 using Verse;
 using Log = RimWorks.RimLogging.Log;
 
@@ -10,9 +11,10 @@ namespace RimWorks.Pickle;
 public static class SuiteScanner {
   public static List<DiscoveredSuite> DiscoverSuites() {
     List<DiscoveredSuite> suites = [];
+    string? writableRoot = FixtureDirectoryResolver.Resolve();
 
     foreach (ModContentPack mod in LoadedModManager.RunningModsListForReading) {
-      SuiteLayout layout = SuiteLayout.FromModRoot(mod.RootDir);
+      SuiteLayout layout = SuiteLayout.FromModRoot(mod.RootDir, writableRoot);
       DiscoveredSuite? suite = SuiteProbe.Probe(mod.Name, layout);
 
       if (suite != null) {
