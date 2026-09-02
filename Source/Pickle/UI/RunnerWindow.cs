@@ -201,6 +201,37 @@ public class RunnerWindow : Window {
     return !deselectedScenarios.Contains((sourcePath, scenarioIndex));
   }
 
+  internal bool IsScenarioVisible(DiscoveredSuite suite, FeaturePlan plan, ScenarioPlan scenario) {
+    if (ModFilterSelection != null && suite.ModName != ModFilterSelection) {
+      return false;
+    }
+
+    if (ActiveTagFilters.Count > 0 && !ActiveTagFilters.All(t => scenario.Tags.Contains(t))) {
+      return false;
+    }
+
+    if (string.IsNullOrEmpty(SearchText)) {
+      return true;
+    }
+
+    return scenario.Name.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0
+        || plan.Name.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0;
+  }
+
+  // Picking a tag is how you say "run these", so the filter becomes the selection outright
+  // rather than leaving whatever was ticked before it.
+  internal void SelectOnlyVisible() {
+    int index = 0;
+    foreach ((DiscoveredSuite suite, FeaturePlan plan) in parsedFeatures) {
+      string sourcePath = plan.SourcePath ?? string.Empty;
+      for (int i = 0; i < plan.Scenarios.Count; i++) {
+        SetScenarioSelected(sourcePath, index + i, IsScenarioVisible(suite, plan, plan.Scenarios[i]));
+      }
+
+      index += plan.Scenarios.Count;
+    }
+  }
+
   internal void SetScenarioSelected(string sourcePath, int scenarioIndex, bool selected) {
     (string, int) key = (sourcePath, scenarioIndex);
     if (selected) {

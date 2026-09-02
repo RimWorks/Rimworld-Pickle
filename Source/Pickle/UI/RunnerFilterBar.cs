@@ -33,6 +33,8 @@ public static class RunnerFilterBar {
         } else {
           window.ActiveTagFilters.Add(tag);
         }
+
+        window.SelectOnlyVisible();
       }
 
       x += chipWidth + ChipPadding;

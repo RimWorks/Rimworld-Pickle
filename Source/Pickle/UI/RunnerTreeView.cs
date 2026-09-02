@@ -84,10 +84,10 @@ public static class RunnerTreeView {
       Rect rowRect = new Rect(0f, RowTops[i], viewRect.width, row.Height);
       switch (row.Kind) {
         case RowKind.Mod:
-          DrawModRow(rowRect, window, row.ModName, row.ModScenarioCount, row.ModFeatures!);
+          DrawModRow(rowRect, window, row.ModName, row.ModScenarioCount, row.SelectionKeys!);
           break;
         case RowKind.Feature:
-          DrawFeatureRow(rowRect, window, row.Plan!, row.Index);
+          DrawFeatureRow(rowRect, window, row.Plan!, row.Index, row.SelectionKeys!);
           break;
         default:
           DrawScenarioRow(rowRect, window, row.Plan!, row.Scenario!, row.Index);
@@ -112,22 +112,46 @@ public static class RunnerTreeView {
         continue;
       }
 
-      // Uses the unfiltered group so the mod checkbox always covers every scenario. A search
-      // that hides rows should not shrink what select-all means.
-      List<(FeaturePlan Plan, int StartIndex)> modFeatures = [.. group.Select(f => (f.Plan, startIndices[f.Plan]))];
+      // Keyed to what is on screen, so filtering to a tag and ticking the mod selects that
+      // tag's scenarios and nothing hidden.
+      List<(string SourcePath, int Index)> modKeys = [];
+      List<List<(string SourcePath, int Index)>> featureKeys = [];
+      foreach ((DiscoveredSuite suite, FeaturePlan plan) in features) {
+        string featurePath = plan.SourcePath ?? string.Empty;
+        int featureStart = startIndices[plan];
+        List<(string SourcePath, int Index)> keys = [];
+        for (int i = 0; i < plan.Scenarios.Count; i++) {
+          if (IsScenarioVisible(window, suite, plan, plan.Scenarios[i])) {
+            keys.Add((featurePath, featureStart + i));
+          }
+        }
+
+        featureKeys.Add(keys);
+        modKeys.AddRange(keys);
+      }
+
       y = AddRow(
           new Row {
             Kind = RowKind.Mod,
             Height = ModRowHeight,
             ModName = group.Key,
-            ModScenarioCount = group.Sum(f => f.Plan.Scenarios.Count),
-            ModFeatures = modFeatures,
+            ModScenarioCount = modKeys.Count,
+            SelectionKeys = modKeys,
           },
           y);
 
-      foreach ((DiscoveredSuite suite, FeaturePlan plan) in features) {
+      for (int f = 0; f < features.Count; f++) {
+        (DiscoveredSuite suite, FeaturePlan plan) = features[f];
         int startIndex = startIndices[plan];
-        y = AddRow(new Row { Kind = RowKind.Feature, Height = FeatureRowHeight, Plan = plan, Index = startIndex }, y);
+        y = AddRow(
+            new Row {
+              Kind = RowKind.Feature,
+              Height = FeatureRowHeight,
+              Plan = plan,
+              Index = startIndex,
+              SelectionKeys = featureKeys[f],
+            },
+            y);
 
         for (int i = 0; i < plan.Scenarios.Count; i++) {
           ScenarioPlan scenario = plan.Scenarios[i];
@@ -165,33 +189,22 @@ public static class RunnerTreeView {
   }
 
   private static bool IsScenarioVisible(RunnerWindow window, DiscoveredSuite suite, FeaturePlan plan, ScenarioPlan scenario) {
-    if (window.ModFilterSelection != null && suite.ModName != window.ModFilterSelection) {
-      return false;
-    }
-
-    if (window.ActiveTagFilters.Count > 0 && !window.ActiveTagFilters.All(t => scenario.Tags.Contains(t))) {
-      return false;
-    }
-
-    if (string.IsNullOrEmpty(window.SearchText)) {
-      return true;
-    }
-
-    return scenario.Name.IndexOf(window.SearchText, StringComparison.OrdinalIgnoreCase) >= 0
-        || plan.Name.IndexOf(window.SearchText, StringComparison.OrdinalIgnoreCase) >= 0;
+    return window.IsScenarioVisible(suite, plan, scenario);
   }
 
-  private static void DrawModRow(Rect rect, RunnerWindow window, string modName, int scenarioCount, List<(FeaturePlan Plan, int StartIndex)> modFeatures) {
+  private static void DrawModRow(
+      Rect rect,
+      RunnerWindow window,
+      string modName,
+      int scenarioCount,
+      List<(string SourcePath, int Index)> keys) {
     Widgets.DrawHighlightIfMouseover(rect);
 
-    MultiCheckboxState state = ComputeCheckState(window, modFeatures);
+    MultiCheckboxState state = ComputeCheckState(window, keys);
     Rect checkRect = new Rect(rect.x + ModIndent, rect.y + ((rect.height - ModCheckboxSize) / 2f), ModCheckboxSize, ModCheckboxSize);
     MultiCheckboxState newState = CheckboxMultiIdFree(checkRect, state);
     if (newState != state) {
-      bool selected = newState == MultiCheckboxState.On;
-      foreach ((FeaturePlan plan, int startIndex) in modFeatures) {
-        SetScenariosSelected(window, plan, startIndex, selected);
-      }
+      SetSelected(window, keys, newState == MultiCheckboxState.On);
     }
 
     Rect labelRect = new Rect(checkRect.xMax + 6f, rect.y, rect.width - checkRect.xMax - 90f, rect.height);
@@ -208,14 +221,15 @@ public static class RunnerTreeView {
     Text.Font = GameFont.Small;
   }
 
-  private static void DrawFeatureRow(Rect rect, RunnerWindow window, FeaturePlan plan, int startIndex) {
+  private static void DrawFeatureRow(
+      Rect rect, RunnerWindow window, FeaturePlan plan, int startIndex, List<(string SourcePath, int Index)> keys) {
     Widgets.DrawHighlightIfMouseover(rect);
 
-    MultiCheckboxState state = ComputeCheckState(window, plan, startIndex);
+    MultiCheckboxState state = ComputeCheckState(window, keys);
     Rect checkRect = new Rect(rect.x + FeatureIndent, rect.y + ((rect.height - FeatureCheckboxSize) / 2f), FeatureCheckboxSize, FeatureCheckboxSize);
     MultiCheckboxState newState = CheckboxMultiIdFree(checkRect, state);
     if (newState != state) {
-      SetScenariosSelected(window, plan, startIndex, newState == MultiCheckboxState.On);
+      SetSelected(window, keys, newState == MultiCheckboxState.On);
     }
 
     int total = plan.Scenarios.Count;
@@ -336,43 +350,22 @@ public static class RunnerTreeView {
     (on ? SoundDefOf.Checkbox_TurnedOn : SoundDefOf.Checkbox_TurnedOff).PlayOneShotOnCamera();
   }
 
-  private static void SetScenariosSelected(RunnerWindow window, FeaturePlan plan, int startIndex, bool selected) {
-    string sourcePath = plan.SourcePath ?? string.Empty;
-    for (int i = 0; i < plan.Scenarios.Count; i++) {
-      window.SetScenarioSelected(sourcePath, startIndex + i, selected);
+  private static void SetSelected(
+      RunnerWindow window, List<(string SourcePath, int Index)> keys, bool selected) {
+    foreach ((string sourcePath, int index) in keys) {
+      window.SetScenarioSelected(sourcePath, index, selected);
     }
   }
 
-  private static MultiCheckboxState ComputeCheckState(RunnerWindow window, FeaturePlan plan, int startIndex) {
-    string sourcePath = plan.SourcePath ?? string.Empty;
+  private static MultiCheckboxState ComputeCheckState(
+      RunnerWindow window, List<(string SourcePath, int Index)> keys) {
     bool anySelected = false;
     bool anyUnselected = false;
-    for (int i = 0; i < plan.Scenarios.Count; i++) {
-      if (window.IsScenarioSelected(sourcePath, startIndex + i)) {
+    foreach ((string sourcePath, int index) in keys) {
+      if (window.IsScenarioSelected(sourcePath, index)) {
         anySelected = true;
       } else {
         anyUnselected = true;
-      }
-    }
-
-    if (anySelected && anyUnselected) {
-      return MultiCheckboxState.Partial;
-    }
-
-    return anySelected ? MultiCheckboxState.On : MultiCheckboxState.Off;
-  }
-
-  private static MultiCheckboxState ComputeCheckState(RunnerWindow window, List<(FeaturePlan Plan, int StartIndex)> features) {
-    bool anySelected = false;
-    bool anyUnselected = false;
-    foreach ((FeaturePlan plan, int startIndex) in features) {
-      string sourcePath = plan.SourcePath ?? string.Empty;
-      for (int i = 0; i < plan.Scenarios.Count; i++) {
-        if (window.IsScenarioSelected(sourcePath, startIndex + i)) {
-          anySelected = true;
-        } else {
-          anyUnselected = true;
-        }
       }
     }
 
@@ -409,7 +402,7 @@ public static class RunnerTreeView {
 
     public int ModScenarioCount { get; set; }
 
-    public List<(FeaturePlan Plan, int StartIndex)>? ModFeatures { get; set; }
+    public List<(string SourcePath, int Index)>? SelectionKeys { get; set; }
 
     public FeaturePlan? Plan { get; set; }
 
