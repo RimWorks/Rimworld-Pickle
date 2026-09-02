@@ -56,6 +56,11 @@ public static class FixtureLoader {
 
     AutorunState.SuppressingFixtureLoad = true;
     try {
+      // Before start(), not only after. WorldRenderer.RegenerateDirtyLayersNow_Async captures a
+      // draw layer and yields between frames; loading discards the world under it, and the
+      // resume then reads freed tile arrays through a Burst call, which is a signal 11.
+      await driver.WaitUntil(() => !LongEventHandler.AnyEventNowOrWaiting, 60f, scope);
+
       start();
 
       await driver.WaitUntil(
