@@ -39,7 +39,7 @@ public static class SuiteProbe {
     if (layout.WritableFixturesDir != layout.FixturesDir) {
       foreach (string path in FindFiles(layout.WritableFixturesDir, "*.rws", SearchOption.TopDirectoryOnly)) {
         string name = Path.GetFileNameWithoutExtension(path);
-        if (byName.TryGetValue(name, out string committed)) {
+        if (byName.TryGetValue(name, out string? committed)) {
           shadowed.Add($"{name}: using {path}, ignoring {committed}");
         }
 

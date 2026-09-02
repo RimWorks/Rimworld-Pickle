@@ -19,7 +19,7 @@ public static class FixtureDirectoryResolver {
   /// <summary>
   /// Null when the mod folders are writable, which leaves the committed layout alone.
   /// </summary>
-  /// <param name="probeRoot">A mod root to test for writability. Null skips the test.</param>
+  /// <param name="modRoot">The mod folder to test. Probed and cached per root.</param>
   /// <returns>The writable root, or null to write into each mod's own Pickle/Fixtures/.</returns>
   public static string? Resolve(string modRoot) {
     if (ByModRoot.TryGetValue(modRoot, out string? cached)) {
@@ -38,7 +38,7 @@ public static class FixtureDirectoryResolver {
       return explicitDir;
     }
 
-    if (IsWritable(Path.Combine(modRoot, "Pickle", "Fixtures"))) {
+    if (IsWritable(Path.Combine(modRoot, "Pickle"))) {
       return null;
     }
 
@@ -57,11 +57,10 @@ public static class FixtureDirectoryResolver {
     return fallback;
   }
 
-  /// <summary>Creates the directory if it is missing, since that is itself a write test.</summary>
+  /// <summary>Writes a probe file into the mod's Pickle/ rather than creating Fixtures/, so a
+  /// mod that ships only features does not get an empty directory it never asked for.</summary>
   private static bool IsWritable(string dir) {
-    try {
-      Directory.CreateDirectory(dir);
-    } catch {
+    if (!Directory.Exists(dir)) {
       return false;
     }
 
