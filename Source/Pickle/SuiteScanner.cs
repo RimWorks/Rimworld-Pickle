@@ -11,12 +11,15 @@ namespace RimWorks.Pickle;
 public static class SuiteScanner {
   public static List<DiscoveredSuite> DiscoverSuites() {
     List<DiscoveredSuite> suites = [];
-    // Probed against the first mod that ships a suite: they all live under the same Mods
-    // directory, so one of them answers for all of them.
-    string? writableRoot = FixtureDirectoryResolver.Resolve(FirstSuiteRoot());
 
     foreach (ModContentPack mod in LoadedModManager.RunningModsListForReading) {
-      SuiteLayout layout = SuiteLayout.FromModRoot(mod.RootDir, writableRoot);
+      // Resolve only for a mod that ships a suite: the probe writes to test writability, and
+      // every other mod would get an empty Pickle/Fixtures/ it never asked for.
+      if (!Directory.Exists(Path.Combine(mod.RootDir, "Pickle"))) {
+        continue;
+      }
+
+      SuiteLayout layout = SuiteLayout.FromModRoot(mod.RootDir, FixtureDirectoryResolver.Resolve(mod.RootDir));
       DiscoveredSuite? suite = SuiteProbe.Probe(mod.Name, layout);
 
       if (suite != null) {
@@ -25,16 +28,6 @@ public static class SuiteScanner {
     }
 
     return suites;
-  }
-
-  private static string? FirstSuiteRoot() {
-    foreach (ModContentPack mod in LoadedModManager.RunningModsListForReading) {
-      if (Directory.Exists(Path.Combine(mod.RootDir, "Pickle"))) {
-        return mod.RootDir;
-      }
-    }
-
-    return null;
   }
 
   public static void LogSuites(List<DiscoveredSuite> suites) {
