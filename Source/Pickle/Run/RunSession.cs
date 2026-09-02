@@ -42,6 +42,7 @@ public class RunSession {
 
   private List<StepResult> currentStepResults = new();
   private string? currentLoadedFixture;
+  private string? currentLoadedQuickstart;
   private string currentOwningMod = string.Empty;
   private TagSet currentScenarioTags = new TagSet(Array.Empty<string>());
 
@@ -259,6 +260,7 @@ public class RunSession {
     try {
       LogWatch.Arm();
 
+      await LoadQuickstartIfTagged(ctx, scenario.Tags);
       await RunBeforeHooks(ctx, scenario.Tags);
 
       // fast mode drives sixty ticks a frame and films almost nothing, so @watch trades
@@ -601,6 +603,21 @@ public class RunSession {
         $"the save did not round trip; {errors.Count} error(s) logged: {string.Join(" | ", errors)}");
   }
 
+  // The tag builds the world before any step runs, so the scenario reads as if the state
+  // was already there. @same-world skips a rebuild the way a repeated fixture load does.
+  private async Task LoadQuickstartIfTagged(PickleContext ctx, TagSet tags) {
+    string? name = QuickstartTag.NameIn(tags);
+    if (name == null || (tags.Contains("@same-world") && currentLoadedQuickstart == name)) {
+      return;
+    }
+
+    await FixtureLoader.LoadQuickstart(name, driver, ctx.WaitScope);
+
+    currentLoadedQuickstart = name;
+    currentLoadedFixture = null;
+    LogWatch.Arm();
+  }
+
   private async Task LoadFixtureStep(PickleContext ctx, string fixtureName) {
     if (currentScenarioTags.Contains("@same-world") && currentLoadedFixture == fixtureName) {
       return;
@@ -615,6 +632,7 @@ public class RunSession {
     await FixtureLoader.LoadFixture(resolution.Fixture!.FullPath, driver, ctx.WaitScope);
 
     currentLoadedFixture = fixtureName;
+    currentLoadedQuickstart = null;
     LogWatch.Arm();
   }
 

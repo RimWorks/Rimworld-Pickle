@@ -79,6 +79,7 @@ that feature.
 | `@allow-errors` | Do not fail the scenario when the game logs an error |
 | `@film` | Record the scenario and attach the video to the report |
 | `@watch` | Make wait steps pass real time instead of driving ticks |
+| `@quickstart:Name` | Build the starting world from a Quickstarts quickstart |
 
 A film stops at sixty seconds by default, and Pickle logs when it does. Raise it with
 `-pickle-max-film-seconds`. Nothing sets the game's own speed for you, so add
@@ -110,6 +111,31 @@ fixtures for the state they capture, not for the test that uses them.
 
 To make a fixture, play until the game is in the state you want. Then open the runner
 and select **Save fixture**. Pick the target mod and a name.
+
+### A quickstart instead of a save
+
+If you use [Quickstarts](https://github.com/RimWorks/Quickstarts), a scenario can build
+its world from code instead of loading a save:
+
+```gherkin
+@quickstart:OnePlanetParityQuickstart
+Feature: parity
+```
+
+The name is the quickstart class name, the same one `-quickstart=` takes. Pickle builds
+the world before the first step runs, so the scenario reads as if the state was there
+already. `@same-world` skips the rebuild between scenarios, exactly as it does for a save.
+
+A quickstart is not a save, so nothing goes into git and nothing goes stale when a def
+changes. The cost is that it regenerates every run, which takes as long as world
+generation does.
+
+A scenario cannot do both. Tag it `@quickstart:` and also run `the save "..." is loaded`
+and Pickle rejects that feature at startup. The log names the file, the quickstart, and
+the step. The rest of the suite still loads.
+
+Pickle finds Quickstarts by reflection, so it stays optional. Nothing breaks if the mod
+is absent until a scenario asks for a quickstart, and that scenario then fails saying so.
 
 Loading a save reloads the Unity scene. Any object you captured before the load is
 stale afterwards, so read game state again after a fixture step.

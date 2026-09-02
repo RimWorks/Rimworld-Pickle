@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Gherkin;
 using Gherkin.Ast;
 using RimWorks.Pickle.Core;
 using RimWorks.Pickle.Core.Discovery;
@@ -29,7 +28,7 @@ public static class SuiteRunner {
 
     try {
       List<DiscoveredSuite> discoveredSuites = SuiteScanner.DiscoverSuites();
-      List<(DiscoveredSuite Suite, FeaturePlan Plan)> parsedFeatures = FilterFeatures(ParseFeatures(discoveredSuites), filter);
+      List<(DiscoveredSuite Suite, FeaturePlan Plan)> parsedFeatures = FilterFeatures(FeatureParser.ParseAll(discoveredSuites), filter);
 
       List<Assembly> assemblies = BuildAssemblyList(discoveredSuites);
       StepTable stepTable = StepScanner.PopulateStepTable(assemblies);
@@ -111,27 +110,6 @@ public static class SuiteRunner {
     }
 
     return kept;
-  }
-
-  private static List<(DiscoveredSuite Suite, FeaturePlan Plan)> ParseFeatures(List<DiscoveredSuite> discoveredSuites) {
-    List<(DiscoveredSuite Suite, FeaturePlan Plan)> parsed = new();
-
-    foreach (DiscoveredSuite suite in discoveredSuites) {
-      foreach (string featureFile in suite.FeatureFiles) {
-        try {
-          string featureText = File.ReadAllText(featureFile);
-          StringReader reader = new StringReader(featureText);
-          Parser parser = new Parser();
-          GherkinDocument gherkinDoc = parser.Parse(reader);
-          FeaturePlan plan = GherkinAdapter.Adapt(gherkinDoc, featureFile);
-          parsed.Add((suite, plan));
-        } catch (Exception ex) {
-          Log.Error(ex, $"pickle: failed to parse {Path.GetFileName(featureFile)}");
-        }
-      }
-    }
-
-    return parsed;
   }
 
   private static List<Assembly> BuildAssemblyList(List<DiscoveredSuite> discoveredSuites) {

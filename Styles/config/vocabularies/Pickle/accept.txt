@@ -61,3 +61,6 @@ precepts
 DLC
 packageId
 startable
+Quickstarts
+quickstart
+quickstarts

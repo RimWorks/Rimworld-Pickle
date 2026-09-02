@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Gherkin;
 using Gherkin.Ast;
 using RimWorks.Pickle.Core;
 using RimWorks.Pickle.Core.Discovery;
@@ -345,20 +343,7 @@ public class RunnerWindow : Window {
     DiscoveredSuites = SuiteScanner.DiscoverSuites();
     parsedFeatures.Clear();
 
-    foreach (DiscoveredSuite suite in DiscoveredSuites) {
-      foreach (string featureFile in suite.FeatureFiles) {
-        try {
-          string featureText = File.ReadAllText(featureFile);
-          StringReader reader = new StringReader(featureText);
-          Parser parser = new Parser();
-          GherkinDocument gherkinDoc = parser.Parse(reader);
-          FeaturePlan plan = GherkinAdapter.Adapt(gherkinDoc, featureFile);
-          parsedFeatures.Add((suite, plan));
-        } catch (Exception ex) {
-          Log.Error(ex, $"pickle: failed to parse {Path.GetFileName(featureFile)}");
-        }
-      }
-    }
+    parsedFeatures.AddRange(FeatureParser.ParseAll(DiscoveredSuites));
 
     PublishSnapshot();
   }

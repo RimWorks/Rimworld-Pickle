@@ -9,13 +9,18 @@ using Log = RimWorks.RimLogging.Log;
 namespace RimWorks.Pickle.Fixtures;
 
 public static class FixtureLoader {
+  /// <summary>Builds the world a quickstart describes, then waits for it the same way a save load does.</summary>
+  public static Task LoadQuickstart(string quickstartName, PickleDriver driver, object? scope = null) {
+    return LoadAndSettle(() => QuickstartBridge.Launch(quickstartName), driver, scope);
+  }
+
   public static async Task LoadFixture(string resolvedRwsPath, PickleDriver driver, object? scope = null) {
     string savedGamesFolder = GenFilePaths.SavedGamesFolderPath;
     string tempRwsPath = Path.Combine(savedGamesFolder, "__pickle_fixture.rws");
 
     try {
       File.Copy(resolvedRwsPath, tempRwsPath, overwrite: true);
-      await LoadAndSettle("__pickle_fixture", driver, scope);
+      await LoadAndSettle(() => GameDataSaveLoader.LoadGame("__pickle_fixture"), driver, scope);
     } finally {
       DeleteQuietly(tempRwsPath);
     }
@@ -38,7 +43,7 @@ public static class FixtureLoader {
             $"saving '{saveName}' wrote no file; the scribe error is in the log above");
       }
 
-      await LoadAndSettle(saveName, driver, scope);
+      await LoadAndSettle(() => GameDataSaveLoader.LoadGame(saveName), driver, scope);
     } finally {
       if (!keepSave) {
         DeleteQuietly(savePath);
@@ -46,12 +51,12 @@ public static class FixtureLoader {
     }
   }
 
-  private static async Task LoadAndSettle(string saveName, PickleDriver driver, object? scope) {
+  private static async Task LoadAndSettle(Action start, PickleDriver driver, object? scope) {
     Game? gameBeforeLoad = Current.Game;
 
     AutorunState.SuppressingFixtureLoad = true;
     try {
-      GameDataSaveLoader.LoadGame(saveName);
+      start();
 
       await driver.WaitUntil(
           () => Current.Game != null
