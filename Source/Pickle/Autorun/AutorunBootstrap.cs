@@ -81,7 +81,7 @@ public static class AutorunBootstrap {
       PickleDriver driver = PickleDriver.Instance;
       await driver.WaitUntil(() => Current.ProgramState == ProgramState.Entry, 180f);
 
-      await SuiteRunner.Run(args.RunFilter, args.IncludeWip, args.Seed, scenario => {
+      await SuiteRunner.Run(args.RunFilter, args.Seed, scenario => {
         accumulated.Add(scenario);
         Watchdog.RecordProgress(accumulated);
 

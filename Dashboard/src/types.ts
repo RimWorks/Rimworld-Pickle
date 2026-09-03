@@ -46,6 +46,7 @@ export type Snapshot = {
   cancelRequested: boolean;
   watch: boolean;
   breakOnFailure: boolean;
+  includeWip: boolean;
   controllable: boolean;
   features: Feature[];
 };

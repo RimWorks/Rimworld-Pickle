@@ -30,6 +30,7 @@ public static class DashboardStrings {
     "Pickle_Film",
     "Pickle_CloseImage",
     "Pickle_BreakOnFailure",
+    "Pickle_IncludeWip",
     "Pickle_ModeWatch",
     "Pickle_ModeFast",
     "Pickle_OutcomePassed",

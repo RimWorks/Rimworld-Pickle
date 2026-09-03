@@ -37,6 +37,7 @@ public static class RunnerSnapshot {
     json.Append("\"cancelRequested\":").Append(session?.CancelRequested == true ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"watch\":").Append(PickleRunMode.Current == PickleRunMode.Mode.Watch ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"breakOnFailure\":").Append(BreakOnFailureState.Enabled ? TrueLiteral : FalseLiteral).Append(',');
+    json.Append("\"includeWip\":").Append(IncludeWipState.Enabled ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"controllable\":").Append(isSelected != null ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"strings\":").Append(DashboardStrings.BuildJson()).Append(',');
 

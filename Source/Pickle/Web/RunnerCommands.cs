@@ -62,6 +62,11 @@ public static class RunnerCommands {
     Post(() => RunnerWindow.Instance.PublishSnapshot());
   }
 
+  public static void SetIncludeWip(bool on) {
+    IncludeWipState.Enabled = on;
+    Post(() => RunnerWindow.Instance.PublishSnapshot());
+  }
+
   public static void SetBreakOnFailure(bool on) {
     BreakOnFailureState.Enabled = on;
     Post(() => RunnerWindow.Instance.PublishSnapshot());

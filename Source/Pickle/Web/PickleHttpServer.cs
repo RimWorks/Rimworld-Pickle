@@ -163,6 +163,12 @@ public static class PickleHttpServer {
       return;
     }
 
+    if (path == "/wip") {
+      RunnerCommands.SetIncludeWip(context.Request.QueryString["on"] != "false");
+      Write(context, JsonContentType, OkBody);
+      return;
+    }
+
     if (path == "/break") {
       RunnerCommands.SetBreakOnFailure(context.Request.QueryString["on"] != "false");
       Write(context, JsonContentType, OkBody);

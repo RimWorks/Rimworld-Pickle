@@ -21,7 +21,6 @@ namespace RimWorks.Pickle.Runtime;
 public static class SuiteRunner {
   public static async Task<List<ScenarioResult>> Run(
       string? filter = null,
-      bool includeWip = false,
       int seed = RunSession.DefaultSeed,
       Action<ScenarioResult>? onScenarioCompleted = null) {
     List<ScenarioResult> allResults = new();
@@ -52,7 +51,7 @@ public static class SuiteRunner {
 
         // wip/tag filtering means completion order does not track plan order,
         // so results are placed by scenario name rather than by a counter.
-        List<ScenarioResult> featureResults = await session.RunFeature(plan, suite.ModName, includeWip, result => {
+        List<ScenarioResult> featureResults = await session.RunFeature(plan, suite.ModName, IncludeWipState.Enabled, result => {
           for (int i = 0; i < plan.Scenarios.Count; i++) {
             if (plan.Scenarios[i].Name == result.ScenarioName) {
               published[(sourcePath, featureStartIndex + i)] = result;

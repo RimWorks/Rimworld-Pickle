@@ -66,7 +66,17 @@ export function Toolbar({ snap }: Readonly<{ snap: Snapshot }>) {
           checked={snap.breakOnFailure}
           onChange={(e) => post(`/break?on=${e.target.checked}`)}
         />
-        <span className="label-text text-sm">Break on failure</span>
+        <span className="label-text text-sm">{t("Pickle_BreakOnFailure", "Break on failure")}</span>
+      </label>
+
+      <label className="label cursor-pointer gap-2">
+        <input
+          type="checkbox"
+          className="toggle toggle-sm"
+          checked={snap.includeWip}
+          onChange={(e) => post(`/wip?on=${e.target.checked}`)}
+        />
+        <span className="label-text text-sm">{t("Pickle_IncludeWip", "Include @wip")}</span>
       </label>
 
       <div className="grow" />

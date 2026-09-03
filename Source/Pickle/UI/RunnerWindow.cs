@@ -428,6 +428,7 @@ public class RunnerWindow : Window {
         await session.RunFeature(
             plan,
             suite.ModName,
+            IncludeWipState.Enabled,
             onScenarioCompleted: result => {
               if (completed < selectedPositions.Count) {
                 results[(sourcePath, featureStartIndex + selectedPositions[completed])] = result;
