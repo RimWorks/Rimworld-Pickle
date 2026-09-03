@@ -27,6 +27,10 @@ public static class PickleHooks {
     DuringUIRootOnGUI?.Invoke();
   }
 
+  public static void AfterMainMenuControls(Rect rect) {
+    MainMenuRunnerButton.Draw(rect);
+  }
+
   public static void AfterButtonText(Rect rect, string label) {
     WidgetCapture.AfterButtonText(rect, label);
   }

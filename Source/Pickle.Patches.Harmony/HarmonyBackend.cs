@@ -1,6 +1,7 @@
 using System.Xml;
 using HarmonyLib;
 using RimWorks.Pickle.Patching;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -24,6 +25,10 @@ public class HarmonyBackend : IPatchBackend {
 
   public static void UIRootOnGUIPostfix() {
     PickleHooks.AfterUIRootOnGUI();
+  }
+
+  public static void MainMenuControlsPostfix(Rect rect) {
+    PickleHooks.AfterMainMenuControls(rect);
   }
 
   public static void ButtonTextPostfix(Rect rect, string label) {
@@ -72,6 +77,10 @@ public class HarmonyBackend : IPatchBackend {
     harmony.Patch(
         typeof(WindowStack).GetMethod(nameof(WindowStack.Add)),
         prefix: Handler(nameof(AddPrefix)));
+
+    harmony.Patch(
+        typeof(MainMenuDrawer).GetMethod(nameof(MainMenuDrawer.DoMainMenuControls)),
+        postfix: Handler(nameof(MainMenuControlsPostfix)));
   }
 
   private static HarmonyMethod Handler(string name) {

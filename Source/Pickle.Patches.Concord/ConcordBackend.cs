@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Xml;
 using Concord;
 using RimWorks.Pickle.Patching;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -25,6 +26,10 @@ public class ConcordBackend : IPatchBackend {
 
   public static void AfterUIRootOnGUI() {
     PickleHooks.AfterUIRootOnGUI();
+  }
+
+  public static void AfterMainMenuControls(Rect rect) {
+    PickleHooks.AfterMainMenuControls(rect);
   }
 
   public static void AfterButtonText(Rect rect, string label) {
@@ -78,6 +83,11 @@ public class ConcordBackend : IPatchBackend {
         typeof(WindowStack).GetMethod(nameof(WindowStack.Add)),
         Injection(nameof(BeforeWindowAdd)),
         At.Head);
+
+    Patcher.Patch(
+        typeof(MainMenuDrawer).GetMethod(nameof(MainMenuDrawer.DoMainMenuControls)),
+        Injection(nameof(AfterMainMenuControls)),
+        At.Tail);
   }
 
   private static MethodBase Injection(string name) {
