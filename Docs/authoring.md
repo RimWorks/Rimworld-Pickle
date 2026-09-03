@@ -143,7 +143,7 @@ where it belongs long term, and it is the copy other people get.
 
 ### A quickstart instead of a save
 
-If you use [Quickstarts](https://github.com/RimWorks/Quickstarts), a scenario can build
+If you use [Quickstarts](https://github.com/RimWorks/Rimworld-Quickstarts), a scenario can build
 its world from code instead of loading a save:
 
 ```gherkin
