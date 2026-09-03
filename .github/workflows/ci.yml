@@ -152,8 +152,8 @@ jobs:
     name: suite (${{ matrix.backends }})
     needs: [dashboard, game-image]
     runs-on: ubuntu-latest
-    # A leg runs the whole suite in about eleven minutes, so this is slack, not a target.
-    timeout-minutes: 20
+    # A leg runs the whole suite in 16 to 20 minutes, so this is slack, not a target.
+    timeout-minutes: 35
     permissions:
       contents: read
       packages: read
