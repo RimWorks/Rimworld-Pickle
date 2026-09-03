@@ -23,6 +23,8 @@ public static class PickleHttpServer {
 
   private const int DefaultPort = 27750;
 
+  private static readonly string[] MutatingPaths = ["/abort", "/run", "/select", "/mode", "/wip", "/break"];
+
   private static HttpListener? listener;
   private static volatile bool running;
 
@@ -125,6 +127,17 @@ public static class PickleHttpServer {
 
   private static void Route(HttpListenerContext context) {
     string path = context.Request.Url.AbsolutePath;
+
+    // The listener binds 0.0.0.0, so a page in any browser on the network could abort a run
+    // through an <img> tag if these answered a GET. A wrong-method script also fails loudly
+    // here rather than looking like a run that never started.
+    if (Array.IndexOf(MutatingPaths, path) >= 0
+        && !string.Equals(context.Request.HttpMethod, "POST", StringComparison.Ordinal)) {
+      context.Response.StatusCode = 405;
+      context.Response.AddHeader("Allow", "POST");
+      Write(context, "text/plain", "use POST");
+      return;
+    }
 
     if (path == "/state") {
       Write(context, JsonContentType, snapshot);
