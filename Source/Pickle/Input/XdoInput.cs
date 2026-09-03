@@ -31,6 +31,14 @@ public static class XdoInput {
     Run($"mousemove {WindowArg()} --sync {(int)target.x} {(int)target.y} click {button}");
   }
 
+  // Keys go to the focus window, not the pointer, and Xvfb has no WM to set it. Never pass
+  // --window here: that switches xdotool to XSendEvent, which Unity ignores.
+  public static void Key(string keysym) {
+    gameWindowId ??= FindGameWindow();
+    string focus = gameWindowId == null ? string.Empty : $"windowfocus {gameWindowId} ";
+    Run($"{focus}key {keysym}");
+  }
+
   // The one place GUI space becomes X11 screen space. Both are top-left, so this only
   // applies UIScale; add an offset here if clicks land wrong.
   public static Vector2 ToScreen(Vector2 guiPoint) {

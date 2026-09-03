@@ -119,8 +119,12 @@ public class PickleContext {
   }
 
   public async Task PressKey(string key) {
-    UnityEngine.KeyCode keyCode = MapKeyName(key);
-    EventSynth.RequestKeyEvent(EventSynth.Mechanism.UIRootReinvoke, keyCode);
+    if (!XdoInput.Available) {
+      throw new InvalidOperationException(
+          "xdotool is not available; the docker image needs xdotool installed for key injection.");
+    }
+
+    XdoInput.Key(MapKeysym(key));
     await WaitFrames(2);
   }
 
@@ -128,30 +132,18 @@ public class PickleContext {
     attachments.Add((name, content));
   }
 
-  private static UnityEngine.KeyCode MapKeyName(string keyName) {
+  // X11 keysyms, not KeyCode names: a synthetic Event never reaches Input.GetKey*, so the
+  // whole step goes through XTEST. Only space and BackSpace differ from the plain name.
+  private static string MapKeysym(string keyName) {
     return keyName.ToLowerInvariant() switch {
-      "escape" => UnityEngine.KeyCode.Escape,
-      "return" or "enter" => UnityEngine.KeyCode.Return,
-      "space" => UnityEngine.KeyCode.Space,
-      "tab" => UnityEngine.KeyCode.Tab,
-      "delete" => UnityEngine.KeyCode.Delete,
-      "backspace" => UnityEngine.KeyCode.Backspace,
-      _ when keyName.Length == 1 && char.IsLetter(keyName[0]) =>
-          (UnityEngine.KeyCode)Enum.Parse(typeof(UnityEngine.KeyCode), keyName, ignoreCase: true),
-      _ when keyName.Length == 1 && char.IsDigit(keyName[0]) =>
-          keyName[0] switch {
-            '0' => UnityEngine.KeyCode.Alpha0,
-            '1' => UnityEngine.KeyCode.Alpha1,
-            '2' => UnityEngine.KeyCode.Alpha2,
-            '3' => UnityEngine.KeyCode.Alpha3,
-            '4' => UnityEngine.KeyCode.Alpha4,
-            '5' => UnityEngine.KeyCode.Alpha5,
-            '6' => UnityEngine.KeyCode.Alpha6,
-            '7' => UnityEngine.KeyCode.Alpha7,
-            '8' => UnityEngine.KeyCode.Alpha8,
-            '9' => UnityEngine.KeyCode.Alpha9,
-            _ => throw new ArgumentException($"Unknown key: {keyName}"),
-          },
+      "escape" => "Escape",
+      "return" or "enter" => "Return",
+      "space" => "space",
+      "tab" => "Tab",
+      "delete" => "Delete",
+      "backspace" => "BackSpace",
+      _ when keyName.Length == 1 && char.IsLetter(keyName[0]) => keyName.ToLowerInvariant(),
+      _ when keyName.Length == 1 && char.IsDigit(keyName[0]) => keyName,
       _ => throw new ArgumentException(
           $"Unknown key: {keyName}; supported keys: Escape, Return, Enter, Space, Tab, Delete, Backspace, A-Z, 0-9"),
     };
