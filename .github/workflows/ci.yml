@@ -274,11 +274,11 @@ jobs:
               ls -la pickle-reports || true
             fi ) &
 
-          # The game says nothing on stdout, so follow its own log and echo the pickle
-          # lines. Without this the step is silent for the whole run.
+          # The game says nothing on stdout, so follow its own log. -o because RimLogging
+          # prefixes every line with a color tag and a timestamp, so the match cannot anchor.
           ( until [[ -f pickle-reports/Player.log ]]; do sleep 1; done
             tail -n +1 -f pickle-reports/Player.log \
-              | grep --line-buffered -E '^pickle: ' ) &
+              | grep --line-buffered -oE 'pickle: .*' ) &
           follow=$!
 
           dashboard=
