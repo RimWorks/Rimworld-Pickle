@@ -223,8 +223,8 @@ jobs:
           mkdir -p "$PWD/pickle-reports"
           chmod 777 "$PWD/pickle-reports"
 
-          # HOME is set here rather than assumed: the image runs as root, so Unity reads
-          # its config from /root and a mount under /home/app is silently ignored.
+          # The base runs as uid 1000, which cannot write the mount parents docker makes,
+          # so the run below forces root; HOME then keeps Unity's config out of /root.
           CFG="/pickle-home/.config/unity3d/Ludeon Studios/RimWorld by Ludeon Studios/Config"
           run_arg="-pickle-run"
           [[ -n "$SUITE_FILTER" ]] && run_arg="-pickle-run=$SUITE_FILTER"
@@ -247,7 +247,7 @@ jobs:
           : > "$RUNNER_TEMP/container.log"
           # --init is load bearing: xvfb-run waits for Xvfb to signal SIGUSR1 to its
           # parent, which never arrives when xvfb-run is itself PID 1.
-          docker run --rm --init --name pickle-suite -p 27750:27750 \
+          docker run --rm --init --name pickle-suite -p 27750:27750 --user 0 \
             -e HOME=/pickle-home \
             -v "$RUNNER_TEMP/mods:/game/Mods:ro" \
             -v "$RUNNER_TEMP/config:$CFG" \
