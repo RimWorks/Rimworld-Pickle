@@ -68,13 +68,17 @@ public static class FixtureLoader {
 
       start();
 
+      // Maps.Count == 0 is a real state, not a half-finished load: a gravship in transit, a
+      // caravan with no home, and the world after abandoning a settlement all have no map.
+      // AnyEventNowOrWaiting is what keeps this from returning mid-load, so by the time the
+      // count is read the load is done and the count is final.
       await driver.WaitUntil(
           () => Current.Game != null
               && !ReferenceEquals(Current.Game, gameBeforeLoad)
               && Current.ProgramState == ProgramState.Playing
-              && Find.CurrentMap != null
-              && !LongEventHandler.AnyEventNowOrWaiting,
-          175f,
+              && !LongEventHandler.AnyEventNowOrWaiting
+              && (Current.Game.Maps.Count == 0 || Find.CurrentMap != null),
+          FixtureStepTimeoutSeconds,
           scope);
       await driver.WaitTicks(2, scope);
 
