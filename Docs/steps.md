@@ -448,11 +448,12 @@ while a follow is active.
 
 | Step | Does |
 | --- | --- |
+| `the main menu is open` | Quits to the main menu if a game is loaded, then waits for `UIRoot_Entry`. The way into the `Page_` stack |
 | `I click {string}` | Clicks a tagged widget |
 | `I click button {string}` | Clicks a vanilla button by label. Pickle tags those for you |
 | `I click gizmo {string}` | Runs a gizmo on the current selection |
 | `I hover {string}` | Moves the pointer onto a tagged widget |
-| `I press key {string}` | Sends a key. Accepts `Escape`, `Return`, `Space`, `Tab`, `Delete`, `Backspace`, a letter, or a digit |
+| `I press key {string}` | Sends a real key through XTEST, so `Input.GetKeyDown` sees it. Accepts `Escape`, `Return`, `Space`, `Tab`, `Delete`, `Backspace`, a letter, or a digit |
 | `I select {string}` | Selects a pawn or thing by name |
 | `I open the {string} tab` | Opens a main tab by def name or label |
 | `I close all dialogs` | Closes every open window |

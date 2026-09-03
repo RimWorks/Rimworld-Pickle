@@ -11,6 +11,28 @@ namespace RimWorks.Pickle.Vanilla;
 
 [PickleSteps]
 public class UiSteps {
+  // Waits out any long event before tearing the world down: a world-renderer layer that
+  // regenerates across frames reads freed tile arrays afterwards, which is a signal 11.
+  [Given("the main menu is open")]
+  public async Task MainMenuIsOpen(PickleContext ctx) {
+    await ctx.WaitUntil(() => !LongEventHandler.AnyEventNowOrWaiting, 60f);
+
+    if (Current.ProgramState != ProgramState.Entry) {
+      GenScene.GoToMainMenu();
+    }
+
+    await ctx.WaitUntil(
+        () => Current.ProgramState == ProgramState.Entry
+            && Find.UIRoot is UIRoot_Entry
+            && !LongEventHandler.AnyEventNowOrWaiting,
+        60f);
+
+    // The menu only draws when nothing dialog-layer covers it, so a page left open by an
+    // earlier scenario would make every click here miss.
+    CloseAllDialogs(ctx);
+    await ctx.WaitFrames(2);
+  }
+
   [When("I click {string}")]
   public async Task ClickTag(PickleContext ctx, string tag) {
     await ctx.Click(tag);
