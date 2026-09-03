@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using RimWorks.Pickle.Core.Fixtures;
 
 namespace RimWorks.Pickle.Core.Discovery;
 
@@ -14,7 +15,11 @@ public static class SuiteProbe {
     List<string> featureFiles = FindFiles(layout.FeaturesDir, "*.feature", SearchOption.AllDirectories);
     List<string> stepsDlls = FindFiles(layout.AssembliesDir, "*.dll", SearchOption.TopDirectoryOnly);
 
-    List<string> fixtureFiles = FindFixtures(layout, out List<string> shadowed);
+    List<FixtureEntry> fixtures = FixtureCatalog.Read(layout.FixturesDir, layout.WritableFixturesDir);
+    List<string> fixtureFiles = [.. fixtures.Where(f => !f.IsShadowed).Select(f => f.FullPath)];
+    List<string> shadowed = [.. fixtures
+        .Where(f => f.ShadowedPath != null)
+        .Select(f => $"{f.Name}: using {f.FullPath}, ignoring {f.ShadowedPath}")];
 
     return new DiscoveredSuite(
         modName,
@@ -24,30 +29,6 @@ public static class SuiteProbe {
         fixtureFiles,
         shadowed,
         stepsDlls);
-  }
-
-  // Both directories, the writable one winning on a name clash: re-recording a fixture is how
-  // you fix one, and the committed copy would otherwise keep shadowing the new file.
-  private static List<string> FindFixtures(SuiteLayout layout, out List<string> shadowed) {
-    Dictionary<string, string> byName = new(StringComparer.OrdinalIgnoreCase);
-    shadowed = [];
-
-    foreach (string path in FindFiles(layout.FixturesDir, "*.rws", SearchOption.TopDirectoryOnly)) {
-      byName[Path.GetFileNameWithoutExtension(path)] = path;
-    }
-
-    if (layout.WritableFixturesDir != layout.FixturesDir) {
-      foreach (string path in FindFiles(layout.WritableFixturesDir, "*.rws", SearchOption.TopDirectoryOnly)) {
-        string name = Path.GetFileNameWithoutExtension(path);
-        if (byName.TryGetValue(name, out string? committed)) {
-          shadowed.Add($"{name}: using {path}, ignoring {committed}");
-        }
-
-        byName[name] = path;
-      }
-    }
-
-    return [.. byName.Values.OrderBy(f => f, StringComparer.Ordinal)];
   }
 
   private static List<string> FindFiles(string directory, string pattern, SearchOption option) {

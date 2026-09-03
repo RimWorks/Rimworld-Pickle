@@ -14,7 +14,9 @@ the right shows the selected scenario's steps, timings, and failure evidence.
 | Rerun failed | Run only the scenarios that failed last time |
 | Watch / Fast | Watch runs at normal speed. Fast skips the waiting |
 | Break on failure | Pause the game on a failed step, with the broken state intact |
+| Include @wip | Run scenarios tagged `@wip` instead of skipping them |
 | Save fixture | Save the running game into a mod's `Pickle/Fixtures/` |
+| Fixtures | List, load, rename, or delete a saved fixture |
 
 Break on failure is the reason to run in game. The game pauses on the failing step, so
 you can inspect the colony that produced the failure.
@@ -33,6 +35,10 @@ makes it the only way to watch a headless run.
 
 The endpoints it calls are not a stable interface yet. Read them from the network tab if
 you want to drive Pickle from your own tooling, but expect them to change.
+
+Every command endpoint is a POST. The game serves them through Mono, which rejects a POST
+that carries no `Content-Length`. Send an empty body: `curl -X POST -d '' <url>`. A bare
+`curl -X POST` gets a `411 Length Required` and never reaches Pickle.
 
 ## Unattended
 

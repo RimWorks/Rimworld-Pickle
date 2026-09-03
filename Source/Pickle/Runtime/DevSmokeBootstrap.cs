@@ -72,6 +72,12 @@ public static class DevSmokeBootstrap {
       return;
     }
 
+    if (marker == "pickle: fixture manager smoke passed") {
+      PickleDriver.EnsureExists();
+      LongEventHandler.QueueLongEvent(() => _ = RunFixtureManagerSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
+      return;
+    }
+
     if (marker == "pickle: suite passed") {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunSuite(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
@@ -212,6 +218,20 @@ public static class DevSmokeBootstrap {
       await driver.WaitTicks(5);
 
       _ = EvidenceSmoke.Run();
+    } catch (Exception ex) {
+      Log.Error(ex, "pickle: dev smoke failed");
+    }
+  }
+
+  // Stays at the main menu rather than loading the play scene: a cold start with no game
+  // is exactly where you go looking for a fixture to load.
+  private static async Task RunFixtureManagerSmoke() {
+    try {
+      PickleDriver driver = PickleDriver.Instance;
+      await driver.WaitUntil(() => Current.ProgramState == ProgramState.Entry && Find.WindowStack != null, 180f);
+      await driver.WaitFrames(5);
+
+      _ = FixtureManagerSmoke.Run();
     } catch (Exception ex) {
       Log.Error(ex, "pickle: dev smoke failed");
     }

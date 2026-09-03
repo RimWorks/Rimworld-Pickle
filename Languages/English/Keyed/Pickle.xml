@@ -8,6 +8,9 @@
   <!-- Toolbar -->
   <Pickle_BreakOnFailure>Break on failure</Pickle_BreakOnFailure>
   <Pickle_SaveFixture>Save fixture…</Pickle_SaveFixture>
+  <Pickle_Fixtures>Fixtures…</Pickle_Fixtures>
+  <Pickle_RunnerMenuButton>Pickle Runner</Pickle_RunnerMenuButton>
+  <Pickle_IncludeWip>Include @wip</Pickle_IncludeWip>
   <Pickle_OpenReportDir>Open report dir</Pickle_OpenReportDir>
   <Pickle_ModeWatch>Watch</Pickle_ModeWatch>
   <Pickle_ModeFast>Fast</Pickle_ModeFast>
@@ -35,6 +38,28 @@
   <Pickle_SaveFailed>Pickle: save failed, see log</Pickle_SaveFailed>
   <Pickle_SaveFixtureFailed>Pickle: save fixture failed, see log</Pickle_SaveFixtureFailed>
   <Pickle_SavedFixtureTo>Pickle: saved fixture to {0}</Pickle_SavedFixtureTo>
+
+  <!-- Fixture manager -->
+  <Pickle_FixtureManagerTitle>Fixtures</Pickle_FixtureManagerTitle>
+  <Pickle_Load>Load</Pickle_Load>
+  <Pickle_Rename>Rename</Pickle_Rename>
+  <Pickle_Delete>Delete</Pickle_Delete>
+  <Pickle_Cancel>Cancel</Pickle_Cancel>
+  <Pickle_SourceRecorded>only on this PC</Pickle_SourceRecorded>
+  <Pickle_SourceCommitted>in the mod</Pickle_SourceCommitted>
+  <Pickle_ShadowsCommitted>also in the mod, this copy wins</Pickle_ShadowsCommitted>
+  <Pickle_ShadowedPathTip>There is a second copy at {0}. Pickle ignores it while this one exists.</Pickle_ShadowedPathTip>
+  <Pickle_CommittedTip>In the mod: this file lives in the mod's Pickle/Fixtures/, so everyone who installs the mod gets it.</Pickle_CommittedTip>
+  <Pickle_RecordedTip>Only on this PC: the mod folder was read-only, so Save fixture wrote here instead. Nobody who installs the mod gets this file, and CI never sees it. Copy it into the mod's Pickle/Fixtures/ and commit it to share it.</Pickle_RecordedTip>
+  <Pickle_NoSuites>No mod ships a Pickle folder, so there is nowhere for a fixture to live.</Pickle_NoSuites>
+  <Pickle_NoFixturesIn>No fixtures yet. Save fixture writes them to {0}</Pickle_NoFixturesIn>
+  <Pickle_RenameEmpty>Name cannot be empty</Pickle_RenameEmpty>
+  <Pickle_RenameInvalid>Name has characters a file name cannot use</Pickle_RenameInvalid>
+  <Pickle_RenameTaken>A fixture of that name is already there</Pickle_RenameTaken>
+  <Pickle_DeleteFixtureConfirm>Delete the fixture '{0}'? This removes {1}</Pickle_DeleteFixtureConfirm>
+  <Pickle_FixtureRenameFailed>Pickle: could not rename '{0}', see log</Pickle_FixtureRenameFailed>
+  <Pickle_FixtureDeleteFailed>Pickle: could not delete '{0}', see log</Pickle_FixtureDeleteFailed>
+  <Pickle_LoadFixtureFailed>Pickle: loading the fixture failed, see log</Pickle_LoadFixtureFailed>
 
   <!-- Dashboard and report, served to the browser from the active language -->
   <Pickle_RunAll>Run all</Pickle_RunAll>

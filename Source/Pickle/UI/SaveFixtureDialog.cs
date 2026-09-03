@@ -18,11 +18,13 @@ public class SaveFixtureDialog : Window {
   private const float RowHeight = 30f;
 
   private readonly List<DiscoveredSuite> suites;
+  private readonly Action? onSaved;
   private string fixtureName = string.Empty;
   private int selectedSuite;
 
-  public SaveFixtureDialog(List<DiscoveredSuite> suites) {
+  public SaveFixtureDialog(List<DiscoveredSuite> suites, Action? onSaved = null) {
     this.suites = suites;
+    this.onSaved = onSaved;
 
     optionalTitle = "Pickle_SaveFixtureTitle".Translate();
     draggable = true;
@@ -64,6 +66,7 @@ public class SaveFixtureDialog : Window {
     GUI.enabled = canSave;
     if (Widgets.ButtonText(new Rect(inRect.x, y, 120f, 30f), "Pickle_Save".Translate())) {
       Save(suites[selectedSuite], fixtureName.Trim());
+      onSaved?.Invoke();
       Close();
     }
 

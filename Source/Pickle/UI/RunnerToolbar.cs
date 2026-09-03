@@ -8,13 +8,15 @@ using Log = RimWorks.RimLogging.Log;
 namespace RimWorks.Pickle.UI;
 
 /// <summary>
-/// Top toolbar: run controls, watch/fast mode, break-on-failure toggle, and the
-/// save-fixture / open-report-dir actions on the right.
+/// Top toolbar: run controls, watch/fast mode, the break-on-failure and include-@wip
+/// toggles, and the fixture manager / report actions on the right.
 /// </summary>
 public static class RunnerToolbar {
   private const float ButtonWidth = 118f;
   private const float SegWidth = 56f;
   private const float Padding = 6f;
+  private const float CheckboxWidth = 170f;
+  private const float WipCheckboxWidth = 132f;
 
   public static void Draw(Rect rect, RunnerWindow window) {
     float x = rect.x + Padding;
@@ -41,18 +43,24 @@ public static class RunnerToolbar {
     DrawModeToggle(segRect);
 
     x += (SegWidth * 2f) + (Padding * 2f);
-    Rect breakRect = new Rect(x, rect.y, 220f, rect.height);
+    Rect breakRect = new Rect(x, rect.y, CheckboxWidth, rect.height);
     bool breakOn = BreakOnFailureState.Enabled;
     Widgets.CheckboxLabeled(breakRect, "Pickle_BreakOnFailure".Translate(), ref breakOn);
     BreakOnFailureState.Enabled = breakOn;
 
-    const float openWidth = 128f;
-    const float saveWidth = 110f;
-    Rect openRect = new Rect(rect.xMax - openWidth - Padding, rect.y + 3f, openWidth, rect.height - 6f);
-    Rect saveRect = new Rect(openRect.x - saveWidth - Padding, rect.y + 3f, saveWidth, rect.height - 6f);
+    x += CheckboxWidth + Padding;
+    Rect wipRect = new Rect(x, rect.y, WipCheckboxWidth, rect.height);
+    bool includeWip = IncludeWipState.Enabled;
+    Widgets.CheckboxLabeled(wipRect, "Pickle_IncludeWip".Translate(), ref includeWip);
+    IncludeWipState.Enabled = includeWip;
 
-    if (Widgets.ButtonText(saveRect, "Pickle_SaveFixture".Translate())) {
-      Find.WindowStack.Add(new SaveFixtureDialog(window.DiscoveredSuites));
+    const float openWidth = 128f;
+    const float manageWidth = 92f;
+    Rect openRect = new Rect(rect.xMax - openWidth - Padding, rect.y + 3f, openWidth, rect.height - 6f);
+    Rect manageRect = new Rect(openRect.x - manageWidth - Padding, rect.y + 3f, manageWidth, rect.height - 6f);
+
+    if (Widgets.ButtonText(manageRect, "Pickle_Fixtures".Translate())) {
+      Find.WindowStack.Add(new FixtureManagerDialog());
     }
 
     if (Widgets.ButtonText(openRect, "Pickle_OpenReportDir".Translate())) {

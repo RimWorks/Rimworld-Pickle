@@ -112,11 +112,17 @@ fixtures for the state they capture, not for the test that uses them.
 To make a fixture, play until the game is in the state you want. Then open the runner
 and select **Save fixture**. Pick the target mod and a name.
 
-### Where a recorded fixture is written
+To see the fixtures you already have, select **Fixtures**. The list groups them by the mod
+that owns them. Each row gives you the size, the date, and the scenario and game version
+from the file itself. From there you can load a fixture, rename it, or delete it. Loading one
+takes the same path as the `Given the save ... is loaded` step. Check what a recording
+holds without writing a scenario for it first.
+
+### Where Pickle writes a recorded fixture
 
 Pickle cannot count on the mod folder being writable. A Workshop install and a Docker
-container both mount it read-only, and the save then fails with nothing to show for the
-playthrough that produced it.
+container both mount it read-only. The save then fails, and you lose the session that
+produced it.
 
 Pickle tests the mod directory at startup and picks a location from the result:
 
@@ -124,10 +130,10 @@ Pickle tests the mod directory at startup and picks a location from the result:
 |---|---|
 | `-pickle-fixtures-dir=<path>` given | `<path>/<mod folder name>/` |
 | Mod directory is writable | The mod's own `Pickle/Fixtures/`, unchanged |
-| Mod directory is read-only | `<save data folder>/PickleFixtures/<mod folder name>/`, and Pickle logs it |
+| Mod directory is not writable | `<save data folder>/PickleFixtures/<mod folder name>/`, and Pickle logs it |
 
-When the fallback is in use, Pickle scans both that directory and the mod's own
-`Pickle/Fixtures/`, so a fixture works as soon as it is recorded. If both hold the same name
+When the fallback is in use, Pickle scans that directory and the mod's own
+`Pickle/Fixtures/`. A fixture then works as soon as you record it. If both hold the same name
 the recorded one wins, because re-recording is how you replace a fixture. Pickle logs a
 warning naming both paths, since a stale recording that beats the committed copy passes on
 your machine and fails in CI.
