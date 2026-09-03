@@ -16,6 +16,7 @@ using RimWorks.Pickle.Core.Run;
 using RimWorks.Pickle.Core.Steps;
 using RimWorks.Pickle.Evidence;
 using RimWorks.Pickle.Fixtures;
+using RimWorks.Pickle.Input;
 using RimWorks.Pickle.Runtime;
 using Verse;
 using Log = RimWorks.RimLogging.Log;
@@ -57,6 +58,10 @@ public class RunSession {
     this.suites = suites;
     this.stepsTypes = stepsTypes;
     this.runSeed = runSeed;
+
+    // Only the dev smokes armed this before, so every click step in a real run saw an
+    // empty store and failed with "no tags recorded this frame".
+    TagStore.SessionActive = true;
 
     RegisterBuiltInEngineSteps();
   }
