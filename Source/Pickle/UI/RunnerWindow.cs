@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Gherkin.Ast;
+using RimWorks.Pickle.Autorun;
 using RimWorks.Pickle.Core;
 using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Core.Model;
@@ -446,6 +447,13 @@ public class RunnerWindow : Window {
 
       LastRunAt = DateTime.Now;
       SelectFirstFailureIfNoneSelected();
+
+      // Only autorun wrote reports before, so the status bar's promise was false for a run
+      // started from the window or the dashboard. The dashboard opens this one when it lands.
+      AutorunBootstrap.WriteReports(
+          ScreenshotCapture.ReportRoot(),
+          [.. results.Values],
+          session.CancelRequested ? "cancelled" : "completed");
 
       // Back to the main menu so the next run starts clean. Break on failure means the world
       // the failure left is the thing you want to look at, so that case stays loaded.

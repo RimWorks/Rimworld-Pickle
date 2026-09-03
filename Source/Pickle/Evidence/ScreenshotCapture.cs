@@ -43,6 +43,11 @@ public static class ScreenshotCapture {
     return resolvedDir;
   }
 
+  /// <summary>The directory the screenshots folder sits in, which is where reports go.</summary>
+  public static string ReportRoot() {
+    return Path.GetDirectoryName(ReportsDirectory()) ?? ReportsDirectory();
+  }
+
   public static string BuildScreenshotPath(string featureName, string scenarioName, int stepIndex) {
     string filename = $"{Sanitize(featureName)}--{Sanitize(scenarioName)}--step{stepIndex}.png";
 

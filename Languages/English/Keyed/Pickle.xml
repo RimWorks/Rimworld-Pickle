@@ -11,6 +11,9 @@
   <Pickle_Fixtures>Fixtures…</Pickle_Fixtures>
   <Pickle_RunnerMenuButton>Pickle Runner</Pickle_RunnerMenuButton>
   <Pickle_IncludeWip>Include @wip</Pickle_IncludeWip>
+  <Pickle_ReportReady>The run finished and the report is ready.</Pickle_ReportReady>
+  <Pickle_OpenReport>Open report</Pickle_OpenReport>
+  <Pickle_Dismiss>Dismiss</Pickle_Dismiss>
   <Pickle_OpenReportDir>Open report dir</Pickle_OpenReportDir>
   <Pickle_ModeWatch>Watch</Pickle_ModeWatch>
   <Pickle_ModeFast>Fast</Pickle_ModeFast>

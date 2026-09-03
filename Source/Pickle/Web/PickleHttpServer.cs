@@ -193,6 +193,11 @@ public static class PickleHttpServer {
       return;
     }
 
+    if (path == "/report") {
+      ServeReport(context);
+      return;
+    }
+
     if (path.StartsWith(EvidencePrefix, StringComparison.Ordinal)) {
       ServeEvidence(context, path.Substring(EvidencePrefix.Length));
       return;
@@ -200,6 +205,20 @@ public static class PickleHttpServer {
 
     context.Response.StatusCode = 404;
     Write(context, "text/plain", "not found");
+  }
+
+  // The last run's report, whoever wrote it. The dashboard opens this in a tab when a run
+  // ends, so a 404 here means the run wrote nothing rather than that the route is wrong.
+  private static void ServeReport(HttpListenerContext context) {
+    string file = Path.Combine(ScreenshotCapture.ReportRoot(), "report.html");
+
+    if (!File.Exists(file)) {
+      context.Response.StatusCode = 404;
+      Write(context, "text/plain", "no report yet, run something first");
+      return;
+    }
+
+    Write(context, "text/html; charset=utf-8", File.ReadAllText(file));
   }
 
   // In CI this listener sits behind a public tunnel for the length of a job, so a request

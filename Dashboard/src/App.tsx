@@ -14,6 +14,7 @@ export function App() {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [selected, setSelected] = useState<Selection | null>(() => readHash());
   const [aborting, setAborting] = useState(false);
+  const [reportBlocked, setReportBlocked] = useState(false);
   const [theme, setTheme] = useState<string>(
     () => initialTheme(),
   );
@@ -76,7 +77,10 @@ export function App() {
 
   // A new run is a fresh reason to watch, so following comes back on by itself.
   useEffect(() => {
-    if (snap?.status === "running" && !wasRunning.current) setFollowing(true);
+    if (snap?.status === "running" && !wasRunning.current) {
+      setFollowing(true);
+      setReportBlocked(false);
+    }
   }, [snap]);
 
   // Keep the followed row on screen; the sidebar is taller than the viewport.
@@ -95,6 +99,10 @@ export function App() {
       const failure = findFirstFailure(snap.features);
       if (failure && !window.location.hash) setSelected(failure);
       setAborting(false);
+
+      // A poll is not a user gesture, so a browser is entitled to block this. window.open
+      // returns null when it does, which is the only way to know; fall back to a link.
+      if (!window.open("/report", "_blank", "noopener")) setReportBlocked(true);
     }
     wasRunning.current = running;
   }, [snap]);
@@ -110,6 +118,7 @@ export function App() {
 
   const current = useMemo(() => findScenario(snap?.features, selected), [snap, selected]);
   const running = snap?.status === "running" || snap?.status === "paused";
+  const t = translator(snap);
 
   return (
     <div className="h-screen flex flex-col bg-base-200 text-base-content">
@@ -126,6 +135,17 @@ export function App() {
       ) : (
         <div className="flex-1 flex flex-col min-h-0">
           <Toolbar snap={snap} />
+          {reportBlocked && (
+            <div className="alert alert-info rounded-none py-2 px-5">
+              <span className="text-sm">{t("Pickle_ReportReady", "The run finished and the report is ready.")}</span>
+              <a className="btn btn-sm" href="/report" target="_blank" rel="noreferrer">
+                {t("Pickle_OpenReport", "Open report")}
+              </a>
+              <button type="button" className="btn btn-sm btn-ghost" onClick={() => setReportBlocked(false)}>
+                {t("Pickle_Dismiss", "Dismiss")}
+              </button>
+            </div>
+          )}
           <div className="flex-1 flex min-h-0">
             <aside className="w-96 shrink-0 overflow-y-auto border-r border-base-content/10 bg-base-100 p-3">
               <Tree
