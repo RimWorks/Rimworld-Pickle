@@ -9,6 +9,8 @@ using Log = RimWorks.RimLogging.Log;
 namespace RimWorks.Pickle.Fixtures;
 
 public static class FixtureLoader {
+  private const float FixtureStepTimeoutSeconds = 175f;
+
   /// <summary>Builds the world a quickstart describes, then waits for it the same way a save load does.</summary>
   public static Task LoadQuickstart(string quickstartName, PickleDriver driver, object? scope = null) {
     return LoadAndSettle(() => QuickstartBridge.Launch(quickstartName), driver, scope);
@@ -59,7 +61,10 @@ public static class FixtureLoader {
       // Before start(), not only after. WorldRenderer.RegenerateDirtyLayersNow_Async captures a
       // draw layer and yields between frames; loading discards the world under it, and the
       // resume then reads freed tile arrays through a Burst call, which is a signal 11.
-      await driver.WaitUntil(() => !LongEventHandler.AnyEventNowOrWaiting, 60f, scope);
+      //
+      // The same budget the load itself gets: a mod that generates a world lazily can leave one
+      // running here, and that costs minutes rather than seconds.
+      await driver.WaitUntil(() => !LongEventHandler.AnyEventNowOrWaiting, FixtureStepTimeoutSeconds, scope);
 
       start();
 
