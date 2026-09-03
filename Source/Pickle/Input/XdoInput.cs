@@ -21,14 +21,15 @@ public static class XdoInput {
 
   public static bool Available => available ??= Probe();
 
+  // no --sync: it waits for a motion event, so a repeat click at the same spot hangs.
   public static void MoveTo(Vector2 guiPoint) {
     Vector2 target = ToScreen(guiPoint);
-    Run($"mousemove {WindowArg()} --sync {(int)target.x} {(int)target.y}");
+    Run($"mousemove {WindowArg()} {(int)target.x} {(int)target.y}");
   }
 
   public static void Click(Vector2 guiPoint, int button = 1) {
     Vector2 target = ToScreen(guiPoint);
-    Run($"mousemove {WindowArg()} --sync {(int)target.x} {(int)target.y} click {button}");
+    Run($"mousemove {WindowArg()} {(int)target.x} {(int)target.y} click {button}");
   }
 
   // Keys go to the focus window, not the pointer, and Xvfb has no WM to set it. Never pass
