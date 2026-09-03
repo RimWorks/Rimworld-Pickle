@@ -75,6 +75,12 @@ public class RunnerWindow : Window {
 
   internal Vector2 DetailScroll { get; set; }
 
+  // Collapse is a view preference of the one runner instance, so it outlives a window
+  // close the same way the selection and the results do.
+  internal HashSet<string> CollapsedMods { get; } = [];
+
+  internal HashSet<string> CollapsedFeatures { get; } = [];
+
   internal bool HasAnyScenarioSelected {
     get {
       int index = 0;

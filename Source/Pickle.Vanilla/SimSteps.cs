@@ -107,7 +107,22 @@ public class SimSteps {
       parms.points = points.Value;
     }
 
-    def.Worker.TryExecute(parms);
+    // An incident draws its faction, strategy, arrival mode and spawn cell from the
+    // shared Rand stream, so without this the raid differs by how many rolls the rest
+    // of the run already consumed. Pop puts the game's own stream back.
+    bool fired;
+    Rand.PushState(Gen.HashCombineInt(ctx.ScenarioSeed, GenText.StableStringHash(defName)));
+    try {
+      fired = def.Worker.TryExecute(parms);
+    } finally {
+      Rand.PopState();
+    }
+
+    // The worker declines rather than throws when it cannot place the incident, and a
+    // discarded false turns into a confusing "no letter arrived" a step later.
+    ctx.Assert(
+        fired,
+        fired ? null : $"incident '{defName}' declined to fire with {parms.points} points; faction: {parms.faction?.Name ?? "(unresolved)"}, map: {map}");
   }
 
   private static string DescribeLetters(List<Letter> letters) {

@@ -5,14 +5,15 @@ There are three ways to run a suite: the in-game runner, a browser, or unattende
 ## The in-game runner
 
 Open the runner from the debug actions menu. It has two panes. The tree on the left
-lists every mod, feature, and scenario. Each row has a checkbox and a status dot. The pane on
-the right shows the selected scenario's steps, timings, and failure evidence.
+lists every mod, feature, and scenario. Each row has a checkbox and a status dot. Click a mod
+or feature row to collapse it. The arrow at the left of the row shows whether it is open. The
+pane on the right shows the selected scenario's steps, timings, and failure evidence.
 
 | Control | Effect |
 | --- | --- |
 | Run selected | Run the checked scenarios |
 | Rerun failed | Run only the scenarios that failed last time |
-| Watch / Fast | Watch runs at normal speed. Fast skips the waiting |
+| Watch / Fast | Watch runs at normal speed. Fast skips the waiting. An unattended run is always Fast unless `-pickle-mode=watch` says otherwise |
 | Break on failure | Pause the game on a failed step, with the broken state intact |
 | Include @wip | Run scenarios tagged `@wip` instead of skipping them |
 | Save fixture | Save the running game into a mod's `Pickle/Fixtures/` |

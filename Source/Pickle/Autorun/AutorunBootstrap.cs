@@ -22,23 +22,29 @@ namespace RimWorks.Pickle.Autorun;
 public static class AutorunBootstrap {
   private const int QuitGraceMs = 15000;
 
+  // Nothing here may escape: anything thrown out of a static constructor becomes a
+  // TypeInitializationException that kills the type, so the run silently never starts.
   static AutorunBootstrap() {
-    PickleArgs args = PickleArgs.Parse();
-    if (!args.RunRequested) {
-      return;
+    try {
+      PickleArgs args = PickleArgs.Parse();
+      if (!args.RunRequested) {
+        return;
+      }
+
+      // Resolved here because a static constructor is guaranteed main thread.
+      // RunAutorun starts on a background thread, where consoleLogPath is unsafe.
+      string reportDir = ReportDirectoryResolver.Resolve(args.ReportDir);
+      Directory.CreateDirectory(reportDir);
+      ScreenshotCapture.SetReportRoot(reportDir);
+      FilmstripRecorder.MaxSeconds = args.MaxFilmSeconds;
+
+      Watchdog.Start(args.ScenarioTimeoutSeconds, args.RunTimeoutMinutes, reportDir, Application.consoleLogPath);
+
+      PickleDriver.EnsureExists();
+      LongEventHandler.QueueLongEvent(() => _ = RunAutorun(args, reportDir), "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
+    } catch (Exception ex) {
+      Log.Error(ex, "pickle: autorun failed to start");
     }
-
-    // Resolved here because a static constructor is guaranteed main thread.
-    // RunAutorun starts on a background thread, where consoleLogPath is unsafe.
-    string reportDir = ReportDirectoryResolver.Resolve(args.ReportDir);
-    Directory.CreateDirectory(reportDir);
-    ScreenshotCapture.SetReportRoot(reportDir);
-    FilmstripRecorder.MaxSeconds = args.MaxFilmSeconds;
-
-    Watchdog.Start(args.ScenarioTimeoutSeconds, args.RunTimeoutMinutes, reportDir, Application.consoleLogPath);
-
-    PickleDriver.EnsureExists();
-    LongEventHandler.QueueLongEvent(() => _ = RunAutorun(args, reportDir), "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
   }
 
   internal static void WriteReports(string reportDir, List<ScenarioResult> results, string exitReason, Action<string>? onError = null) {
@@ -76,7 +82,10 @@ public static class AutorunBootstrap {
 
     try {
       AutorunState.IsAutorunning = true;
-      PickleRunMode.Current = PickleRunMode.Mode.Fast;
+
+      // Set here, not in the static constructor: RunSession restores the mode it found
+      // after every scenario, so the value has to be in place when the run starts.
+      PickleRunMode.Current = args.Mode;
 
       PickleDriver driver = PickleDriver.Instance;
       await driver.WaitUntil(() => Current.ProgramState == ProgramState.Entry, 180f);

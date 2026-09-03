@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Autorun;
 
@@ -11,9 +12,21 @@ namespace RimWorks.Pickle.Autorun;
 public static class ReportDirectoryResolver {
   public static string Resolve(string? explicitDir) {
     if (!string.IsNullOrEmpty(explicitDir)) {
-      return explicitDir!;
+      if (TryPrepare(explicitDir!)) {
+        return explicitDir!;
+      }
+
+      // A bad path used to throw out of AutorunBootstrap's static constructor, which
+      // killed the type and ran nothing. Name it and carry on instead.
+      string fallback = ResolveDefault();
+      Log.Error("pickle: report dir '{Dir}' is not writable, falling back to {Fallback}", [explicitDir!, fallback]);
+      return fallback;
     }
 
+    return ResolveDefault();
+  }
+
+  private static string ResolveDefault() {
     if (IsWritableDirectory("/out")) {
       return Path.Combine("/out", "pickle-reports");
     }
@@ -23,6 +36,16 @@ public static class ReportDirectoryResolver {
     } catch (Exception) {
       return Path.Combine(Directory.GetCurrentDirectory(), "pickle-reports");
     }
+  }
+
+  private static bool TryPrepare(string dir) {
+    try {
+      Directory.CreateDirectory(dir);
+    } catch (Exception) {
+      return false;
+    }
+
+    return IsWritableDirectory(dir);
   }
 
   private static bool IsWritableDirectory(string dir) {

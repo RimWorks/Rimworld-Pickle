@@ -5,7 +5,7 @@ Autorun runs a whole suite without a person watching. Start RimWorld with
 exits.
 
 ```
-./RimWorldLinux -pickle-run -pickle-report-dir=/out/pickle-reports
+./RimWorldLinux -pickle-run -pickle-report-dir=$PWD/pickle-reports
 ```
 
 ## Flags
@@ -13,16 +13,33 @@ exits.
 | Flag | Effect |
 | --- | --- |
 | `-pickle-run[=filter]` | Run the suite. See [choosing what runs](#choosing-what-runs) |
-| `-pickle-report-dir=PATH` | Write reports here. Defaults to `/out/pickle-reports`, then a temporary directory |
+| `-pickle-report-dir=PATH` | Write reports here. See [where reports go](#where-reports-go) |
+| `-pickle-mode=fast\|watch` | How wait steps spend time. Defaults to `fast` |
 | `-pickle-include-wip` | Include scenarios tagged `@wip` |
 | `-pickle-seed=N` | Set the run seed. Pickle logs the seed it used |
 | `-pickle-scenario-timeout=N` | Fail a scenario after N seconds |
 | `-pickle-run-timeout=N` | Stop the run after N minutes |
-| `-pickle-max-film-seconds=N` | Seconds of footage a `@film` scenario keeps. Defaults to 60 |
+| `-pickle-max-film-seconds=N` | Seconds of footage a `@film` scenario keeps. Defaults to 60. Use `0` to film nothing |
 | `-pickle-config=PATH` | Read these flags from a file |
 | `-pickle-http-port=N` | Serve the dashboard on port N instead of 27750 |
 | `-pickle-no-http` | Do not serve the dashboard |
 | `-pickle-no-browser` | Do not open the dashboard in a browser |
+
+`fast` drives the ticks by hand, so a scenario that waits a game hour takes seconds. An
+unattended run uses it because nobody is watching. Pass `-pickle-mode=watch` when you
+want the film to play back at the speed a person would see. A scenario tagged `@watch`
+runs at watch speed either way.
+
+## Where reports go
+
+`-pickle-report-dir` wins when the path is writable. Pickle creates the directory, then
+writes a probe file to it. If either step fails, Pickle logs the path it could not use
+and falls back.
+
+Without the flag, Pickle uses `/out/pickle-reports` when `/out` exists and is writable,
+and the save folder otherwise. `/out` is a mount your harness has to provide. A container
+that does not mount it gets the save folder, which is `/data/PickleReports` under
+docker-game.
 
 ## Choosing what runs
 

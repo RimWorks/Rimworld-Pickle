@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using RimWorks.Pickle.Run;
+using RimWorks.Pickle.Runtime;
 using Verse;
 using Log = RimWorks.RimLogging.Log;
 
@@ -22,6 +23,9 @@ public sealed class PickleArgs {
   public int Seed { get; private set; } = RunSession.DefaultSeed;
 
   public int ScenarioTimeoutSeconds { get; private set; } = 120;
+
+  /// <summary>How wait steps spend time. An unattended run is Fast unless -pickle-mode says otherwise.</summary>
+  public PickleRunMode.Mode Mode { get; private set; } = PickleRunMode.Mode.Fast;
 
   public int RunTimeoutMinutes { get; private set; } = 60;
 
@@ -55,6 +59,15 @@ public sealed class PickleArgs {
             ? parsedRunTimeout
             : null;
 
+    PickleRunMode.Mode cliMode = PickleRunMode.Mode.Fast;
+    if (GenCommandLine.TryGetCommandLineArg("-pickle-mode", out string modeValue)) {
+      if (string.Equals(modeValue, "watch", StringComparison.OrdinalIgnoreCase)) {
+        cliMode = PickleRunMode.Mode.Watch;
+      } else if (!string.Equals(modeValue, "fast", StringComparison.OrdinalIgnoreCase)) {
+        Log.Warn("pickle: -pickle-mode={Value} is not 'fast' or 'watch', running in fast", [modeValue]);
+      }
+    }
+
     PickleArgsConfig? config = null;
     if (GenCommandLine.TryGetCommandLineArg("-pickle-config", out string configPath)) {
       config = LoadConfig(configPath);
@@ -69,6 +82,7 @@ public sealed class PickleArgs {
       ScenarioTimeoutSeconds = cliScenarioTimeout ?? config?.ScenarioTimeoutSeconds ?? 120,
       RunTimeoutMinutes = cliRunTimeout ?? config?.RunTimeoutMinutes ?? 60,
       MaxFilmSeconds = cliMaxFilm ?? 60,
+      Mode = cliMode,
     };
   }
 

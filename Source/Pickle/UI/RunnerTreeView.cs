@@ -18,9 +18,12 @@ public static class RunnerTreeView {
   private const float ModRowHeight = 26f;
   private const float FeatureRowHeight = 22f;
   private const float ScenarioRowHeight = 20f;
-  private const float ModIndent = 6f;
-  private const float FeatureIndent = 26f;
-  private const float ScenarioIndent = 44f;
+  private const float ModIndent = 22f;
+  private const float FeatureIndent = 42f;
+  private const float ScenarioIndent = 58f;
+  private const float ArrowSize = 16f;
+  private const float ModArrowX = 4f;
+  private const float FeatureArrowX = 24f;
   private const float ModCheckboxSize = 24f;
   private const float FeatureCheckboxSize = 18f;
   private const float ScenarioCheckboxSize = 16f;
@@ -140,6 +143,10 @@ public static class RunnerTreeView {
           },
           y);
 
+      if (window.CollapsedMods.Contains(group.Key)) {
+        continue;
+      }
+
       for (int f = 0; f < features.Count; f++) {
         (DiscoveredSuite suite, FeaturePlan plan) = features[f];
         int startIndex = startIndices[plan];
@@ -152,6 +159,10 @@ public static class RunnerTreeView {
               SelectionKeys = featureKeys[f],
             },
             y);
+
+        if (window.CollapsedFeatures.Contains(plan.SourcePath ?? string.Empty)) {
+          continue;
+        }
 
         for (int i = 0; i < plan.Scenarios.Count; i++) {
           ScenarioPlan scenario = plan.Scenarios[i];
@@ -200,6 +211,8 @@ public static class RunnerTreeView {
       List<(string SourcePath, int Index)> keys) {
     Widgets.DrawHighlightIfMouseover(rect);
 
+    bool toggled = DrawArrow(rect, ModArrowX, window.CollapsedMods.Contains(modName));
+
     MultiCheckboxState state = ComputeCheckState(window, keys);
     Rect checkRect = new Rect(rect.x + ModIndent, rect.y + ((rect.height - ModCheckboxSize) / 2f), ModCheckboxSize, ModCheckboxSize);
     MultiCheckboxState newState = CheckboxMultiIdFree(checkRect, state);
@@ -219,11 +232,19 @@ public static class RunnerTreeView {
     GUI.color = Color.white;
     Text.Anchor = TextAnchor.UpperLeft;
     Text.Font = GameFont.Small;
+
+    // Last, so the checkbox and the arrow have already claimed their own clicks.
+    if (toggled || ClickedIdFree(rect)) {
+      Toggle(window.CollapsedMods, modName);
+    }
   }
 
   private static void DrawFeatureRow(
       Rect rect, RunnerWindow window, FeaturePlan plan, int startIndex, List<(string SourcePath, int Index)> keys) {
     Widgets.DrawHighlightIfMouseover(rect);
+
+    string featureKey = plan.SourcePath ?? string.Empty;
+    bool toggled = DrawArrow(rect, FeatureArrowX, window.CollapsedFeatures.Contains(featureKey));
 
     MultiCheckboxState state = ComputeCheckState(window, keys);
     Rect checkRect = new Rect(rect.x + FeatureIndent, rect.y + ((rect.height - FeatureCheckboxSize) / 2f), FeatureCheckboxSize, FeatureCheckboxSize);
@@ -263,6 +284,10 @@ public static class RunnerTreeView {
     GUI.color = Color.white;
     Text.Anchor = TextAnchor.UpperLeft;
     Text.Font = GameFont.Small;
+
+    if (toggled || ClickedIdFree(rect)) {
+      Toggle(window.CollapsedFeatures, featureKey);
+    }
   }
 
   private static void DrawScenarioRow(Rect rect, RunnerWindow window, FeaturePlan plan, ScenarioPlan scenario, int scenarioIndex) {
@@ -344,6 +369,20 @@ public static class RunnerTreeView {
     MultiCheckboxState next = state == MultiCheckboxState.Off ? MultiCheckboxState.On : MultiCheckboxState.Off;
     PlayCheckboxSound(next == MultiCheckboxState.On);
     return next;
+  }
+
+  private static bool DrawArrow(Rect rect, float x, bool collapsed) {
+    Rect arrowRect = new Rect(rect.x + x, rect.y + ((rect.height - ArrowSize) / 2f), ArrowSize, ArrowSize);
+    GUI.color = Mouse.IsOver(arrowRect) ? GenUI.MouseoverColor : Color.white;
+    GUI.DrawTexture(arrowRect, collapsed ? TexButton.Reveal : TexButton.Collapse);
+    GUI.color = Color.white;
+    return ClickedIdFree(arrowRect);
+  }
+
+  private static void Toggle(HashSet<string> collapsed, string key) {
+    if (!collapsed.Remove(key)) {
+      collapsed.Add(key);
+    }
   }
 
   private static void PlayCheckboxSound(bool on) {
