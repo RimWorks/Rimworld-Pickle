@@ -27,7 +27,7 @@ public static class SuiteRunner {
 
     try {
       List<DiscoveredSuite> discoveredSuites = SuiteScanner.DiscoverSuites();
-      List<(DiscoveredSuite Suite, FeaturePlan Plan)> parsedFeatures = FilterFeatures(FeatureParser.ParseAll(discoveredSuites), filter);
+      List<(DiscoveredSuite Suite, FeaturePlan Plan)> parsedFeatures = ScenarioFilter.FilterFeatures(FeatureParser.ParseAll(discoveredSuites), filter);
 
       List<Assembly> assemblies = BuildAssemblyList(discoveredSuites);
       StepTable stepTable = StepScanner.PopulateStepTable(assemblies);
@@ -85,30 +85,11 @@ public static class SuiteRunner {
         }
       }
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: suite runner error");
+      Log.ErrorTo("Pickle", ex, "pickle: suite runner error");
       throw;
     }
 
     return allResults;
-  }
-
-  private static List<(DiscoveredSuite Suite, FeaturePlan Plan)> FilterFeatures(
-      List<(DiscoveredSuite Suite, FeaturePlan Plan)> parsedFeatures, string? filter) {
-    IReadOnlyList<string> terms = ScenarioFilter.SplitTerms(filter);
-    if (terms.Count == 0) {
-      return parsedFeatures;
-    }
-
-    List<(DiscoveredSuite Suite, FeaturePlan Plan)> kept = new();
-    foreach ((DiscoveredSuite suite, FeaturePlan plan) in parsedFeatures) {
-      List<ScenarioPlan> scenarios = [.. plan.Scenarios
-          .Where(s => terms.Any(t => ScenarioFilter.Matches(suite.ModName, plan.SourcePath, s, t)))];
-      if (scenarios.Count > 0) {
-        kept.Add((suite, new FeaturePlan(plan.Name, plan.Tags, scenarios, plan.SourcePath)));
-      }
-    }
-
-    return kept;
   }
 
   private static List<Assembly> BuildAssemblyList(List<DiscoveredSuite> discoveredSuites) {

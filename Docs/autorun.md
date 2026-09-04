@@ -62,13 +62,17 @@ so you can combine a whole feature with one scenario from another.
 Names match on a substring and ignore case, so you rarely need the whole thing. A line
 number is exact, which is what you want when two scenarios share a prefix.
 
+A filter that matches nothing is an error, not an empty pass. Pickle logs the terms you
+gave and the features it found, then exits 2. This is what stops a renamed feature file
+from leaving the pipeline green forever.
+
 ## Exit codes
 
 | Code | Meaning |
 | --- | --- |
 | 0 | Every scenario passed |
 | 1 | At least one scenario failed |
-| 2 | Pickle itself failed |
+| 2 | Pickle itself failed, or the filter matched no scenarios |
 
 Read `exitReason` in `summary.json` when you need more than the code. A run that the
 watchdog stops reports its reason there.

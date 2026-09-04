@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Core.Model;
 using RimWorks.Pickle.Core.Run;
 using Xunit;
@@ -57,6 +59,39 @@ public class ScenarioFilterTests {
     Assert.Equal(["@film", "MyMod"], ScenarioFilter.SplitTerms(" @film , MyMod , "));
     Assert.Empty(ScenarioFilter.SplitTerms(null));
     Assert.Empty(ScenarioFilter.SplitTerms(string.Empty));
+  }
+
+  [Fact]
+  public void An_unmatched_filter_throws_and_lists_what_is_available() {
+    InvalidOperationException ex = Assert.Throws<InvalidOperationException>(
+        () => ScenarioFilter.FilterFeatures(Features(), "rings"));
+
+    Assert.Contains("filter 'rings' matched no scenarios", ex.Message, StringComparison.Ordinal);
+    Assert.Contains("2 features in MyMod: pawn-steps.feature, map-steps.feature", ex.Message, StringComparison.Ordinal);
+    Assert.Contains("terms are @tag", ex.Message, StringComparison.Ordinal);
+  }
+
+  [Fact]
+  public void An_empty_filter_keeps_every_feature() {
+    Assert.Equal(2, ScenarioFilter.FilterFeatures(Features(), null).Count);
+    Assert.Equal(2, ScenarioFilter.FilterFeatures(Features(), string.Empty).Count);
+  }
+
+  [Fact]
+  public void A_matching_filter_keeps_only_the_scenarios_it_picks() {
+    List<(DiscoveredSuite Suite, FeaturePlan Plan)> kept =
+        ScenarioFilter.FilterFeatures(Features(), "pawn-steps.feature::walks");
+
+    (DiscoveredSuite _, FeaturePlan plan) = Assert.Single(kept);
+    Assert.Equal("walks", Assert.Single(plan.Scenarios).Name);
+  }
+
+  private static List<(DiscoveredSuite Suite, FeaturePlan Plan)> Features() {
+    DiscoveredSuite suite = new DiscoveredSuite("MyMod", "fx", "fx", [], [], [], []);
+    return [
+      (suite, new FeaturePlan("pawn", new TagSet([]), [Scenario("walks", 12), Scenario("sleeps", 20)], Path)),
+      (suite, new FeaturePlan("map", new TagSet([]), [Scenario("grows", 8)], "/mods/MyMod/Pickle/Features/map-steps.feature")),
+    ];
   }
 
   private static ScenarioPlan Scenario(string name, int line, params string[] tags) {
