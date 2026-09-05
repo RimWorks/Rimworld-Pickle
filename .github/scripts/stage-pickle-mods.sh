@@ -36,7 +36,8 @@ gh_api() {
   fi
 }
 
-# Both mods publish their whole folder as a release zip holding one top level directory.
+# A release zip is either the mod folder itself or one directory holding it, and both
+# shapes are common. About/About.xml is what identifies the mod root either way.
 stage_release_zip() {
   local repo="$1" prefix="$2" dest="$3" tmp json url inner
   tmp="$(mktemp -d)"
@@ -61,8 +62,11 @@ print(match[0]["browser_download_url"])')" || {
   curl -sSfL "${https_only[@]}" "$url" -o "$tmp/mod.zip"
   unzip -qo "$tmp/mod.zip" -d "$tmp/x"
 
-  inner="$(find "$tmp/x" -mindepth 1 -maxdepth 1 -type d -print -quit)"
-  [[ -n "$inner" ]] || { echo "error: no mod folder inside the ${repo} zip" >&2; exit 1; }
+  inner="$(dirname "$(dirname "$(find "$tmp/x" -mindepth 2 -maxdepth 3 -path '*/About/About.xml' -print -quit)")")"
+  [[ -d "$inner" && "$inner" != "." ]] || {
+    echo "error: no About/About.xml inside the ${repo} zip, so its mod folder cannot be found" >&2
+    exit 1
+  }
 
   rm -rf "$dest"
   mv "$inner" "$dest"

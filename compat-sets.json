@@ -4,11 +4,25 @@
     "extraMods is a comma separated list of owner/repo:AssetPrefix:packageId, staged from",
     "GitHub releases by .github/scripts/stage-pickle-mods.sh. A Workshop-only mod cannot go",
     "here: staging one needs Steam credentials the script deliberately does not take.",
+    "Backends live in ci.yml, not here. This file is only about other people's mods, so",
+    "baseline is the control column every other set is compared against.",
     "Every set costs a full suite run, so keep this list short."
   ],
   "sets": [
-    { "name": "harmony", "backend": "harmony", "extraMods": "" },
-    { "name": "concord", "backend": "concord", "extraMods": "" },
-    { "name": "both", "backend": "both", "extraMods": "" }
+    {
+      "name": "baseline",
+      "backend": "harmony",
+      "extraMods": ""
+    },
+    {
+      "name": "hugslib",
+      "backend": "harmony",
+      "extraMods": "UnlimitedHugs/RimworldHugsLib:HugsLib_:UnlimitedHugs.HugsLib"
+    },
+    {
+      "name": "vehicle-framework",
+      "backend": "harmony",
+      "extraMods": "SmashPhil/Vehicle-Framework:Vehicle-Framework-:SmashPhil.VehicleFramework"
+    }
   ]
 }
