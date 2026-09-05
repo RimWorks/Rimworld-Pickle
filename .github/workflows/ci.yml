@@ -115,6 +115,8 @@ jobs:
     permissions:
       contents: read
       packages: read
+      # dorny/test-reporter publishes its results as a check run.
+      checks: write
     steps:
       - uses: actions/checkout@v6
 
@@ -146,7 +148,20 @@ jobs:
         run: dotnet build Pickle.slnx -c Release
 
       - name: Run tests
-        run: dotnet test Pickle.slnx -c Release --no-build
+        run: |
+          dotnet test Pickle.slnx -c Release --no-build \
+            --logger "trx;LogFileName=tests.trx" --results-directory "$RUNNER_TEMP/test-results"
+
+      # if: always() so a failing test still gets annotated. Without it the reporter is
+      # skipped by the very failure it exists to point at.
+      - name: Publish the test results
+        if: always()
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
+        with:
+          name: unit tests
+          path: ${{ runner.temp }}/test-results/*.trx
+          reporter: dotnet-trx
+          fail-on-error: false
 
   suite:
     name: suite (${{ matrix.backends }})
@@ -157,6 +172,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      checks: write
     strategy:
       # Every combination should be reported, not just the first one that breaks.
       fail-fast: false
@@ -310,6 +326,17 @@ jobs:
             echo "for \`report.html\` (open it in a browser; failures carry screenshots),"
             echo "plus \`junit.xml\` and the full \`Player.log\`."
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # Pickle writes JUnit for every run, so a failed scenario can be an annotation
+      # rather than an artifact somebody has to download and open.
+      - name: Publish the scenario results
+        if: always()
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
+        with:
+          name: suite (${{ matrix.backends }})
+          path: pickle-reports/junit.xml
+          reporter: java-junit
+          fail-on-error: false
 
       - name: Publish the report
         if: always()
