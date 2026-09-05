@@ -3,3 +3,95 @@
 @plugin "daisyui" {
   themes: dim --default, winter;
 }
+
+@font-face { font-family: Fira; src: url("./assets/fira-regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: Fira; src: url("./assets/fira-semibold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
+.runner-app { font-family: Fira, sans-serif; --runner-accent: #b2e48b; --runner-paused: #e9be70; --runner-failed: #ffaaa3; --runner-muted: #b3c1c7; --runner-line: #47525b; --color-primary: #b2e48b; --color-primary-content: #18251b; --color-base-100: #282f39; --color-base-200: #222933; --color-base-300: #343e48; --color-base-content: #e6eded; --color-success: #83d6b7; --color-error: #ffaaa3; }
+[data-theme=winter] .runner-app { --runner-accent: #426620; --runner-paused: #805600; --runner-failed: #b3312b; --runner-muted: #4a5b64; --runner-line: #bdc7ce; --color-primary: #426620; --color-primary-content: #fff; --color-base-100: #f4f7f8; --color-base-200: #fff; --color-base-300: #e0e7eb; --color-base-content: #22313a; --color-success: #246b4f; --color-error: #b3312b; }
+.runner-app .btn { box-shadow: none; font-weight: 400; text-transform: none; transition: none; }
+.runner-app .btn-primary { font-weight: 600; }
+.runner-app :is(button,summary,input,select,a):focus-visible { outline: 2px solid var(--runner-accent); outline-offset: 3px; }
+.runner-app input { caret-color: var(--runner-accent); }
+.runner-app input[type=checkbox] { accent-color: var(--runner-accent); width: 16px; height: 16px; flex-shrink: 0; }
+.runner-app ::selection { background: var(--runner-accent); color: var(--color-base-200); }
+.runner-app * { scrollbar-width: thin; scrollbar-color: var(--runner-line) transparent; }
+.runner-header { display: flex; align-items: center; gap: 20px; padding: 0 20px; background: var(--color-base-100); border-bottom: 1px solid var(--runner-line); flex-shrink: 0; }
+.workspace-tabs { display: flex; gap: 3px; }
+.workspace-tabs button { padding: 16px 13px; min-height: 56px; white-space: nowrap; border-bottom: 2px solid transparent; font-size: 13px; }
+.workspace-tabs button[aria-selected=true] { color: var(--runner-accent); border-bottom-color: var(--runner-accent); font-weight: 600; }
+.workspace-summary { display: grid; grid-template-columns: minmax(0,1fr) auto; flex: 1; gap: 20px; align-items: center; min-width: 0; padding-block: 8px; }
+.run-status { display: grid; grid-template-columns: 7px minmax(0,1fr); column-gap: 9px; min-width: 0; height: 36px; font-size: 13px; }
+.run-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--runner-muted); grid-row: 1 / 3; align-self: center; }
+.run-status strong,.run-status small { line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.run-status small { grid-column: 2; color: var(--runner-muted); font-size: 11px; }
+.run-status.running .run-status-dot { background: var(--runner-accent); }
+.run-status.paused { color: var(--runner-paused); }
+.run-status.paused .run-status-dot { background: var(--runner-paused); }
+.run-status.failed { color: var(--runner-failed); }
+.run-status.failed .run-status-dot { background: var(--runner-failed); }
+.run-scores { display: flex; gap: 12px; font-size: 11px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.runner-controls { background: var(--color-base-100); flex-shrink: 0; }
+.runner-toolbar { display: flex; align-items: center; gap: 26px; padding: 14px 20px; flex-wrap: wrap; }
+.control-group { display: flex; align-items: center; gap: 8px; }
+.control-label,.bulk-selection { font-size: 11px; color: var(--runner-muted); }
+.scope-select { width: 140px; }
+.behavior-group { padding-left: 24px; border-left: 1px solid var(--runner-line); }
+.mode-switch { display: flex; gap: 6px; }
+.mode-switch button[aria-pressed=true] { border-color: var(--runner-accent); background: var(--color-base-300); }
+.bulk-selection { display: flex; gap: 6px; align-items: center; margin-left: auto; font-variant-numeric: tabular-nums; }
+.runner-menu { position: relative; font-size: 12px; }
+.runner-menu summary { list-style: none; }
+.runner-menu summary::-webkit-details-marker { display: none; }
+.runner-popover { position: absolute; top: calc(100% + 6px); left: 0; width: 270px; max-width: calc(100vw - 40px); display: grid; gap: 10px; padding: 14px; background: var(--color-base-200); border: 1px solid var(--runner-line); border-radius: 5px; box-shadow: 0 8px 20px #0004; z-index: 20; }
+.runner-popover label { display: flex; align-items: center; gap: 8px; min-height: 30px; }
+.runner-popover p { font-size: 11px; color: var(--runner-muted); }
+.runner-popover a { padding: 8px; text-decoration: underline; text-underline-offset: 3px; }
+.runner-filters { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 18px; border-top: 1px solid var(--runner-line); padding: 10px 20px; }
+.filter-fields { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.filter-fields input[type=search] { flex: 1 1 190px; max-width: 340px; min-width: 0; }
+.filter-fields .mod-select { width: auto; max-width: 170px; }
+.tag-options { display: grid; gap: 6px; max-height: 40vh; overflow-y: auto; }
+.tag-options button { justify-content: flex-start; height: auto; white-space: normal; overflow-wrap: anywhere; }
+.tag-options button[aria-pressed=true],.active-tags .btn { background: var(--color-base-300); border-color: var(--runner-accent); }
+.active-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex-basis: 100%; font-size: 11px; }
+.active-tags svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.bottom-actions { display: flex; align-items: center; justify-self: end; gap: 16px; }
+.follow-control { display: flex; align-items: center; gap: 8px; font-size: 12px; white-space: nowrap; }
+.run-actions { display: flex; align-items: center; gap: 6px; }
+.transport-actions { display: flex; gap: 4px; }
+.transport-action { width: 34px; height: 34px; padding: 0; flex-shrink: 0; }
+.transport-action svg { width: 16px; height: 16px; }
+.runner-progress { height: 3px; flex-shrink: 0; background: var(--runner-line); }
+.runner-progress span { display: block; height: 100%; background: var(--runner-accent); transition: width .2s ease-out; }
+.runner-progress.paused span { background: var(--runner-paused); }
+.runner-progress.failed span { background: var(--runner-failed); }
+.runner-notice { position: fixed; z-index: 30; bottom: 20px; left: 50%; transform: translateX(-50%); width: min(620px,calc(100% - 32px)); background: var(--color-base-100); border: 1px solid var(--runner-line); border-radius: 5px; box-shadow: 0 8px 20px #0004; }
+.reports-workspace { display: grid; gap: 14px; }
+.report-actions { display: flex; gap: 8px; }
+@media(max-width:1100px) {
+  .workspace-summary { grid-template-columns: minmax(0,1fr); gap: 4px; }
+  .runner-header { gap: 10px; }
+  .runner-filters { grid-template-columns: minmax(0,1fr); gap: 10px; }
+  .filter-fields input[type=search] { max-width: none; }
+}
+@media(max-width:620px) {
+  .runner-header { flex-wrap: wrap; gap: 0 10px; padding-inline: 14px; }
+  .runner-header > svg { width: 24px; }
+  .workspace-tabs { flex: 1; }
+  .workspace-tabs button { font-size: 11px; padding-inline: 8px; min-height: 48px; }
+  .workspace-summary { order: 2; flex-basis: calc(100% - 70px); padding-bottom: 12px; }
+  .runner-header > .btn { order: 3; margin-left: auto; }
+  .runner-toolbar { gap: 10px; padding: 12px 14px; }
+  .runner-toolbar > .control-group:first-child { width: 100%; }
+  .scope-select { flex: 1; }
+  .behavior-group { border: 0; padding: 0; }
+  .bulk-selection { margin-left: auto; }
+  .runner-filters { padding: 10px 14px; }
+  .filter-fields input[type=search] { flex-basis: 100%; }
+  .tag-menu .runner-popover { left: auto; right: 0; }
+  .bottom-actions { flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+  .runner-controls :is(.btn,.input,.select) { min-height: 44px; }
+  .follow-control { min-height: 44px; }
+  .transport-action { width: 44px; height: 44px; }
+}
+@media(prefers-reduced-motion:reduce) { .runner-progress span { transition: none; } }

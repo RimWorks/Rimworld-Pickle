@@ -1,103 +1,100 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using Verse;
 
 namespace RimWorks.Pickle.UI;
 
-/// <summary>
-/// Search box, tag chips, and mod picker. Chips are built from whatever tags the
-/// discovered scenarios carry, so an untagged suite renders an empty row.
-/// </summary>
 public static class RunnerFilterBar {
-  private const float SearchWidth = 240f;
-  private const float ChipHeight = 20f;
-  private const float ChipPadding = 6f;
-  private const float ModPickerWidth = 140f;
+  private const float RowHeight = 40f;
+  private const float Padding = 8f;
 
   public static float Height(float width, RunnerWindow window) {
-    float x = 4f;
-    float height = 30f;
-    foreach (string tag in window.AllTags) {
-      float chipWidth = Mathf.Min(ChipWidth(tag), width - 8f);
-      if (x + chipWidth > width - 4f) {
-        height += 26f;
-        x = 4f;
+    float fieldsWidth = FieldsWidth(width);
+    float x = 70f;
+    float height = RowHeight;
+    foreach (string tag in window.ActiveTagFilters) {
+      float chipWidth = ChipWidth(tag, fieldsWidth);
+      if (x + chipWidth > fieldsWidth) {
+        height += 30f;
+        x = 0f;
       }
 
-      x += chipWidth + ChipPadding;
+      x += chipWidth + 6f;
     }
 
-    return height + (x > 4f ? 26f : 0f);
+    if (window.ActiveTagFilters.Count > 0) {
+      height += 30f;
+    }
+
+    return height + (width < 1000f ? RowHeight : 0f);
   }
 
   public static void Draw(Rect rect, RunnerWindow window) {
-    float x = rect.x + 4f;
-    Rect searchRect = new Rect(x, rect.y + 5f, Mathf.Min(SearchWidth, (rect.width * 0.6f) - 8f), ChipHeight);
+    float fieldsWidth = FieldsWidth(rect.width);
+    float searchWidth = Mathf.Max(100f, fieldsWidth - 300f);
+    Rect searchRect = new Rect(rect.x + Padding, rect.y + 5f, searchWidth, 30f);
     string search = Widgets.TextField(searchRect, window.SearchText);
     if (search != window.SearchText) {
       window.SetFilter(search: search);
     }
 
-    x = rect.x + 4f;
-    float chipY = rect.y + 32f;
-    foreach (string tag in window.AllTags) {
-      float chipWidth = Mathf.Min(ChipWidth(tag), rect.width - 8f);
-      if (x + chipWidth > rect.xMax - 4f) {
-        x = rect.x + 4f;
-        chipY += 26f;
-      }
-      Rect chipRect = new Rect(x, chipY, chipWidth, ChipHeight);
-      bool active = window.ActiveTagFilters.Contains(tag);
-      DrawChip(chipRect, tag, active);
-      if (Widgets.ButtonInvisible(chipRect)) {
-        window.SetFilter(tag: tag);
+    Rect modRect = new Rect(searchRect.xMax + 8f, searchRect.y, 138f, 30f);
+    string modLabel = window.ModFilterSelection ?? "All mods";
+    if (Widgets.ButtonText(modRect, modLabel.Truncate(modRect.width - 12f))) {
+      List<FloatMenuOption> options = [new FloatMenuOption("All mods", () => window.SetFilter(mod: string.Empty))];
+      foreach (string mod in window.AllModNames) {
+        options.Add(new FloatMenuOption(mod, () => window.SetFilter(mod: mod)));
       }
 
-      x += chipWidth + ChipPadding;
+      Find.WindowStack.Add(new FloatMenu(options));
     }
 
-    string modLabel = window.ModFilterSelection ?? "all";
-    string modChipText = $"mods: {modLabel} ▾";
-    float modChipWidth = Mathf.Min((rect.width * 0.4f) - 8f, Mathf.Max(ModPickerWidth, Text.CalcSize(modChipText).x + (ChipPadding * 2f)));
-    Rect modRect = new Rect(rect.xMax - modChipWidth - 4f, rect.y + 5f, modChipWidth, ChipHeight);
-    DrawChip(modRect, modChipText.Truncate(modChipWidth - (ChipPadding * 2f)), false);
-    if (Widgets.ButtonInvisible(modRect)) {
-      OpenModPicker(window);
+    Rect tagRect = new Rect(modRect.xMax + 8f, searchRect.y, 144f, 30f);
+    GUI.enabled = !window.IsRunning && !Web.FixtureCommands.IsBusy;
+    string tagLabel = window.ActiveTagFilters.Count == 0 ? "Select by tag" : $"{window.ActiveTagFilters.Count} tags · match any";
+    if (Widgets.ButtonText(tagRect, tagLabel)) {
+      Find.WindowStack.Add(new RunnerTagMenu(window, GUIUtility.GUIToScreenPoint(new Vector2(tagRect.x, tagRect.yMax))));
     }
+
+    float x = rect.x + Padding + 70f;
+    float y = rect.y + RowHeight;
+    Text.Font = GameFont.Tiny;
+    if (window.ActiveTagFilters.Count > 0) {
+      Widgets.Label(new Rect(rect.x + Padding, y + 5f, 65f, 24f), "Match any");
+    }
+
+    foreach (string tag in new List<string>(window.ActiveTagFilters)) {
+      float chipWidth = ChipWidth(tag, fieldsWidth);
+      if (x + chipWidth > rect.x + Padding + fieldsWidth) {
+        x = rect.x + Padding;
+        y += 30f;
+      }
+
+      Rect chip = new Rect(x, y + 2f, chipWidth, 26f);
+      TooltipHandler.TipRegion(chip, $"Remove {tag} tag");
+      if (Widgets.ButtonText(chip, tag.Truncate(chipWidth - 28f))) {
+        window.SetFilter(tag: tag, additive: true);
+      }
+
+      Vector2 c = new Vector2(chip.xMax - 11f, chip.center.y);
+      Widgets.DrawLine(c + new Vector2(-3f, -3f), c + new Vector2(3f, 3f), RunnerStatusColors.Muted, 1f);
+      Widgets.DrawLine(c + new Vector2(3f, -3f), c + new Vector2(-3f, 3f), RunnerStatusColors.Muted, 1f);
+      x += chipWidth + 6f;
+    }
+
+    Text.Font = GameFont.Small;
+    GUI.enabled = true;
+    RunnerToolbar.DrawActions(new Rect(rect.x, rect.yMax - 35f, rect.width - Padding, 30f), window);
   }
 
-  private static float ChipWidth(string tag) {
+  private static float FieldsWidth(float width) {
+    return width - (Padding * 2f) - (width < 1000f ? 0f : RunnerToolbar.ActionsWidth + 18f);
+  }
+
+  private static float ChipWidth(string tag, float fieldsWidth) {
     Text.Font = GameFont.Tiny;
-    float width = Text.CalcSize(tag).x + (ChipPadding * 2f);
+    float width = Mathf.Min(Text.CalcSize(tag).x + 32f, fieldsWidth);
     Text.Font = GameFont.Small;
     return width;
-  }
-
-  private static void DrawChip(Rect rect, string label, bool active) {
-    Color outline = active ? RunnerStatusColors.Keyword : Widgets.SeparatorLineColor;
-    Color fill = active ? new Color(0.851f, 0.604f, 0.239f, 0.15f) : Color.clear;
-    Widgets.DrawBoxSolidWithOutline(rect, fill, outline);
-
-    Text.Font = GameFont.Tiny;
-    Text.Anchor = TextAnchor.MiddleCenter;
-    GUI.color = active ? RunnerStatusColors.Keyword : Color.white;
-    Widgets.Label(rect, label);
-    GUI.color = Color.white;
-    Text.Anchor = TextAnchor.UpperLeft;
-    Text.Font = GameFont.Small;
-  }
-
-  private static void OpenModPicker(RunnerWindow window) {
-    List<FloatMenuOption> options =
-    [
-        new FloatMenuOption("all mods", () => window.SetFilter(mod: string.Empty)),
-        ];
-
-    foreach (string modName in window.AllModNames) {
-      options.Add(new FloatMenuOption(modName, () => window.SetFilter(mod: modName)));
-    }
-
-    Find.WindowStack.Add(new FloatMenu(options));
   }
 }

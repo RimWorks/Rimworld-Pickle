@@ -85,6 +85,12 @@ public class RunSession {
 
   public bool IsPausedForBreak { get; private set; }
 
+  public bool IsManuallyPaused { get; private set; }
+
+  public bool PauseRequested { get; private set; }
+
+  public bool IsPaused => IsPausedForBreak || IsManuallyPaused;
+
   public bool CancelRequested { get; private set; }
 
   // Fires when a step fails with break-on-failure armed; the run blocks on the Task.
@@ -101,6 +107,17 @@ public class RunSession {
 
   public void RequestCancel() {
     CancelRequested = true;
+  }
+
+  public void RequestPause() {
+    if (!CancelRequested && !IsPaused && !AutorunState.IsAutorunning) {
+      PauseRequested = true;
+      OnProgress?.Invoke();
+    }
+  }
+
+  public void Resume() {
+    PauseRequested = false;
   }
 
   /// <summary>
@@ -130,6 +147,7 @@ public class RunSession {
 
     int scenarioIndex = 0;
     foreach (ScenarioPlan scenario in plan.Scenarios) {
+      await WaitWhilePaused();
       if (CancelRequested) {
         break;
       }
@@ -340,6 +358,12 @@ public class RunSession {
       film?.Start();
 
       foreach (StepPlan step in scenario.Steps) {
+        await WaitWhilePaused();
+        if (CancelRequested) {
+          SkipRemainingSteps(scenario, stepResults);
+          break;
+        }
+
         StepResult stepResult = await RunStep(ctx, step);
         stepResults.Add(stepResult);
         OnProgress?.Invoke();
@@ -771,6 +795,22 @@ public class RunSession {
       Attachments = BuildAttachmentsWithScreenshot(ctx, screenshotPath),
       StateDumps = stateDumps,
     };
+  }
+
+  private async Task WaitWhilePaused() {
+    if (!PauseRequested || CancelRequested) {
+      return;
+    }
+
+    IsManuallyPaused = true;
+    OnProgress?.Invoke();
+    try {
+      await driver.WaitUntil(() => !PauseRequested || CancelRequested, float.PositiveInfinity);
+    } finally {
+      IsManuallyPaused = false;
+      PauseRequested = false;
+      OnProgress?.Invoke();
+    }
   }
 
   // Only a real failure pauses, and only when a human is watching. An autorun has

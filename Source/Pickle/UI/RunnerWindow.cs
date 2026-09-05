@@ -28,8 +28,6 @@ public class RunnerWindow : Window {
   private const float PaneTopPadding = 10f;
   private const float PaneGutter = 14f;
 
-  private const float StatusRowHeight = 24f;
-
   // Long enough that a human at a break card never times it out. CancelRequested is
   // the other way out and fires regardless.
   private const float BreakWaitTimeoutSeconds = 3600f;
@@ -42,6 +40,7 @@ public class RunnerWindow : Window {
   private RunPill? activePill;
   private bool restoreWindowAfterRun;
   private BreakCard? activeBreakCard;
+  private FixtureManagerDialog? fixturesView;
 
   public RunnerWindow() {
     optionalTitle = "Pickle_RunnerTitle".Translate();
@@ -100,6 +99,20 @@ public class RunnerWindow : Window {
 
   internal RunSession? ActiveSession { get; private set; }
 
+  internal string Workspace { get; set; } = "run";
+
+  internal string RunScope { get; set; } = "all";
+
+  internal int RunScenarioCount { get; private set; }
+
+  internal int CompletedScenarioCount { get; private set; }
+
+  internal int SelectedScenarioCount => TotalScenarioCount - deselectedScenarios.Count;
+
+  internal int PassedResultsCount => results.Values.Count(r => r.Outcome == ScenarioOutcome.Passed);
+
+  internal int SkippedResultsCount => results.Values.Count(r => r.Outcome == ScenarioOutcome.Skipped);
+
   internal int TotalScenarioCount => parsedFeatures.Sum(f => f.Plan.Scenarios.Count);
 
   internal DateTime? LastRunAt { get; private set; }
@@ -133,6 +146,9 @@ public class RunnerWindow : Window {
   public override void DoWindowContents(Rect inRect) {
     float y = inRect.y;
 
+    float headerHeight = RunnerToolbar.HeaderHeight(inRect.width);
+    RunnerToolbar.DrawHeader(new Rect(inRect.x, y, inRect.width, headerHeight), this);
+    y += headerHeight;
     float toolbarHeight = RunnerToolbar.Height(inRect.width);
     Rect toolbarRect = new Rect(inRect.x, y, inRect.width, toolbarHeight);
     RunnerToolbar.Draw(toolbarRect, this);
@@ -143,12 +159,24 @@ public class RunnerWindow : Window {
     Rect filterRect = new Rect(inRect.x, y, inRect.width, filterHeight);
     RunnerFilterBar.Draw(filterRect, this);
     y += filterHeight;
-    Widgets.DrawLineHorizontal(inRect.x, y, inRect.width, Widgets.SeparatorLineColor);
+    RunnerToolbar.DrawProgress(new Rect(inRect.x, y, inRect.width, 3f), this);
+    y += 3f;
 
-    float bodyHeight = inRect.height - (y - inRect.y) - StatusRowHeight;
+    float bodyHeight = inRect.height - (y - inRect.y);
     Rect bodyRect = new Rect(inRect.x, y, inRect.width, bodyHeight);
 
-    float treeWidth = Mathf.Clamp(bodyRect.width * 0.4f, 220f, 420f);
+    if (Workspace == "fixtures") {
+      fixturesView ??= new FixtureManagerDialog();
+      fixturesView.DoWindowContents(bodyRect.ContractedBy(12f));
+      return;
+    }
+
+    if (Workspace == "reports") {
+      RunnerToolbar.DrawReports(bodyRect.ContractedBy(16f), this);
+      return;
+    }
+
+    float treeWidth = Mathf.Clamp(bodyRect.width * 0.3f, 180f, 420f);
     float dividerX = bodyRect.x + treeWidth;
     Widgets.DrawLineVertical(dividerX, bodyRect.y, bodyRect.height);
 
@@ -167,10 +195,6 @@ public class RunnerWindow : Window {
 
     RunnerTreeView.Draw(treeRect, this);
     RunnerDetailView.Draw(detailRect, this);
-
-    y += bodyHeight;
-    Rect statusRect = new Rect(inRect.x, y, inRect.width, StatusRowHeight);
-    DrawStatusRow(statusRect);
   }
 
   internal bool TryGetResult(string sourcePath, int scenarioIndex, out ScenarioResult result) {
@@ -216,7 +240,7 @@ public class RunnerWindow : Window {
       return false;
     }
 
-    if (ActiveTagFilters.Count > 0 && !ActiveTagFilters.All(t => scenario.Tags.Contains(t))) {
+    if (ActiveTagFilters.Count > 0 && !ActiveTagFilters.Any(t => scenario.Tags.Contains(t))) {
       return false;
     }
 
@@ -276,13 +300,14 @@ public class RunnerWindow : Window {
         RunnerSnapshot.Build(parsedFeatures, results, ActiveSession, IsRunning, IsScenarioSelected, this));
   }
 
-  internal void ContinueRun(bool openResults = false) {
+  internal void ContinueRun() {
+    ActiveSession?.Resume();
     if (activeBreakCard != null) {
-      activeBreakCard.Decision = openResults ? BreakCardDecision.OpenInResults : BreakCardDecision.Continue;
+      activeBreakCard.Decision = BreakCardDecision.Continue;
     }
   }
 
-  internal void SetFilter(string? search = null, string? mod = null, string? tag = null) {
+  internal void SetFilter(string? search = null, string? mod = null, string? tag = null, bool additive = false, bool clearTags = false) {
     if (search != null) {
       SearchText = search;
     }
@@ -291,12 +316,25 @@ public class RunnerWindow : Window {
       ModFilterSelection = mod.Length == 0 ? null : mod;
     }
 
-    if (tag != null) {
-      if (!ActiveTagFilters.Remove(tag)) {
+    if (clearTags) {
+      ActiveTagFilters.Clear();
+    }
+
+    if (tag != null && !IsRunning) {
+      if (!additive) {
+        ActiveTagFilters.Clear();
+      }
+
+      if (!additive || !ActiveTagFilters.Remove(tag)) {
         ActiveTagFilters.Add(tag);
       }
 
-      SelectOnlyVisible();
+      int index = 0;
+      foreach ((DiscoveredSuite _, FeaturePlan plan) in parsedFeatures) {
+        foreach (ScenarioPlan scenario in plan.Scenarios) {
+          SetScenarioSelected(plan.SourcePath ?? string.Empty, index++, ActiveTagFilters.Any(t => scenario.Tags.Contains(t)));
+        }
+      }
     }
 
     PublishSnapshot();
@@ -404,30 +442,6 @@ public class RunnerWindow : Window {
     PublishSnapshot();
   }
 
-  private void DrawStatusRow(Rect rect) {
-    Widgets.DrawLineHorizontal(rect.x, rect.y, rect.width, Widgets.SeparatorLineColor);
-
-    int passed = results.Values.Count(r => r.Outcome == ScenarioOutcome.Passed);
-    int failed = FailedResultsCount;
-    int notRun = TotalScenarioCount - results.Count;
-
-    Text.Font = GameFont.Tiny;
-    Text.Anchor = TextAnchor.MiddleLeft;
-    Widgets.Label(new Rect(rect.x + 2f, rect.y, 260f, rect.height), $"{passed} passed · {failed} failed · {notRun} not run");
-
-    string modeText = PickleRunMode.Current == PickleRunMode.Mode.Watch ? "watch mode" : "fast mode";
-    string lastRunText = LastRunAt.HasValue ? $"last run {LastRunAt.Value:HH:mm:ss} · {modeText}" : modeText;
-    GUI.color = RunnerStatusColors.Muted;
-    Widgets.Label(new Rect(rect.x + 270f, rect.y, 260f, rect.height), lastRunText);
-    GUI.color = Color.white;
-
-    Text.Anchor = TextAnchor.MiddleRight;
-    Widgets.Label(new Rect(rect.xMax - 300f, rect.y, 296f, rect.height), "junit + messages written to pickle-reports/");
-
-    Text.Anchor = TextAnchor.UpperLeft;
-    Text.Font = GameFont.Small;
-  }
-
   // Keyed by (sourcePath, global scenario index), same as RunnerTreeView and results.
   // Null runs everything; a feature with nothing selected is skipped outright.
   private async Task RunAsync(Func<string, int, bool>? isScenarioSelected) {
@@ -440,11 +454,14 @@ public class RunnerWindow : Window {
     try {
       DiscoverAndParseFeatures();
 
+      RunScenarioCount = 0;
+      CompletedScenarioCount = 0;
       int clearIndex = 0;
       foreach ((DiscoveredSuite _, FeaturePlan plan) in parsedFeatures) {
         string path = plan.SourcePath ?? string.Empty;
         foreach (int position in SelectedPositions(path, clearIndex, plan.Scenarios.Count, isScenarioSelected)) {
           results.Remove((path, clearIndex + position));
+          RunScenarioCount++;
         }
 
         clearIndex += plan.Scenarios.Count;
@@ -508,6 +525,7 @@ public class RunnerWindow : Window {
               if (completed < selectedPositions.Count) {
                 results[(sourcePath, featureStartIndex + selectedPositions[completed])] = result;
                 completed++;
+                CompletedScenarioCount++;
               }
 
               PublishSnapshot();
@@ -603,16 +621,12 @@ public class RunnerWindow : Window {
         BreakWaitTimeoutSeconds);
 
     Find.WindowStack.TryRemove(card, doCloseSound: false);
-    activeBreakCard = null;
 
-    if (card.Decision == BreakCardDecision.OpenInResults) {
-      FollowRun = false;
-      int offset = parsedFeatures.TakeWhile(f => f.Plan.SourcePath != info.SourcePath).Sum(f => f.Plan.Scenarios.Count);
-      Selected = (info.SourcePath ?? string.Empty, offset + info.ScenarioIndex);
-      session?.RequestCancel();
-    } else if (card.Decision == BreakCardDecision.Abort) {
+    if (card.Decision == BreakCardDecision.Abort) {
       session?.RequestCancel();
     }
+
+    activeBreakCard = null;
   }
 
   private void SelectFirstFailureIfNoneSelected() {

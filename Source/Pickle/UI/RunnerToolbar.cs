@@ -1,5 +1,8 @@
+using System.Collections.Generic;
+using System.IO;
 using RimWorks.Pickle.Evidence;
 using RimWorks.Pickle.Runtime;
+using RimWorks.Pickle.Web;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -7,121 +10,199 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.UI;
 
-/// <summary>
-/// Top toolbar: run controls, watch/fast mode, the break-on-failure and include-@wip
-/// toggles, and the fixture manager / report actions on the right.
-/// </summary>
 public static class RunnerToolbar {
-  private const float RowHeight = 34f;
-  private const float Padding = 6f;
-  private static readonly float[] Widths = [80f, 118f, 118f, 96f, 86f, 112f, 170f, 132f, 116f, 92f, 128f, 106f, 106f, 116f, 110f];
+  public const float ActionsWidth = 246f;
+  private const float Padding = 8f;
+  private const float ButtonHeight = 30f;
 
-  public static float Height(float width) {
-    Rect bounds = new Rect(0f, 0f, width, 0f);
-    float x = Padding;
-    float y = 0f;
-    foreach (float controlWidth in Widths) {
-      _ = Next(bounds, ref x, ref y, controlWidth);
+  public static float HeaderHeight(float width) => width < 900f ? 84f : 56f;
+
+  public static float Height(float width) => width < 760f ? 82f : 48f;
+
+  public static void DrawHeader(Rect rect, RunnerWindow window) {
+    float x = rect.x + Padding;
+    foreach ((string key, string label) in new[] { ("run", "Run"), ("fixtures", "Fixtures"), ("reports", "Reports") }) {
+      Rect tab = new Rect(x, rect.y, 90f, 48f);
+      bool active = window.Workspace == key;
+      Label(tab, label, active ? RunnerStatusColors.Accent : Color.white, GameFont.Small);
+      if (active) {
+        Widgets.DrawBoxSolid(new Rect(tab.x, tab.yMax - 2f, tab.width, 2f), RunnerStatusColors.Accent);
+      }
+
+      if (Widgets.ButtonInvisible(tab)) {
+        window.Workspace = key;
+      }
+
+      x += 94f;
     }
 
-    return y + RowHeight;
+    float summaryY = rect.width < 900f ? rect.y + 48f : rect.y + 8f;
+    float summaryX = rect.width < 900f ? rect.x + Padding : x + 18f;
+    float summaryWidth = rect.xMax - summaryX - Padding;
+    bool paused = window.ActiveSession?.IsPaused == true;
+    string state = paused ? "Paused" : window.IsRunning ? "Running" : window.FailedResultsCount > 0 ? "Failed" : "Idle";
+    if (!paused && window.ActiveSession?.PauseRequested == true) {
+      state = "Pausing after current step";
+    }
+
+    Color color = StatusColor(window);
+    RunnerStatusColors.DrawDot(new Vector2(summaryX + 4f, summaryY + 16f), color, 7f);
+    float statusWidth = Mathf.Max(100f, summaryWidth - 320f);
+    Label(new Rect(summaryX + 16f, summaryY, statusWidth - 16f, 18f), state, color, GameFont.Tiny);
+    string detail = window.IsRunning ? window.ActiveSession?.CurrentStepDisplay ?? string.Empty
+        : $"{window.ParsedFeaturesCount} features" + (window.LastRunAt.HasValue ? $" · last run {window.LastRunAt:HH:mm:ss}" : string.Empty);
+    Label(new Rect(summaryX + 16f, summaryY + 18f, statusWidth - 16f, 18f), detail, RunnerStatusColors.Muted, GameFont.Tiny);
+    Label(new Rect(summaryX + statusWidth, summaryY + 8f, 310f, 22f),
+        $"{window.PassedResultsCount} passed · {window.FailedResultsCount} failed · {window.SkippedResultsCount} skipped", Color.white, GameFont.Tiny);
+    Widgets.DrawLineHorizontal(rect.x, rect.yMax, rect.width, Widgets.SeparatorLineColor);
   }
 
   public static void Draw(Rect rect, RunnerWindow window) {
-    float x = rect.x + Padding;
-    float y = rect.y;
-    bool idle = !window.IsRunning && !Web.FixtureCommands.IsBusy;
+    bool idle = !window.IsRunning && !FixtureCommands.IsBusy;
+    float y = rect.y + 9f;
+    Label(new Rect(rect.x + Padding, y, 42f, ButtonHeight), "Scope", RunnerStatusColors.Muted, GameFont.Tiny);
+    Rect scope = new Rect(rect.x + 50f, y, 142f, ButtonHeight);
+    string scopeLabel = window.RunScope == "selected" ? $"{window.SelectedScenarioCount} selected"
+        : window.RunScope == "failed" ? $"{window.FailedResultsCount} failed" : $"All {window.TotalScenarioCount}";
+    GUI.enabled = idle;
+    if (Widgets.ButtonText(scope, scopeLabel)) {
+      List<FloatMenuOption> options = [];
+      foreach ((string key, string label) in new[] {
+          ("all", $"All {window.TotalScenarioCount}"), ("selected", $"{window.SelectedScenarioCount} selected"), ("failed", $"{window.FailedResultsCount} failed") }) {
+        options.Add(new FloatMenuOption(label, () => {
+          window.RunScope = key;
+          window.PublishSnapshot();
+        }));
+      }
 
-    GUI.enabled = idle && window.TotalScenarioCount > 0;
-    if (Widgets.ButtonText(Next(rect, ref x, ref y, Widths[0]), "Pickle_RunAll".Translate())) {
-      _ = window.RunAllAndWait();
+      Find.WindowStack.Add(new FloatMenu(options));
     }
 
-    GUI.enabled = idle && window.HasAnyScenarioSelected;
-    if (Widgets.ButtonText(Next(rect, ref x, ref y, Widths[1]), "Pickle_RunSelected".Translate())) {
-      window.RunSelected();
+    Label(new Rect(scope.xMax + 22f, y, 40f, ButtonHeight), "Mode", RunnerStatusColors.Muted, GameFont.Tiny);
+    Rect mode = new Rect(scope.xMax + 64f, y, 112f, ButtonHeight);
+    DrawModeToggle(mode);
+    Rect settings = new Rect(mode.xMax + 10f, y, 88f, ButtonHeight);
+    if (Widgets.ButtonText(settings, "Options")) {
+      OpenOptions(window);
     }
 
-    GUI.enabled = idle && window.FailedResultsCount > 0;
-    if (Widgets.ButtonText(Next(rect, ref x, ref y, Widths[2]), "Pickle_RerunFailed".Translate())) {
-      window.RerunFailed();
+    float bulkY = rect.width < 760f ? y + 34f : y;
+    float bulkX = rect.xMax - 258f;
+    Label(new Rect(bulkX, bulkY, 100f, ButtonHeight), $"{window.SelectedScenarioCount} selected", RunnerStatusColors.Muted, GameFont.Tiny);
+    if (Widgets.ButtonText(new Rect(bulkX + 106f, bulkY, 70f, ButtonHeight), $"All {window.TotalScenarioCount}")) {
+      _ = RunnerCommands.SelectAll(true);
     }
 
-    GUI.enabled = window.ActiveSession?.IsPausedForBreak == true;
-    if (Widgets.ButtonText(Next(rect, ref x, ref y, Widths[3]), "Pickle_ContinueRun".Translate())) {
-      window.ContinueRun();
+    if (Widgets.ButtonText(new Rect(bulkX + 182f, bulkY, 70f, ButtonHeight), "Clear all")) {
+      _ = RunnerCommands.SelectAll(false);
     }
 
-    GUI.enabled = window.IsRunning && window.ActiveSession?.CancelRequested == false;
-    if (Widgets.ButtonText(Next(rect, ref x, ref y, Widths[4]), "Pickle_AbortRun".Translate())) {
+    GUI.enabled = true;
+  }
+
+  public static void DrawActions(Rect rect, RunnerWindow window) {
+    bool paused = window.ActiveSession?.IsPaused == true;
+    bool stopping = window.ActiveSession?.CancelRequested == true;
+    bool idle = !window.IsRunning && !FixtureCommands.IsBusy;
+    float x = rect.xMax - ActionsWidth;
+    GUI.enabled = window.IsRunning;
+    bool follow = window.FollowRun;
+    Widgets.CheckboxLabeled(new Rect(x, rect.y, 120f, ButtonHeight), "Follow run", ref follow);
+    if (follow != window.FollowRun) {
+      window.FollowRun = follow;
+      window.PublishSnapshot();
+    }
+
+    x += 138f;
+    int count = window.RunScope == "selected" ? window.SelectedScenarioCount
+        : window.RunScope == "failed" ? window.FailedResultsCount : window.TotalScenarioCount;
+    GUI.enabled = !stopping && (paused || (idle && count > 0));
+    if (IconButton(new Rect(x, rect.y, 32f, ButtonHeight), paused ? "continue" : "run", paused ? "Continue run" : $"Run {count} scenarios", RunnerStatusColors.Accent)) {
+      if (paused) {
+        window.ContinueRun();
+      } else {
+        _ = RunnerCommands.Run(window.RunScope);
+      }
+    }
+
+    x += 36f;
+    GUI.enabled = window.IsRunning && !paused && !stopping && window.ActiveSession?.PauseRequested == false;
+    if (IconButton(new Rect(x, rect.y, 32f, ButtonHeight), "pause", "Pause after current step", Color.white)) {
+      window.ActiveSession?.RequestPause();
+    }
+
+    x += 36f;
+    GUI.enabled = window.IsRunning && !stopping;
+    if (IconButton(new Rect(x, rect.y, 32f, ButtonHeight), "abort", stopping ? "Aborting run" : "Abort run", RunnerStatusColors.FailedText)) {
       window.ActiveSession?.RequestCancel();
-    }
-
-    GUI.enabled = true;
-    DrawModeToggle(Next(rect, ref x, ref y, Widths[5]));
-
-    bool breakOn = BreakOnFailureState.Enabled;
-    Widgets.CheckboxLabeled(Next(rect, ref x, ref y, Widths[6]), "Pickle_BreakOnFailure".Translate(), ref breakOn);
-    if (breakOn != BreakOnFailureState.Enabled) {
-      BreakOnFailureState.Enabled = breakOn;
-      window.PublishSnapshot();
-    }
-
-    bool includeWip = IncludeWipState.Enabled;
-    Widgets.CheckboxLabeled(Next(rect, ref x, ref y, Widths[7]), "Pickle_IncludeWip".Translate(), ref includeWip);
-    if (includeWip != IncludeWipState.Enabled) {
-      IncludeWipState.Enabled = includeWip;
-      window.PublishSnapshot();
-    }
-
-    bool showPill = RunPillState.Enabled;
-    Widgets.CheckboxLabeled(Next(rect, ref x, ref y, Widths[8]), "Pickle_ShowRunPill".Translate(), ref showPill);
-    if (showPill != RunPillState.Enabled) {
-      RunPillState.Enabled = showPill;
-      window.PublishSnapshot();
-    }
-
-    if (Widgets.ButtonText(Next(rect, ref x, ref y, Widths[9]), "Pickle_Fixtures".Translate())) {
-      Find.WindowStack.Add(new FixtureManagerDialog());
-    }
-
-    if (Widgets.ButtonText(Next(rect, ref x, ref y, Widths[10]), "Pickle_OpenReportDir".Translate())) {
-      OpenReportDirectory();
-    }
-
-    if (Widgets.ButtonText(Next(rect, ref x, ref y, Widths[11]), "Pickle_SelectAll".Translate())) {
-      _ = Web.RunnerCommands.SelectAll(true);
-    }
-
-    if (Widgets.ButtonText(Next(rect, ref x, ref y, Widths[12]), "Pickle_DeselectAll".Translate())) {
-      _ = Web.RunnerCommands.SelectAll(false);
-    }
-
-    GUI.enabled = window.IsRunning && !window.FollowRun;
-    if (Widgets.ButtonText(Next(rect, ref x, ref y, Widths[13]), "Follow the run")) {
-      window.FollowRun = true;
       window.PublishSnapshot();
     }
 
     GUI.enabled = true;
-    string report = System.IO.Path.Combine(ScreenshotCapture.ReportRoot(), "report.html");
-    GUI.enabled = System.IO.File.Exists(report);
-    if (Widgets.ButtonText(Next(rect, ref x, ref y, Widths[14]), "Pickle_OpenReport".Translate())) {
+  }
+
+  public static void DrawProgress(Rect rect, RunnerWindow window) {
+    Widgets.DrawBoxSolid(rect, Widgets.SeparatorLineColor);
+    float fraction = window.RunScenarioCount == 0 ? 0f : (float)window.CompletedScenarioCount / window.RunScenarioCount;
+    Widgets.DrawBoxSolid(new Rect(rect.x, rect.y, rect.width * Mathf.Clamp01(fraction), rect.height), StatusColor(window));
+  }
+
+  public static void DrawReports(Rect rect, RunnerWindow window) {
+    Label(new Rect(rect.x, rect.y, rect.width, 30f), "Last run report", Color.white, GameFont.Medium);
+    Label(new Rect(rect.x, rect.y + 38f, rect.width, 24f), window.LastRunAt?.ToString("g") ?? "No completed run yet.", RunnerStatusColors.Muted, GameFont.Small);
+    string report = Path.Combine(ScreenshotCapture.ReportRoot(), "report.html");
+    GUI.enabled = File.Exists(report);
+    if (Widgets.ButtonText(new Rect(rect.x, rect.y + 76f, 140f, 30f), "Pickle_OpenReport".Translate())) {
       Application.OpenURL(new System.Uri(report).AbsoluteUri);
     }
 
     GUI.enabled = true;
+    if (Widgets.ButtonText(new Rect(rect.x + 150f, rect.y + 76f, 180f, 30f), "Pickle_OpenReportDir".Translate())) {
+      OpenReportDirectory();
+    }
   }
 
-  private static Rect Next(Rect bounds, ref float x, ref float y, float width) {
-    if (x + width > bounds.xMax - Padding && x > bounds.x + Padding) {
-      x = bounds.x + Padding;
-      y += RowHeight;
-    }
+  private static Color StatusColor(RunnerWindow window) {
+    return window.ActiveSession?.IsPaused == true ? RunnerStatusColors.Paused
+        : window.IsRunning ? RunnerStatusColors.Accent
+        : window.FailedResultsCount > 0 ? RunnerStatusColors.FailedText : RunnerStatusColors.Passed;
+  }
 
-    Rect control = new Rect(x, y + 3f, width, RowHeight - 6f);
-    x += width + Padding;
-    return control;
+  private static void Label(Rect rect, string label, Color color, GameFont font) {
+    Text.Font = font;
+    Text.Anchor = TextAnchor.MiddleLeft;
+    GUI.color = color;
+    Widgets.Label(rect, label.Truncate(rect.width));
+    GUI.color = Color.white;
+    Text.Anchor = TextAnchor.UpperLeft;
+    Text.Font = GameFont.Small;
+  }
+
+  private static bool IconButton(Rect rect, string icon, string tooltip, Color color) {
+    TooltipHandler.TipRegion(rect, tooltip);
+    bool clicked = Widgets.ButtonText(rect, string.Empty);
+    Texture2D texture = icon == "abort" ? TexButton.Stop : icon == "pause" ? TexButton.SpeedButtonTextures[0] : TexButton.Play;
+    GUI.color = GUI.enabled ? color : new Color(color.r, color.g, color.b, 0.35f);
+    GUI.DrawTexture(rect.ContractedBy(6f), texture, ScaleMode.ScaleToFit);
+    GUI.color = Color.white;
+    return clicked;
+  }
+
+  private static void OpenOptions(RunnerWindow window) {
+    Find.WindowStack.Add(new FloatMenu([
+        new FloatMenuOption($"Pause on failure: {(BreakOnFailureState.Enabled ? "On" : "Off")}", () => {
+          BreakOnFailureState.Enabled = !BreakOnFailureState.Enabled;
+          window.PublishSnapshot();
+        }),
+        new FloatMenuOption($"Include @wip: {(IncludeWipState.Enabled ? "On" : "Off")}", () => {
+          IncludeWipState.Enabled = !IncludeWipState.Enabled;
+          window.PublishSnapshot();
+        }),
+        new FloatMenuOption($"Show run pill: {(RunPillState.Enabled ? "On" : "Off")}", () => {
+          RunPillState.Enabled = !RunPillState.Enabled;
+          window.PublishSnapshot();
+        }),
+    ]));
   }
 
   // A segmented control, not two buttons. DrawHighlightSelected alone reads as a smudge

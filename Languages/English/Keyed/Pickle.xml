@@ -32,7 +32,6 @@
   <Pickle_BreakHint>game is paused with the failing state live. inspect anything, then choose:</Pickle_BreakHint>
   <Pickle_ContinueRun>Continue run</Pickle_ContinueRun>
   <Pickle_AbortRun>Abort run</Pickle_AbortRun>
-  <Pickle_OpenInResults>Open in results</Pickle_OpenInResults>
 
   <!-- Save fixture dialog -->
   <Pickle_SaveFixtureTitle>Save current game as fixture</Pickle_SaveFixtureTitle>

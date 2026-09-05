@@ -79,10 +79,9 @@ public class BreakCard : Window {
     Text.Font = GameFont.Small;
     y += HintHeight + Gap;
 
-    float buttonWidth = (inRect.width - (Gap * 2f)) / 3f;
+    float buttonWidth = (inRect.width - Gap) / 2f;
     Rect continueRect = new Rect(inRect.x, y, buttonWidth, ButtonRowHeight);
     Rect abortRect = new Rect(continueRect.xMax + Gap, y, buttonWidth, ButtonRowHeight);
-    Rect openRect = new Rect(abortRect.xMax + Gap, y, buttonWidth, ButtonRowHeight);
 
     if (Widgets.ButtonText(continueRect, "Pickle_ContinueRun".Translate())) {
       Decision = BreakCardDecision.Continue;
@@ -90,10 +89,6 @@ public class BreakCard : Window {
 
     if (Widgets.ButtonText(abortRect, "Pickle_AbortRun".Translate())) {
       Decision = BreakCardDecision.Abort;
-    }
-
-    if (Widgets.ButtonText(openRect, "Pickle_OpenInResults".Translate())) {
-      Decision = BreakCardDecision.OpenInResults;
     }
   }
 }

@@ -16,7 +16,6 @@ public static class DashboardStrings {
     "Pickle_RerunFailed",
     "Pickle_AbortRun",
     "Pickle_ContinueRun",
-    "Pickle_OpenInResults",
     "Pickle_Fixtures",
     "Pickle_StepConsole",
     "Pickle_SelectAll",

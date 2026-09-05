@@ -156,6 +156,21 @@ public class HtmlReportWriterTests {
     Assert.Equal("screenshots/film/a-scenario/film.webm", attachment.GetProperty("content").GetString());
   }
 
+  [Fact]
+  public void Payload_carries_attempts_and_earlier_failures() {
+    string payload = HtmlReportWriter.BuildPayload(ReportWriterTestData.BuildFlakyRun(), "passed", null);
+
+    JsonElement scenarios = JsonDocument.Parse(payload.Replace("<\\/", "</"))
+        .RootElement.GetProperty("features")[0].GetProperty("scenarios");
+
+    Assert.Equal(3, scenarios[0].GetProperty("attempts").GetInt32());
+    JsonElement earlier = scenarios[0].GetProperty("failedAttempts");
+    Assert.Equal(2, earlier.GetArrayLength());
+    Assert.Equal(1, earlier[0].GetProperty("attempt").GetInt32());
+    Assert.Equal("cart was empty", earlier[0].GetProperty("message").GetString());
+    Assert.Equal(JsonValueKind.Null, earlier[1].GetProperty("message").ValueKind);
+  }
+
   private static int CountOccurrences(string haystack, string needle) {
     int count = 0;
     int at = haystack.IndexOf(needle, System.StringComparison.Ordinal);
@@ -193,21 +208,6 @@ public class HtmlReportWriterTests {
         .GetProperty("features")[0]
         .GetProperty("scenarios")[0]
         .GetProperty("attachments")[0];
-  }
-
-  [Fact]
-  public void Payload_carries_attempts_and_earlier_failures() {
-    string payload = HtmlReportWriter.BuildPayload(ReportWriterTestData.BuildFlakyRun(), "passed", null);
-
-    JsonElement scenarios = JsonDocument.Parse(payload.Replace("<\\/", "</"))
-        .RootElement.GetProperty("features")[0].GetProperty("scenarios");
-
-    Assert.Equal(3, scenarios[0].GetProperty("attempts").GetInt32());
-    JsonElement earlier = scenarios[0].GetProperty("failedAttempts");
-    Assert.Equal(2, earlier.GetArrayLength());
-    Assert.Equal(1, earlier[0].GetProperty("attempt").GetInt32());
-    Assert.Equal("cart was empty", earlier[0].GetProperty("message").GetString());
-    Assert.Equal(JsonValueKind.Null, earlier[1].GetProperty("message").ValueKind);
   }
 
   // BuildAttachment probes the disk for film.webm beside the frames, so the branches only

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { formatMs, isFlaky, statusTone, translator } from "./types";
 import type { Attachment, Feature, Scenario, Snapshot } from "./types";
 
-export function Detail({ scenario, live, feature, onTag }: Readonly<{ scenario: Scenario | null; live: Snapshot | null; feature?: Feature; onTag?: (tag: string) => void }>) {
+export function Detail({ scenario, live, feature, onTag }: Readonly<{ scenario: Scenario | null; live: Snapshot | null; feature?: Feature; onTag?: (tag: string, additive: boolean) => void }>) {
   const [zoomed, setZoomed] = useState<string | null>(null);
   const t = translator(live);
 
@@ -29,7 +29,7 @@ export function Detail({ scenario, live, feature, onTag }: Readonly<{ scenario: 
           {formatMs(scenario.durationMs)}
         </span>
         {scenario.tags.map((tag) => (
-          onTag ? <button key={tag} type="button" className="btn btn-xs btn-ghost" onClick={() => onTag(tag)}>{tag}</button>
+          onTag ? <button key={tag} type="button" className="btn btn-xs btn-ghost" onClick={(event) => onTag(tag, event.shiftKey)}>{tag}</button>
             : <span key={tag} className="badge badge-sm badge-soft badge-warning">{tag}</span>
         ))}
       </div>

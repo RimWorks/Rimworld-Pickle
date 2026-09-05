@@ -22,6 +22,8 @@ public static class RunnerCommands {
         throw new InvalidOperationException("Wait for the current run or fixture operation to finish.");
       }
 
+      runner.RunScope = scope;
+
       switch (scope) {
         case "selected":
           runner.RunSelected();
@@ -45,20 +47,43 @@ public static class RunnerCommands {
     });
   }
 
-  public static Task Continue(bool openResults = false) {
+  public static Task Continue() {
     return Post(() => {
       if (AutorunState.IsAutorunning) {
         throw new InvalidOperationException("An unattended run cannot pause for inspection.");
       }
 
-      RunnerWindow.Instance.ContinueRun(openResults);
+      RunnerWindow.Instance.ContinueRun();
     });
   }
 
-  public static Task Filter(string? search, string? mod, string? tag) {
+  public static Task Pause() {
+    return Post(() => {
+      if (AutorunState.IsAutorunning) {
+        throw new InvalidOperationException("An unattended run cannot pause for inspection.");
+      }
+
+      RunnerWindow.Instance.ActiveSession?.RequestPause();
+    });
+  }
+
+  public static Task SetScope(string scope) {
+    return Post(() => {
+      if (scope != "all" && scope != "selected" && scope != "failed") {
+        throw new ArgumentException("Unknown run scope.", nameof(scope));
+      }
+
+      if (!RunnerWindow.Instance.IsRunning && !AutorunState.IsAutorunning) {
+        RunnerWindow.Instance.RunScope = scope;
+        Publish();
+      }
+    });
+  }
+
+  public static Task Filter(string? search, string? mod, string? tag, bool additive = false, bool clearTags = false) {
     return Post(() => {
       if (!AutorunState.IsAutorunning) {
-        RunnerWindow.Instance.SetFilter(search, mod, tag);
+        RunnerWindow.Instance.SetFilter(search, mod, tag, additive, clearTags);
       }
     });
   }

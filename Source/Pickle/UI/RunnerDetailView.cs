@@ -64,7 +64,7 @@ public static class RunnerDetailView {
       }
 
       if (draw && Widgets.ButtonText(new Rect(tagX, y, tagWidth, 24f), tag)) {
-        window.SetFilter(tag: tag);
+        window.SetFilter(tag: tag, additive: Event.current.shift);
       }
 
       tagX += tagWidth + 6f;

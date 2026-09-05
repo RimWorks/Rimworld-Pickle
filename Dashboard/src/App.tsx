@@ -5,7 +5,6 @@ import { readHash, toHash } from "./hash";
 import type { Feature, Scenario, Selection, Snapshot } from "./types";
 import { Tree } from "./Tree";
 import { Detail } from "./Detail";
-import { FilterBar } from "./FilterBar";
 import { post, Toolbar } from "./Toolbar";
 import { Logo } from "./Logo";
 import { Fixtures } from "./Fixtures";
@@ -18,8 +17,7 @@ export function App() {
   const [selected, setSelected] = useState<Selection | null>(() => readHash());
   const [aborting, setAborting] = useState(false);
   const [reportBlocked, setReportBlocked] = useState(false);
-  const [fixturesOpen, setFixturesOpen] = useState(false);
-  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [workspace, setWorkspace] = useState("run");
   const [commandError, setCommandError] = useState("");
   const [theme, setTheme] = useState<string>(
     () => initialTheme(),
@@ -140,18 +138,11 @@ export function App() {
   const t = translator(snap);
 
   return (
-    <div className="min-h-dvh md:h-dvh flex flex-col bg-base-200 text-base-content">
+    <div className="runner-app min-h-dvh md:h-dvh flex flex-col bg-base-200 text-base-content">
       <Header
         snap={snap}
-        aborting={aborting}
-        onAbort={abort}
-        onOpenResults={() => {
-          if (snap) setSelected(findRunning(snap));
-          setFollowing(false);
-          setFixturesOpen(false);
-          setConsoleOpen(false);
-          void post("/continue?results=true");
-        }}
+        workspace={workspace}
+        onWorkspace={setWorkspace}
         theme={theme}
         onToggleTheme={() => setTheme(theme === THEMES.dark ? THEMES.light : THEMES.dark)}
       />
@@ -162,16 +153,18 @@ export function App() {
         <div className="flex-1 flex flex-col min-h-0">
           <Toolbar
             snap={snap}
-            onFixtures={() => { setFixturesOpen(true); setConsoleOpen(false); }}
-            onConsole={() => { setConsoleOpen(true); setFixturesOpen(false); }}
+            following={following}
+            onFollow={setFollowing}
+            onAbort={abort}
+            aborting={aborting}
+
           />
-          <FilterBar snap={snap} />
-          {commandError && <div role="alert" className="flex items-center gap-3 px-5 py-2 text-error">
+          {commandError && <div role="alert" className="runner-notice flex items-center gap-3 px-5 py-2 text-error">
             <span className="grow">Command failed: {commandError}. Try again.</span>
             <button type="button" className="btn btn-sm" onClick={() => setCommandError("")}>Dismiss</button>
           </div>}
           {reportBlocked && (
-            <div className="alert alert-info rounded-none py-2 px-5">
+            <div className="runner-notice alert alert-info py-2 px-5">
               <span className="text-sm">{t("Pickle_ReportReady", "The run finished and the report is ready.")}</span>
               <a className="btn btn-sm" href="/report" target="_blank" rel="noreferrer">
                 {t("Pickle_OpenReport", "Open report")}
@@ -181,8 +174,11 @@ export function App() {
               </button>
             </div>
           )}
-          <div className="flex-1 flex flex-col md:flex-row min-h-0">
-            <aside className="w-full md:w-80 lg:w-96 max-h-60 md:max-h-none shrink-0 overflow-y-auto border-r border-base-content/10 bg-base-100 p-3">
+          <div className={`runner-progress ${runState(snap)}`} role="progressbar" aria-label="Run progress" aria-valuemin={0} aria-valuemax={snap.runTotal || 1} aria-valuenow={snap.runCompleted}>
+            <span style={{ width: `${snap.runTotal > 0 ? Math.min(100, snap.runCompleted / snap.runTotal * 100) : 0}%` }} />
+          </div>
+          <div id="runner-workspace" role="tabpanel" aria-labelledby={`tab-${workspace}`} className="runner-content flex-1 flex flex-col md:flex-row min-h-0">
+            {workspace === "run" && <aside className="w-full md:w-80 lg:w-96 max-h-60 md:max-h-none shrink-0 overflow-y-auto border-r border-base-content/10 bg-base-100 p-3">
               <Tree
                 features={visibleFeatures}
                 selected={selected}
@@ -193,20 +189,31 @@ export function App() {
                   setSelected(next);
                 }}
               />
-            </aside>
+            </aside>}
             <main className="flex-1 min-w-0 overflow-y-auto p-4 md:p-6">
-              {current?.visible === false && <p className="text-sm mb-3">This scenario is hidden by the current filters.</p>}
-              {running && !following && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary mb-4"
-                  onClick={() => setFollowing(true)}
-                >
-                  Follow the run
-                </button>
-              )}
-              {consoleOpen && <Console running={running} onClose={() => setConsoleOpen(false)} />}
-              {!consoleOpen && (fixturesOpen ? <Fixtures running={running} onClose={() => setFixturesOpen(false)} /> : <Detail key={selected ? toHash(selected) : "empty"} scenario={current} live={running ? snap : null} feature={snap.features.find((feature) => feature.path === selected?.path)} onTag={snap.controllable ? (tag) => { void post(`/filter?tag=${encodeURIComponent(tag)}`); } : undefined} />)}
+              {workspace === "run" && <>
+                {current?.visible === false && <p className="text-sm mb-3">This scenario is hidden by the current filters.</p>}
+                <Detail key={selected ? toHash(selected) : "empty"} scenario={current} live={running ? snap : null} feature={snap.features.find((feature) => feature.path === selected?.path)} onTag={snap.controllable && !running ? (tag, additive) => { void post(`/filter?tag=${encodeURIComponent(tag)}&additive=${additive}`); } : undefined} />
+              </>}
+              {workspace === "console" && <Console running={running} onClose={() => setWorkspace("run")} />}
+              {workspace === "fixtures" && <Fixtures running={running} onClose={() => setWorkspace("run")} />}
+              {workspace === "reports" && <section className="reports-workspace">
+                <h1 className="text-xl font-semibold">Last run report</h1>
+                <p>{snap.lastRunAt ? new Date(snap.lastRunAt).toLocaleString() : "No completed run yet."}</p>
+                <div className="report-actions">
+                  <a className="btn btn-sm btn-primary" href="/report" target="_blank" rel="noreferrer">{t("Pickle_OpenReport", "Open report")}</a>
+                  <details className="runner-menu">
+                    <summary className="btn btn-sm">Download reports</summary>
+                    <div className="runner-popover">
+                      <a href="/reports/junit.xml" download>JUnit XML</a>
+                      <a href="/reports/messages.ndjson" download>Cucumber messages</a>
+                      <a href="/reports/summary.json" download>Summary JSON</a>
+                      <a href="/reports/summary.md" download>Summary Markdown</a>
+                    </div>
+                  </details>
+                </div>
+              </section>}
+
             </main>
           </div>
         </div>
@@ -232,89 +239,47 @@ function subline(snap: Snapshot | null, running: boolean): string {
   return "";
 }
 
-function statusDotClass(snap: Snapshot | null, paused: boolean, running: boolean): string {
-  if (!snap || paused) return "status-error";
-  if (running) return "status-success";
-  return "status-neutral";
+function runState(snap: Snapshot | null): string {
+  if (!snap) return "offline";
+  if (snap.status !== "idle") return snap.status;
+  return snap.failed > 0 ? "failed" : "idle";
 }
 
-function headline(snap: Snapshot | null, paused: boolean, running: boolean): string {
-  const strings = translator(snap);
-  if (!snap) return strings("Pickle_WaitingForGame", "Waiting for the game");
-  if (paused) return `Paused: ${snap.scenario}`;
-  if (running) return snap.scenario || "Running";
-  return strings("Pickle_Idle", "Idle");
-}
-
-function Header({
-  snap,
-  aborting,
-  onAbort,
-  onOpenResults,
-  theme,
-  onToggleTheme,
-}: Readonly<{
+function Header({ snap, workspace, onWorkspace, theme, onToggleTheme }: Readonly<{
   snap: Snapshot | null;
-  aborting: boolean;
-  onAbort: () => void;
-  onOpenResults: () => void;
+  workspace: string;
+  onWorkspace: (value: string) => void;
   theme: string;
   onToggleTheme: () => void;
 }>) {
-  const running = snap?.status === "running" || snap?.status === "paused";
-  const paused = snap?.status === "paused";
+  const busy = snap?.status === "running" || snap?.status === "paused";
+  const state = runState(snap);
   const counts = countOutcomes(snap?.features.flatMap((feature) => feature.scenarios) ?? []);
+  const tabs = [["run", "Run"], ["fixtures", "Fixtures"], ["reports", "Reports"], ["console", "Step console"]];
+  const title = !snap ? "Waiting for the game" : snap.pauseRequested && !busy ? "Idle" : state === "running" && snap.pauseRequested ? "Pausing after current step" : state[0].toUpperCase() + state.slice(1);
 
   return (
-    <header className="shrink-0 flex flex-wrap items-center gap-4 border-b border-base-content/10 bg-base-100 px-5 py-3">
-      <div className="flex items-center gap-3 min-w-0">
-        <Logo />
-        <span
-          className={`status status-lg ${statusDotClass(snap, paused, running)}`}
-        />
-        <div className="min-w-0">
-          <div className="text-sm font-semibold truncate">
-            {headline(snap, paused, running)}
-          </div>
-          <div className="text-xs text-base-content/50 truncate font-mono">
-            {subline(snap, running)}
-          </div>
-        </div>
+    <header className="runner-header">
+      <Logo />
+      <div role="tablist" aria-label="Runner workspace" className="workspace-tabs" onKeyDown={(event) => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        const index = tabs.findIndex(([key]) => key === workspace);
+        const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length;
+        onWorkspace(tabs[next][0]);
+        document.getElementById(`tab-${tabs[next][0]}`)?.focus();
+      }}>
+        {tabs.map(([key, label]) => <button key={key} type="button" id={`tab-${key}`} role="tab" aria-selected={workspace === key} aria-controls="runner-workspace" tabIndex={workspace === key ? 0 : -1} disabled={!snap} onClick={() => onWorkspace(key)}>{label}</button>)}
       </div>
-
-      <div className="grow" />
-
-      <span className={`badge badge-soft ${(snap?.passed ?? 0) > 0 ? "badge-success" : ""}`}>
-        {snap?.passed ?? 0} passed
-      </span>
-      <span className={`badge badge-soft ${(snap?.failed ?? 0) > 0 ? "badge-error" : ""}`}>
-        {snap?.failed ?? 0} failed
-      </span>
-      <span className="badge badge-soft">{counts.notRun} not run</span>
-
-      {paused && (
-        <>
-        <button type="button" className="btn btn-sm btn-primary" disabled={snap?.cancelRequested} onClick={() => post("/continue")}>
-          {translator(snap)("Pickle_ContinueRun", "Continue run")}
-        </button>
-        <button type="button" className="btn btn-sm" disabled={snap?.cancelRequested} onClick={onOpenResults}>
-          {translator(snap)("Pickle_OpenInResults", "Open in results")}
-        </button>
-        </>
-      )}
-
-      <button
-        type="button"
-        className="btn btn-sm btn-outline btn-error"
-        disabled={!running || snap?.cancelRequested || aborting}
-        onClick={onAbort}
-      >
-        {snap?.cancelRequested || aborting ? "Aborting" : "Abort run"}
-      </button>
-
-      <button type="button" className="btn btn-sm btn-ghost" onClick={onToggleTheme}>
-        {theme === THEMES.dark ? "Light" : "Dark"}
-      </button>
+      <div className="workspace-summary">
+        <div className={`run-status ${state}`} role="status">
+          <span className="run-status-dot" />
+          <strong title={title}>{title}</strong>
+          <small title={subline(snap, busy)}>{subline(snap, busy)}</small>
+        </div>
+        <div className="run-scores"><span className="text-success">{counts.passed} passed</span><span className="text-error">{counts.failed} failed</span><span>{counts.skipped} skipped</span><span>{counts.notRun} not run</span></div>
+      </div>
+      <button type="button" className="btn btn-sm btn-ghost" onClick={onToggleTheme}>{theme === THEMES.dark ? "Light" : "Dark"}</button>
     </header>
   );
 }

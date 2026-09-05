@@ -316,7 +316,7 @@ public static class RunnerTreeView {
 
     Color dotColor = hasResult ? RunnerStatusColors.ForOutcome(result.Outcome) : RunnerStatusColors.Pending;
     if (ReferenceEquals(window.ActiveSession?.CurrentScenario, scenario)) {
-      dotColor = window.ActiveSession?.IsPausedForBreak == true ? RunnerStatusColors.Failed : RunnerStatusColors.Keyword;
+      dotColor = window.ActiveSession?.IsPaused == true ? RunnerStatusColors.Paused : RunnerStatusColors.Keyword;
     }
 
     Rect checkRect = new Rect(rect.x + ScenarioIndent, rect.y + ((rect.height - ScenarioCheckboxSize) / 2f), ScenarioCheckboxSize, ScenarioCheckboxSize);

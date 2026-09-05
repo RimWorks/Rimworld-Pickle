@@ -41,6 +41,11 @@ public static class RunnerSnapshot {
     json.Append("\"passed\":").Append(results.Values.Count(r => r.Outcome == ScenarioOutcome.Passed)).Append(',');
     json.Append("\"failed\":").Append(results.Values.Count(r => r.Outcome == ScenarioOutcome.Failed)).Append(',');
     json.Append("\"cancelRequested\":").Append(session?.CancelRequested == true ? TrueLiteral : FalseLiteral).Append(',');
+    json.Append("\"pauseRequested\":").Append(session?.PauseRequested == true ? TrueLiteral : FalseLiteral).Append(',');
+    json.Append("\"runScope\":").Append(Json.Quote(runner?.RunScope ?? "all")).Append(',');
+    json.Append("\"runTotal\":").Append(runner?.RunScenarioCount ?? parsedFeatures.Sum(f => f.Plan.Scenarios.Count)).Append(',');
+    json.Append("\"runCompleted\":").Append(runner?.CompletedScenarioCount ?? results.Count).Append(',');
+    json.Append("\"fixtureBusy\":").Append(FixtureCommands.IsBusy ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"watch\":").Append(PickleRunMode.Current == PickleRunMode.Mode.Watch ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"breakOnFailure\":").Append(BreakOnFailureState.Enabled ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"includeWip\":").Append(IncludeWipState.Enabled ? TrueLiteral : FalseLiteral).Append(',');
@@ -205,6 +210,6 @@ public static class RunnerSnapshot {
       return "idle";
     }
 
-    return session?.IsPausedForBreak == true ? "paused" : "running";
+    return session?.IsPaused == true ? "paused" : "running";
   }
 }

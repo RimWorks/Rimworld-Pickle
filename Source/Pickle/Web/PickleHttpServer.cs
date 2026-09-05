@@ -26,7 +26,7 @@ public static class PickleHttpServer {
 
   private static readonly string[] ReportFiles = ["junit.xml", "messages.ndjson", "summary.json", "summary.md"];
 
-  private static readonly string[] MutatingPaths = ["/abort", "/continue", "/run", "/select", "/filter", "/mode", "/wip", "/break", "/pill", "/fixture", "/step", "/step/reset"];
+  private static readonly string[] MutatingPaths = ["/abort", "/pause", "/continue", "/run", "/scope", "/select", "/filter", "/mode", "/wip", "/break", "/pill", "/fixture", "/step", "/step/reset"];
 
   private static HttpListener? listener;
   private static volatile bool running;
@@ -194,13 +194,27 @@ public static class PickleHttpServer {
     }
 
     if (path == "/continue") {
-      RunnerCommands.Continue(context.Request.QueryString["results"] == "true").GetAwaiter().GetResult();
+      RunnerCommands.Continue().GetAwaiter().GetResult();
+      Write(context, JsonContentType, OkBody);
+      return;
+    }
+
+    if (path == "/pause") {
+      RunnerCommands.Pause().GetAwaiter().GetResult();
+      Write(context, JsonContentType, OkBody);
+      return;
+    }
+
+    if (path == "/scope") {
+      RunnerCommands.SetScope(context.Request.QueryString["value"] ?? "all").GetAwaiter().GetResult();
       Write(context, JsonContentType, OkBody);
       return;
     }
 
     if (path == "/filter") {
-      RunnerCommands.Filter(context.Request.QueryString["search"], context.Request.QueryString["mod"], context.Request.QueryString["tag"]).GetAwaiter().GetResult();
+      RunnerCommands.Filter(
+          context.Request.QueryString["search"], context.Request.QueryString["mod"], context.Request.QueryString["tag"],
+          context.Request.QueryString["additive"] == "true", context.Request.QueryString["clearTags"] == "true").GetAwaiter().GetResult();
       Write(context, JsonContentType, OkBody);
       return;
     }

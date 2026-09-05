@@ -17,6 +17,11 @@ export default defineConfig({
     proxy: {
       "/state": "http://127.0.0.1:27750",
       "/abort": "http://127.0.0.1:27750",
+      "/pause": "http://127.0.0.1:27750",
+      "/scope": "http://127.0.0.1:27750",
+      "/pill": "http://127.0.0.1:27750",
+      "/steps": "http://127.0.0.1:27750",
+      "/step": "http://127.0.0.1:27750",
       "/continue": "http://127.0.0.1:27750",
       "/run": "http://127.0.0.1:27750",
       "/select": "http://127.0.0.1:27750",

@@ -172,7 +172,7 @@ public class FixtureManagerDialog : Window {
   private void DrawHeader(Rect rect) {
     Rect saveRect = new Rect(rect.xMax - SaveButtonWidth, rect.y + 2f, SaveButtonWidth, 28f);
 
-    GUI.enabled = groups.Count > 0;
+    GUI.enabled = groups.Count > 0 && Current.Game != null && !RunnerWindow.Instance.IsRunning && !FixtureCommands.IsBusy;
     if (Widgets.ButtonText(saveRect, "Pickle_SaveFixture".Translate())) {
       Find.WindowStack.Add(new SaveFixtureDialog([.. groups.Select(g => g.Suite)], Refresh));
     }

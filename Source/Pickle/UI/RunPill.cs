@@ -66,7 +66,7 @@ public class RunPill : Window {
   /// <inheritdoc/>
   public override void DoWindowContents(Rect inRect) {
     RunSession? session = owner.ActiveSession;
-    bool paused = session?.IsPausedForBreak ?? false;
+    bool paused = session?.IsPaused ?? false;
 
     // CalcHeight measures in the current font, so each label sets its own before asking.
     Text.Font = GameFont.Small;
@@ -75,7 +75,7 @@ public class RunPill : Window {
 
     // Centred on the first line, not the whole block, or a wrapped title drags the dot
     // down into the middle of the paragraph.
-    Color dotColor = paused ? RunnerStatusColors.Failed : RunnerStatusColors.Passed;
+    Color dotColor = paused ? RunnerStatusColors.Paused : RunnerStatusColors.Passed;
     RunnerStatusColors.DrawDot(
         new Vector2(inRect.x + 6f, y + (Text.LineHeightOf(GameFont.Small) / 2f)), dotColor, 8f);
 

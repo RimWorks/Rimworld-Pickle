@@ -51,6 +51,11 @@ export type Snapshot = {
   passed: number;
   failed: number;
   cancelRequested: boolean;
+  pauseRequested: boolean;
+  runScope: "all" | "selected" | "failed";
+  runTotal: number;
+  runCompleted: number;
+  fixtureBusy: boolean;
   watch: boolean;
   breakOnFailure: boolean;
   includeWip: boolean;
