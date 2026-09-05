@@ -75,6 +75,7 @@ that feature.
 | `@wip` | Skip unless you pass `-pickle-include-wip` |
 | `@timeout:60` | Give this scenario 60 seconds instead of the default |
 | `@seed:42` | Use this random seed instead of the run seed |
+| `@retry:2` | Give this scenario 2 more attempts before it fails. Beats `-pickle-retry` |
 | `@same-world` | Skip the fixture reload and keep the previous world |
 | `@allow-errors` | Do not fail the scenario when the game logs an error |
 | `@film` | Record the scenario and attach the video to the report |

@@ -1,0 +1,219 @@
+name: compat
+
+# One game launch per mod set, then a single merged report showing which scenario broke
+# under which set. Off the push path on purpose: every set is a full suite run.
+on:
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+    inputs:
+      suite-filter:
+        description: Passed to -pickle-run. Empty runs the whole suite.
+        type: string
+        default: ''
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  sets:
+    name: read compat-sets.json
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.read.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Read the sets
+        id: read
+        run: |
+          matrix="$(python3 -c "
+          import json
+          sets = json.load(open('compat-sets.json'))['sets']
+          print(json.dumps({'set': sets}))
+          ")"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "$matrix"
+
+  dashboard:
+    name: dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Dashboard/package-lock.json
+
+      - name: Install
+        run: npm --prefix Dashboard ci
+
+      - name: Build
+        run: npm --prefix Dashboard run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-dist
+          path: Dashboard/dist
+
+  game-image:
+    name: rimworld 1.6 image
+    uses: ./.github/workflows/game-image.yml
+    secrets: inherit
+
+  suite:
+    name: suite (${{ matrix.set.name }})
+    needs: [sets, dashboard, game-image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      # Every set should be reported, not just the first one that breaks. That is the
+      # whole point of merging them.
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.sets.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: dashboard-dist
+          path: Dashboard/dist
+
+      - name: Build the mod
+        run: dotnet build Pickle.slnx -c Release
+
+      - name: Stage mods and config
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          .github/scripts/stage-pickle-mods.sh \
+            "${{ matrix.set.backend }}" "$RUNNER_TEMP/mods" "$RUNNER_TEMP/config" \
+            "${{ matrix.set.extraMods }}"
+
+          mkdir -p "$RUNNER_TEMP/mods/Pickle"
+          tar -c --exclude=.git --exclude=node_modules --exclude=Source \
+              --exclude=Dashboard --exclude=pickle-reports . \
+            | tar -x -C "$RUNNER_TEMP/mods/Pickle"
+
+      - name: Run the suite
+        env:
+          GAME_IMAGE: ${{ needs.game-image.outputs.image-ref }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUITE_FILTER: ${{ inputs.suite-filter }}
+          SET_NAME: ${{ matrix.set.name }}
+        run: |
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull -q "$GAME_IMAGE"
+
+          mkdir -p "$PWD/pickle-reports"
+          chmod 777 "$PWD/pickle-reports"
+
+          CFG="/pickle-home/.config/unity3d/Ludeon Studios/RimWorld by Ludeon Studios/Config"
+          run_arg="-pickle-run"
+          [[ -n "$SUITE_FILTER" ]] && run_arg="-pickle-run=$SUITE_FILTER"
+
+          # No film and no dashboard: nobody watches a scheduled run, and a merged report
+          # links its frames rather than embedding them.
+          docker run --rm --init --name "pickle-compat-$SET_NAME" --user 0 \
+            -e HOME=/pickle-home \
+            -v "$RUNNER_TEMP/mods:/game/Mods:ro" \
+            -v "$RUNNER_TEMP/config:$CFG" \
+            -v "$PWD/pickle-reports:/out" \
+            "$GAME_IMAGE" \
+            xvfb-run -a -s '-screen 0 1920x1080x24' \
+              /game/RimWorldLinux "$run_arg" \
+                -pickle-max-film-seconds=0 \
+                -pickle-set-name="$SET_NAME" \
+                -pickle-report-dir=/out -logfile /out/Player.log \
+            > "$RUNNER_TEMP/container.log" 2>&1 &
+          game=$!
+
+          ( until [[ -f pickle-reports/Player.log ]]; do sleep 1; done
+            tail -n +1 -f pickle-reports/Player.log \
+              | grep --line-buffered -oE 'pickle: .*' ) &
+          follow=$!
+
+          # A failing set must not stop the merge, so the status is recorded, not raised.
+          status=0
+          wait "$game" || status=$?
+          sleep 1
+          kill "$follow" 2>/dev/null || true
+          echo "set $SET_NAME exited $status"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compat-${{ matrix.set.name }}
+          path: pickle-reports/
+
+  merge:
+    name: merged report
+    needs: suite
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: compat-*
+          path: sets
+
+      - name: Merge the reports
+        run: |
+          # The merger reads each set's name out of its own payload, so the order here
+          # only decides the column order.
+          mapfile -t reports < <(find sets -name report.html | sort)
+          if [[ ${#reports[@]} -eq 0 ]]; then
+            echo "::error title=Pickle compat::no set produced a report"
+            exit 1
+          fi
+
+          python3 .github/scripts/merge-reports.py merged.html "${reports[@]}"
+
+          # Films are linked, and the merger set-prefixes those paths.
+          for dir in sets/compat-*/screenshots/film; do
+            [[ -d "$dir" ]] || continue
+            set_name="$(basename "$(dirname "$(dirname "$dir")")")"
+            mkdir -p "screenshots/${set_name#compat-}"
+            cp -r "$dir" "screenshots/${set_name#compat-}/film"
+          done
+
+      - name: Publish the counts
+        if: always()
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          import json, pathlib
+
+          print("## Pickle compat\n")
+          print("| Set | Result |")
+          print("|---|---|")
+          for summary in sorted(pathlib.Path("sets").glob("compat-*/summary.json")):
+              d = json.loads(summary.read_text())
+              name = d.get("setName") or summary.parent.name
+              print(f"| {name} | {d['passed']} passed, {d['failed']} failed, "
+                    f"{d['skipped']} skipped ({d['exitReason']}) |")
+
+          print("\nDownload **merged-report** below and open `merged.html`. Select "
+                "**Compare sets** to see which scenario broke under which set.")
+          EOF
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: merged-report
+          path: |
+            merged.html
+            screenshots/

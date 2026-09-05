@@ -22,18 +22,15 @@ public static class SuiteRunner {
   public static async Task<List<ScenarioResult>> Run(
       string? filter = null,
       int seed = RunSession.DefaultSeed,
-      Action<ScenarioResult>? onScenarioCompleted = null) {
+      Action<ScenarioResult>? onScenarioCompleted = null,
+      int retries = 0) {
     List<ScenarioResult> allResults = new();
 
     try {
-      List<DiscoveredSuite> discoveredSuites = SuiteScanner.DiscoverSuites();
+      (StepTable stepTable, List<Type> stepsTypes, List<DiscoveredSuite> discoveredSuites) = BuildStepEnvironment();
       List<(DiscoveredSuite Suite, FeaturePlan Plan)> parsedFeatures = ScenarioFilter.FilterFeatures(FeatureParser.ParseAll(discoveredSuites), filter);
 
-      List<Assembly> assemblies = BuildAssemblyList(discoveredSuites);
-      StepTable stepTable = StepScanner.PopulateStepTable(assemblies);
-      List<Type> stepsTypes = StepScanner.GetPickleStepsTypes(assemblies);
-
-      RunSession session = new RunSession(stepTable, PickleDriver.Instance, discoveredSuites, stepsTypes, seed);
+      RunSession session = new RunSession(stepTable, PickleDriver.Instance, discoveredSuites, stepsTypes, seed, retries);
       PickleHttpServer.ActiveSession = session;
 
       Dictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> published = new();
@@ -90,6 +87,18 @@ public static class SuiteRunner {
     }
 
     return allResults;
+  }
+
+  /// <summary>
+  /// Scans every loaded suite and builds the step table a session runs against. The
+  /// console builds its own rather than sharing a run's, because a RunSession registers
+  /// the engine steps into whatever table it is handed and two sessions on one table
+  /// would make every engine step ambiguous.
+  /// </summary>
+  internal static (StepTable Table, List<Type> StepsTypes, List<DiscoveredSuite> Suites) BuildStepEnvironment() {
+    List<DiscoveredSuite> suites = SuiteScanner.DiscoverSuites();
+    List<Assembly> assemblies = BuildAssemblyList(suites);
+    return (StepScanner.PopulateStepTable(assemblies), StepScanner.GetPickleStepsTypes(assemblies), suites);
   }
 
   private static List<Assembly> BuildAssemblyList(List<DiscoveredSuite> discoveredSuites) {

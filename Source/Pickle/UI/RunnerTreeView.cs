@@ -43,6 +43,7 @@ public static class RunnerTreeView {
   private static int visibleFirst;
   private static int visibleLast;
   private static int lastWidthKey = -1;
+  private static (string SourcePath, int ScenarioIndex)? lastFollowed;
 
   private enum RowKind {
     Mod,
@@ -53,6 +54,18 @@ public static class RunnerTreeView {
   public static void Draw(Rect outRect, RunnerWindow window) {
     if (Event.current.type == EventType.Layout) {
       RebuildRows(window);
+      if (window.FollowRun && window.Selected != lastFollowed) {
+        int selectedRow = Rows.FindIndex(row => row.Kind == RowKind.Scenario
+            && window.Selected == (row.Plan?.SourcePath ?? string.Empty, row.Index));
+        if (selectedRow >= 0) {
+          float top = RowTops[selectedRow];
+          float bottom = top + Rows[selectedRow].Height;
+          float scrollY = Mathf.Clamp(window.TreeScroll.y, bottom - outRect.height, top);
+          window.TreeScroll = new Vector2(0f, Mathf.Max(0f, scrollY));
+        }
+
+        lastFollowed = window.Selected;
+      }
     }
 
     Rect viewRect = new Rect(0f, 0f, outRect.width - 16f, contentHeight);
@@ -302,6 +315,9 @@ public static class RunnerTreeView {
     }
 
     Color dotColor = hasResult ? RunnerStatusColors.ForOutcome(result.Outcome) : RunnerStatusColors.Pending;
+    if (ReferenceEquals(window.ActiveSession?.CurrentScenario, scenario)) {
+      dotColor = window.ActiveSession?.IsPausedForBreak == true ? RunnerStatusColors.Failed : RunnerStatusColors.Keyword;
+    }
 
     Rect checkRect = new Rect(rect.x + ScenarioIndent, rect.y + ((rect.height - ScenarioCheckboxSize) / 2f), ScenarioCheckboxSize, ScenarioCheckboxSize);
     bool selected = window.IsScenarioSelected(sourcePath, scenarioIndex);
@@ -309,6 +325,7 @@ public static class RunnerTreeView {
     MouseoverSounds.DoRegion(checkRect);
     if (ClickedIdFree(checkRect)) {
       window.SetScenarioSelected(sourcePath, scenarioIndex, !selected);
+      window.PublishSnapshot();
       PlayCheckboxSound(!selected);
     }
 
@@ -335,6 +352,8 @@ public static class RunnerTreeView {
     MouseoverSounds.DoRegion(rect);
     if (ClickedIdFree(rect)) {
       window.Selected = (sourcePath, scenarioIndex);
+      window.FollowRun = false;
+      window.DetailScroll = Vector2.zero;
     }
   }
 
@@ -394,6 +413,8 @@ public static class RunnerTreeView {
     foreach ((string sourcePath, int index) in keys) {
       window.SetScenarioSelected(sourcePath, index, selected);
     }
+
+    window.PublishSnapshot();
   }
 
   private static MultiCheckboxState ComputeCheckState(

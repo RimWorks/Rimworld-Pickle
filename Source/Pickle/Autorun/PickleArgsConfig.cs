@@ -22,6 +22,10 @@ public sealed class PickleArgsConfig {
 
   public int? RunTimeoutMinutes { get; private set; }
 
+  public int? Retries { get; private set; }
+
+  public string? SetName { get; private set; }
+
   public static PickleArgsConfig Parse(string json) {
     return new PickleArgsConfig {
       Filter = ExtractString(json, "run"),
@@ -30,6 +34,8 @@ public sealed class PickleArgsConfig {
       Seed = ExtractInt(json, "seed"),
       ScenarioTimeoutSeconds = ExtractInt(json, "scenarioTimeout"),
       RunTimeoutMinutes = ExtractInt(json, "runTimeout"),
+      Retries = ExtractInt(json, "retry"),
+      SetName = ExtractString(json, "setName"),
     };
   }
 

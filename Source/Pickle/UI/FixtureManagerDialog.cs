@@ -8,6 +8,7 @@ using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Core.Fixtures;
 using RimWorks.Pickle.Fixtures;
 using RimWorks.Pickle.Runtime;
+using RimWorks.Pickle.Web;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -106,7 +107,7 @@ public class FixtureManagerDialog : Window {
   }
 
   private static string TargetPath(FixtureEntry entry, string name) {
-    return Path.Combine(Path.GetDirectoryName(entry.FullPath) ?? string.Empty, name + ".rws");
+    return FixtureCatalog.PathForName(Path.GetDirectoryName(entry.FullPath) ?? string.Empty, name);
   }
 
   private static string? RenameProblem(FixtureEntry entry, string proposed) {
@@ -116,7 +117,9 @@ public class FixtureManagerDialog : Window {
       return "Pickle_RenameEmpty".Translate();
     }
 
-    if (trimmed.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) {
+    try {
+      _ = TargetPath(entry, trimmed);
+    } catch (ArgumentException) {
       return "Pickle_RenameInvalid".Translate();
     }
 
@@ -157,9 +160,9 @@ public class FixtureManagerDialog : Window {
 
   // The scene swap clears the window stack, so nothing here survives to report on it.
   // A failure lands in the log and as a message on whatever comes back.
-  private static async Task LoadAsync(string path) {
+  private async Task LoadAsync(FixtureEntry entry) {
     try {
-      await FixtureLoader.LoadFixture(path, PickleDriver.Instance);
+      await FixtureCommands.Execute("load", SuitePath(entry), entry.Name, null, false);
     } catch (Exception ex) {
       Log.Error(ex, "pickle: loading fixture failed");
       Messages.Message("Pickle_LoadFixtureFailed".Translate(), MessageTypeDefOf.RejectInput, false);
@@ -247,6 +250,7 @@ public class FixtureManagerDialog : Window {
 
   private void DrawActions(Rect rect, FixtureEntry entry) {
     float x = rect.xMax - ActionWidth;
+    GUI.enabled = !RunnerWindow.Instance.IsRunning && !FixtureCommands.IsBusy;
     if (Widgets.ButtonText(new Rect(x, rect.y, ActionWidth, rect.height), "Pickle_Delete".Translate())) {
       ConfirmDelete(entry);
     }
@@ -258,10 +262,9 @@ public class FixtureManagerDialog : Window {
     }
 
     x -= ActionWidth + ActionGap;
-    GUI.enabled = !RunnerWindow.Instance.IsRunning;
     if (Widgets.ButtonText(new Rect(x, rect.y, ActionWidth, rect.height), "Pickle_Load".Translate())) {
       Close();
-      _ = LoadAsync(entry.FullPath);
+      _ = LoadAsync(entry);
     }
 
     GUI.enabled = true;
@@ -287,16 +290,16 @@ public class FixtureManagerDialog : Window {
     x -= ActionWidth + ActionGap;
     GUI.enabled = problem == null;
     if (Widgets.ButtonText(new Rect(x, actions.y, ActionWidth, actions.height), "Pickle_Rename".Translate())) {
-      Rename(entry, renameText.Trim());
+      _ = Rename(entry, renameText.Trim());
     }
 
     GUI.enabled = true;
   }
 
-  private void Rename(FixtureEntry entry, string newName) {
+  private async Task Rename(FixtureEntry entry, string newName) {
     if (!string.Equals(newName, entry.Name, StringComparison.Ordinal)) {
       try {
-        File.Move(entry.FullPath, TargetPath(entry, newName));
+        await FixtureCommands.Execute("rename", SuitePath(entry), entry.Name, newName, false);
       } catch (Exception ex) {
         Log.Error(ex, "pickle: renaming fixture failed");
         Messages.Message("Pickle_FixtureRenameFailed".Translate(entry.Name), MessageTypeDefOf.RejectInput, false);
@@ -309,19 +312,23 @@ public class FixtureManagerDialog : Window {
   private void ConfirmDelete(FixtureEntry entry) {
     Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
         "Pickle_DeleteFixtureConfirm".Translate(entry.Name, entry.FullPath),
-        () => Delete(entry),
+        () => _ = Delete(entry),
         destructive: true));
   }
 
-  private void Delete(FixtureEntry entry) {
+  private async Task Delete(FixtureEntry entry) {
     try {
-      File.Delete(entry.FullPath);
+      await FixtureCommands.Execute("delete", SuitePath(entry), entry.Name, null, false);
     } catch (Exception ex) {
       Log.Error(ex, "pickle: deleting fixture failed");
       Messages.Message("Pickle_FixtureDeleteFailed".Translate(entry.Name), MessageTypeDefOf.RejectInput, false);
     }
 
     Refresh();
+  }
+
+  private string SuitePath(FixtureEntry entry) {
+    return groups.First(group => group.Entries.Contains(entry)).Suite.FixturesDir;
   }
 
   private void Refresh() {

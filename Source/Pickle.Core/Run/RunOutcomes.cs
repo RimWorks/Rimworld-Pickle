@@ -37,6 +37,26 @@ public static class RunOutcomes {
     return null;
   }
 
+  /// <summary>
+  /// Passed, but not on the first try. One definition, because five writers and two
+  /// dashboards all have to agree on what the badge means.
+  /// </summary>
+  public static bool IsFlaky(ScenarioResult result) {
+    return result.Outcome == ScenarioOutcome.Passed && result.Attempts > 1;
+  }
+
+  /// <summary>Reads a whole number off a tag such as <c>@retry:2</c>, or null when absent.</summary>
+  public static int? IntFromTag(TagSet tags, string prefix) {
+    foreach (string tag in tags) {
+      if (tag.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+          && int.TryParse(tag.Substring(prefix.Length), out int value)) {
+        return value;
+      }
+    }
+
+    return null;
+  }
+
   public static ScenarioOutcome OutcomeFromSteps(IReadOnlyList<StepResult> steps) {
     foreach (StepResult step in steps) {
       if (step.Status == StepStatus.Failed || step.Status == StepStatus.Undefined || step.Status == StepStatus.Ambiguous) {

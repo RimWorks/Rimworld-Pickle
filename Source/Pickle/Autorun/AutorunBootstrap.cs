@@ -47,13 +47,15 @@ public static class AutorunBootstrap {
     }
   }
 
-  internal static void WriteReports(string reportDir, List<ScenarioResult> results, string exitReason, Action<string>? onError = null) {
+  internal static void WriteReports(
+      string reportDir, List<ScenarioResult> results, string exitReason,
+      Action<string>? onError = null, string? setName = null) {
     try {
       File.WriteAllText(Path.Combine(reportDir, "junit.xml"), JUnitReportWriter.Write(results));
       File.WriteAllText(
           Path.Combine(reportDir, "messages.ndjson"),
           MessagesNdjsonWriter.Write(results, path => File.Exists(path) ? File.ReadAllBytes(path) : null));
-      File.WriteAllText(Path.Combine(reportDir, "summary.json"), SummaryJsonWriter.Write(results, exitReason));
+      File.WriteAllText(Path.Combine(reportDir, "summary.json"), SummaryJsonWriter.Write(results, exitReason, setName));
       File.WriteAllText(Path.Combine(reportDir, "summary.md"), SummaryMarkdownWriter.Write(results));
       File.WriteAllText(
           Path.Combine(reportDir, "report.html"),
@@ -62,7 +64,8 @@ public static class AutorunBootstrap {
               exitReason,
               Web.Dashboard.ReportTemplate,
               path => File.Exists(path) ? File.ReadAllBytes(path) : null,
-              Web.DashboardStrings.BuildJson()));
+              Web.DashboardStrings.BuildJson(),
+              setName));
     } catch (Exception ex) {
       string msg = $"pickle: failed writing reports: {ex.Message}";
       if (onError != null) {
@@ -76,6 +79,7 @@ public static class AutorunBootstrap {
   private static async Task RunAutorun(PickleArgs args, string reportDir) {
     Log.Info("pickle: autorun report dir = {ReportDir}", [reportDir]);
     Log.Info("pickle: autorun seed = {Seed}", [args.Seed]);
+    Log.Info("pickle: autorun retries = {Retries}", [args.Retries]);
 
     List<ScenarioResult> accumulated = new();
     int exitCode;
@@ -90,13 +94,13 @@ public static class AutorunBootstrap {
       PickleDriver driver = PickleDriver.Instance;
       await driver.WaitUntil(() => Current.ProgramState == ProgramState.Entry, 180f);
 
-      await SuiteRunner.Run(args.RunFilter, args.Seed, scenario => {
+      await SuiteRunner.Run(args.RunFilter, args.Seed, retries: args.Retries, onScenarioCompleted: scenario => {
         accumulated.Add(scenario);
         Watchdog.RecordProgress(accumulated);
 
         // TODO(perf): rewrites every file per scenario, O(n^2). Batch if a suite
         // ever runs to hundreds of scenarios.
-        WriteReports(reportDir, accumulated, "in-progress");
+        WriteReports(reportDir, accumulated, "in-progress", setName: args.SetName);
       });
 
       exitCode = accumulated.Any(r => r.Outcome == ScenarioOutcome.Failed) ? 1 : 0;
@@ -112,11 +116,15 @@ public static class AutorunBootstrap {
     // doing it between scenarios would show up in every duration the report prints.
     EncodeFilms();
 
-    WriteReports(reportDir, accumulated, exitCode switch {
-      0 => "passed",
-      1 => "failed",
-      _ => "infrastructure-error",
-    });
+    WriteReports(
+        reportDir,
+        accumulated,
+        exitCode switch {
+          0 => "passed",
+          1 => "failed",
+          _ => "infrastructure-error",
+        },
+        setName: args.SetName);
 
     Log.Info("pickle: autorun exit code = {ExitCode}", [exitCode]);
     Quit(exitCode);

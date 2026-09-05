@@ -8,6 +8,24 @@ using Xunit;
 namespace RimWorks.Pickle.Tests;
 
 public class FixtureCatalogTests {
+  [Theory]
+  [InlineData("")]
+  [InlineData(" ")]
+  [InlineData("../outside")]
+  [InlineData("..\\outside")]
+  [InlineData("/tmp/outside")]
+  [InlineData("C:\\outside")]
+  [InlineData("..")]
+  [InlineData("name ")]
+  public void Fixture_names_cannot_escape_the_selected_directory(string name) {
+    Assert.Throws<ArgumentException>(() => FixtureCatalog.PathForName("fixtures", name));
+  }
+
+  [Fact]
+  public void Fixture_names_keep_spaces_and_unicode_inside_the_directory() {
+    Assert.Equal(Path.Combine("fixtures", "colony café.rws"), FixtureCatalog.PathForName("fixtures", "colony café"));
+  }
+
   [Fact]
   public void Read_WithOnlyCommittedFixtures_MarksThemCommitted() {
     string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());

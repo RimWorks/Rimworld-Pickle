@@ -25,11 +25,9 @@ namespace RimWorks.Pickle.UI;
 /// scenario's steps and failure evidence on the right.
 /// </summary>
 public class RunnerWindow : Window {
-  private const float ToolbarHeight = 34f;
   private const float PaneTopPadding = 10f;
   private const float PaneGutter = 14f;
 
-  private const float FilterRowHeight = 30f;
   private const float StatusRowHeight = 24f;
 
   // Long enough that a human at a break card never times it out. CancelRequested is
@@ -43,6 +41,7 @@ public class RunnerWindow : Window {
   private readonly HashSet<(string SourcePath, int ScenarioIndex)> deselectedScenarios = [];
   private RunPill? activePill;
   private bool restoreWindowAfterRun;
+  private BreakCard? activeBreakCard;
 
   public RunnerWindow() {
     optionalTitle = "Pickle_RunnerTitle".Translate();
@@ -123,6 +122,8 @@ public class RunnerWindow : Window {
 
   internal (string SourcePath, int ScenarioIndex)? Selected { get; set; }
 
+  internal bool FollowRun { get; set; } = true;
+
   // Preserved for RunnerWindowSmoke.cs, which relies on a full unconditional run.
   internal int ParsedFeaturesCount => parsedFeatures.Count;
 
@@ -132,14 +133,16 @@ public class RunnerWindow : Window {
   public override void DoWindowContents(Rect inRect) {
     float y = inRect.y;
 
-    Rect toolbarRect = new Rect(inRect.x, y, inRect.width, ToolbarHeight);
+    float toolbarHeight = RunnerToolbar.Height(inRect.width);
+    Rect toolbarRect = new Rect(inRect.x, y, inRect.width, toolbarHeight);
     RunnerToolbar.Draw(toolbarRect, this);
-    y += ToolbarHeight;
+    y += toolbarHeight;
     Widgets.DrawLineHorizontal(inRect.x, y, inRect.width, Widgets.SeparatorLineColor);
 
-    Rect filterRect = new Rect(inRect.x, y, inRect.width, FilterRowHeight);
+    float filterHeight = RunnerFilterBar.Height(inRect.width, this);
+    Rect filterRect = new Rect(inRect.x, y, inRect.width, filterHeight);
     RunnerFilterBar.Draw(filterRect, this);
-    y += FilterRowHeight;
+    y += filterHeight;
     Widgets.DrawLineHorizontal(inRect.x, y, inRect.width, Widgets.SeparatorLineColor);
 
     float bodyHeight = inRect.height - (y - inRect.y) - StatusRowHeight;
@@ -249,8 +252,54 @@ public class RunnerWindow : Window {
   }
 
   internal void PublishSnapshot() {
+    if (FollowRun && ActiveSession?.CurrentScenario != null) {
+      int index = 0;
+      foreach ((DiscoveredSuite suite, FeaturePlan plan) in parsedFeatures) {
+        for (int i = 0; i < plan.Scenarios.Count; i++) {
+          if (ReferenceEquals(plan.Scenarios[i], ActiveSession.CurrentScenario)) {
+            (string, int) next = (plan.SourcePath ?? string.Empty, index + i);
+            if (Selected != next) {
+              DetailScroll = Vector2.zero;
+            }
+
+            Selected = next;
+            CollapsedMods.Remove(suite.ModName);
+            CollapsedFeatures.Remove(plan.SourcePath ?? string.Empty);
+          }
+        }
+
+        index += plan.Scenarios.Count;
+      }
+    }
+
     PickleHttpServer.Publish(
-        RunnerSnapshot.Build(parsedFeatures, results, ActiveSession, IsRunning, IsScenarioSelected));
+        RunnerSnapshot.Build(parsedFeatures, results, ActiveSession, IsRunning, IsScenarioSelected, this));
+  }
+
+  internal void ContinueRun(bool openResults = false) {
+    if (activeBreakCard != null) {
+      activeBreakCard.Decision = openResults ? BreakCardDecision.OpenInResults : BreakCardDecision.Continue;
+    }
+  }
+
+  internal void SetFilter(string? search = null, string? mod = null, string? tag = null) {
+    if (search != null) {
+      SearchText = search;
+    }
+
+    if (mod != null) {
+      ModFilterSelection = mod.Length == 0 ? null : mod;
+    }
+
+    if (tag != null) {
+      if (!ActiveTagFilters.Remove(tag)) {
+        ActiveTagFilters.Add(tag);
+      }
+
+      SelectOnlyVisible();
+    }
+
+    PublishSnapshot();
   }
 
   // Called by RunPill's expand button. Restoring the same instance (rather than
@@ -382,19 +431,32 @@ public class RunnerWindow : Window {
   // Keyed by (sourcePath, global scenario index), same as RunnerTreeView and results.
   // Null runs everything; a feature with nothing selected is skipped outright.
   private async Task RunAsync(Func<string, int, bool>? isScenarioSelected) {
-    if (IsRunning) {
+    if (IsRunning || FixtureCommands.IsBusy) {
       return;
     }
 
     IsRunning = true;
+    FollowRun = true;
     try {
       DiscoverAndParseFeatures();
+
+      int clearIndex = 0;
+      foreach ((DiscoveredSuite _, FeaturePlan plan) in parsedFeatures) {
+        string path = plan.SourcePath ?? string.Empty;
+        foreach (int position in SelectedPositions(path, clearIndex, plan.Scenarios.Count, isScenarioSelected)) {
+          results.Remove((path, clearIndex + position));
+        }
+
+        clearIndex += plan.Scenarios.Count;
+      }
 
       List<Assembly> assemblies = BuildAssemblyList();
       StepTable stepTable = StepScanner.PopulateStepTable(assemblies);
       List<Type> stepsTypes = StepScanner.GetPickleStepsTypes(assemblies);
 
-      RunSession session = new RunSession(stepTable, PickleDriver.Instance, DiscoveredSuites, stepsTypes);
+      RunSession session = new RunSession(
+          stepTable, PickleDriver.Instance, DiscoveredSuites, stepsTypes,
+          runRetries: PickleArgs.Parse().Retries);
       ActiveSession = session;
       session.OnBreak = HandleBreak;
       session.OnProgress = PublishSnapshot;
@@ -405,10 +467,16 @@ public class RunnerWindow : Window {
       // WindowStack is null until a UIRoot exists, which a headless run precedes.
       restoreWindowAfterRun = Find.WindowStack != null && Find.WindowStack.IsOpen(this);
 
-      // The dashboard replaced the pill because it survives the scene reload each fixture
-      // load triggers. Collapse only when one is serving, or there is no way to abort.
-      if (PickleHttpServer.IsRunning) {
+      if (restoreWindowAfterRun) {
         Close(false);
+      }
+
+      // Built for every run, not just one started from the window. A dashboard run closes
+      // nothing, so gating the pill on that left it with no in-game progress at all.
+      if (Find.WindowStack != null) {
+        activePill = new RunPill(this);
+        PickleDriver.Instance.AddFrameHook(RestorePill);
+        RestorePill();
       }
 
       int scenarioIndex = 0;
@@ -452,6 +520,10 @@ public class RunnerWindow : Window {
       }
 
       LastRunAt = DateTime.Now;
+      if (FollowRun) {
+        Selected = null;
+      }
+
       SelectFirstFailureIfNoneSelected();
 
       // Only autorun wrote reports before, so the status bar's promise was false for a run
@@ -479,6 +551,7 @@ public class RunnerWindow : Window {
     } catch (Exception ex) {
       Log.Error(ex, "pickle: runner window run failed");
     } finally {
+      PickleDriver.Instance.RemoveFrameHook(RestorePill);
       IsRunning = false;
       ActiveSession = null;
       PickleHttpServer.ActiveSession = null;
@@ -495,6 +568,21 @@ public class RunnerWindow : Window {
     }
   }
 
+  // Runs every frame, which is what re-adds the pill after the scene reload a fixture load
+  // triggers, and what lets the toggle take effect part way through a run.
+  private void RestorePill() {
+    if (activePill == null || Find.WindowStack == null) {
+      return;
+    }
+
+    bool open = Find.WindowStack.IsOpen(activePill);
+    if (RunPillState.Enabled && !open) {
+      Find.WindowStack.Add(activePill);
+    } else if (!RunPillState.Enabled && open) {
+      Find.WindowStack.TryRemove(activePill, doCloseSound: false);
+    }
+  }
+
   // The scene change clears the window stack, so the runner is added back after it lands.
   private void RestoreAfterMainMenu() {
     if (restoreWindowAfterRun && Find.WindowStack != null && !Find.WindowStack.IsOpen(this)) {
@@ -506,6 +594,7 @@ public class RunnerWindow : Window {
   // keeps rendering the paused world while RunSession blocks.
   private async Task HandleBreak((string FeatureName, string ScenarioName, string? SourcePath, int ScenarioIndex, StepResult FailingStep) info) {
     BreakCard card = new BreakCard(info.FeatureName, info.ScenarioName, info.FailingStep);
+    activeBreakCard = card;
     Find.WindowStack.Add(card);
 
     RunSession? session = ActiveSession;
@@ -514,9 +603,12 @@ public class RunnerWindow : Window {
         BreakWaitTimeoutSeconds);
 
     Find.WindowStack.TryRemove(card, doCloseSound: false);
+    activeBreakCard = null;
 
     if (card.Decision == BreakCardDecision.OpenInResults) {
-      Selected = (info.SourcePath ?? string.Empty, info.ScenarioIndex);
+      FollowRun = false;
+      int offset = parsedFeatures.TakeWhile(f => f.Plan.SourcePath != info.SourcePath).Sum(f => f.Plan.Scenarios.Count);
+      Selected = (info.SourcePath ?? string.Empty, offset + info.ScenarioIndex);
       session?.RequestCancel();
     } else if (card.Decision == BreakCardDecision.Abort) {
       session?.RequestCancel();

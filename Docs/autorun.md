@@ -18,6 +18,8 @@ exits.
 | `-pickle-include-wip` | Include scenarios tagged `@wip` |
 | `-pickle-seed=N` | Set the run seed. Pickle logs the seed it used |
 | `-pickle-scenario-timeout=N` | Fail a scenario after N seconds |
+| `-pickle-retry=N` | Give a failed scenario N more attempts. See [flaky scenarios](#flaky-scenarios) |
+| `-pickle-set-name=NAME` | Label this run's reports. See [mod sets](#mod-sets) |
 | `-pickle-run-timeout=N` | Stop the run after N minutes |
 | `-pickle-max-film-seconds=N` | Seconds of footage a `@film` scenario keeps. Defaults to 60. Use `0` to film nothing |
 | `-pickle-config=PATH` | Read these flags from a file |
@@ -65,6 +67,64 @@ number is exact, which is what you want when two scenarios share a prefix.
 A filter that matches nothing is an error, not an empty pass. Pickle logs the terms you
 gave and the features it found, then exits 2. This is what stops a renamed feature file
 from leaving the pipeline green forever.
+
+## Flaky scenarios
+
+Game tests race the simulation. RimWorld assigns much of a pawn's state on the next think
+cycle. A scenario can lose that race on a slow machine, then pass on the next try.
+
+`-pickle-retry=2` gives each failed scenario two more attempts. A scenario that then
+passes is **flaky**, not green:
+
+- `summary.json` counts it in `flaky` and gives each scenario its `attempts`
+- `junit.xml` writes a passing `<testcase>` holding one `<flakyFailure>` per earlier try,
+  which Jenkins and Maven surefire already read
+- both the report and the dashboard badge the row and show what each attempt said
+
+A flaky scenario does not fail the run. Read the `flaky` count in `summary.json` when you
+want your pipeline to gate on it.
+
+Tag one scenario with `@retry:2` to give it more attempts than the rest of the suite. The
+tag wins over the flag.
+
+Every retry reloads the world, even under `@same-world`. A retry into the state the
+failure left behind tests the wrong thing.
+
+Retry hides nothing: keep an eye on the count. A scenario that needs a retry every run is
+a bug you have not found yet.
+
+## Mod sets
+
+RimWorld builds its def database once at startup, so one process runs one mod set. To find
+out whether a patch survives another mod, run the suite once per set and merge the reports.
+
+Name each run, and point each at its own directory:
+
+```sh
+./RimWorldLinux -pickle-run -pickle-set-name=vanilla -pickle-report-dir=$PWD/out/vanilla
+./RimWorldLinux -pickle-run -pickle-set-name=ve      -pickle-report-dir=$PWD/out/ve
+```
+
+Then merge them into one file:
+
+```sh
+.github/scripts/merge-reports.py merged.html out/vanilla/report.html out/ve/report.html
+```
+
+`merged.html` opens from disk like any report. It gains a **Compare sets** view: scenarios
+down, sets across, and a highlight on every row where the sets disagree. That highlight is
+the answer you came for.
+
+The merger reads each set's name out of its own report, so the order on the command line
+only decides the column order. A single report in still reads as a single report out.
+
+`compat-sets.json` lists the sets `.github/workflows/compat.yml` runs on a schedule. Add a
+mod with `owner/repo:AssetPrefix:packageId`, which
+[stage-pickle-mods.sh](https://github.com/RimWorks/Rimworld-Pickle/blob/main/.github/scripts/stage-pickle-mods.sh)
+pulls from that repository's latest release. Steam Workshop items do not work: staging one
+needs credentials the script does not take.
+
+Every set is a full suite run, so keep the list short.
 
 ## Exit codes
 

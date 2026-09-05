@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -10,6 +12,30 @@ namespace RimWorks.Pickle.Tests;
 
 public class HtmlReportWriterTests {
   private const string Template = "<html><script id=\"pickle-report\">__PICKLE_REPORT_JSON__</script></html>";
+
+  [Fact]
+  public void Film_evidence_expands_every_frame_and_one_video_for_all_viewers() {
+    string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(directory);
+    try {
+      File.WriteAllBytes(Path.Combine(directory, "0002.jpg"), [2]);
+      File.WriteAllBytes(Path.Combine(directory, "0000.jpg"), [0]);
+      File.WriteAllBytes(Path.Combine(directory, "0001.jpg"), [1]);
+      List<ScenarioResult> results = ReportWriterTestData.BuildTwoFeatureRun();
+      results[0].Attachments = [("film-frames", Path.Combine(directory, "0000.jpg"))];
+      Assert.Equal(["0000.jpg", "0001.jpg", "0002.jpg"], EvidenceAttachments.Expand(results[0].Attachments).Select(a => Path.GetFileName(a.Content)));
+
+      File.WriteAllBytes(Path.Combine(directory, "film.webm"), [3]);
+      using JsonDocument report = JsonDocument.Parse(HtmlReportWriter.BuildPayload([results[0]], "completed", File.ReadAllBytes));
+      JsonElement attachments = report.RootElement.GetProperty("features")[0].GetProperty("scenarios")[0].GetProperty("attachments");
+      Assert.Equal(4, attachments.GetArrayLength());
+      Assert.Equal("film-video", attachments[0].GetProperty("name").GetString());
+      Assert.Equal("data:video/webm;base64,Aw==", attachments[0].GetProperty("content").GetString());
+      Assert.EndsWith("/0002.jpg", attachments[3].GetProperty("content").GetString());
+    } finally {
+      Directory.Delete(directory, true);
+    }
+  }
 
   [Fact]
   public void Write_replaces_the_placeholder() {
@@ -167,6 +193,21 @@ public class HtmlReportWriterTests {
         .GetProperty("features")[0]
         .GetProperty("scenarios")[0]
         .GetProperty("attachments")[0];
+  }
+
+  [Fact]
+  public void Payload_carries_attempts_and_earlier_failures() {
+    string payload = HtmlReportWriter.BuildPayload(ReportWriterTestData.BuildFlakyRun(), "passed", null);
+
+    JsonElement scenarios = JsonDocument.Parse(payload.Replace("<\\/", "</"))
+        .RootElement.GetProperty("features")[0].GetProperty("scenarios");
+
+    Assert.Equal(3, scenarios[0].GetProperty("attempts").GetInt32());
+    JsonElement earlier = scenarios[0].GetProperty("failedAttempts");
+    Assert.Equal(2, earlier.GetArrayLength());
+    Assert.Equal(1, earlier[0].GetProperty("attempt").GetInt32());
+    Assert.Equal("cart was empty", earlier[0].GetProperty("message").GetString());
+    Assert.Equal(JsonValueKind.Null, earlier[1].GetProperty("message").ValueKind);
   }
 
   // BuildAttachment probes the disk for film.webm beside the frames, so the branches only

@@ -10,6 +10,15 @@ namespace RimWorks.Pickle.Core.Fixtures;
 /// name are listed, so the fixture manager can show the loser rather than only mention it.
 /// </summary>
 public static class FixtureCatalog {
+  public static string PathForName(string directory, string name) {
+    if (string.IsNullOrWhiteSpace(name) || name != name.Trim() || name == "." || name == ".."
+        || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || name.IndexOfAny(['/', '\\', ':']) >= 0) {
+      throw new ArgumentException("Enter a fixture name without path separators.", nameof(name));
+    }
+
+    return Path.Combine(directory, name + ".rws");
+  }
+
   // The writable copy wins on a name clash: re-recording a fixture is how you fix one, and
   // the committed copy would otherwise keep shadowing the new file.
   public static List<FixtureEntry> Read(string committedDir, string writableDir) {

@@ -10,14 +10,21 @@ namespace RimWorks.Pickle.UI;
 /// </summary>
 public class RunPill : Window {
   private const float PillWidth = 360f;
-  private const float Padding = 10f;
   private const float Gap = 8f;
-  private const float TitleRowHeight = 20f;
-  private const float StepRowHeight = 18f;
   private const float ButtonRowHeight = 28f;
   private const float ButtonWidth = 70f;
 
+  // Leaves room for the status dot, which draws in the gutter to the left of both labels.
+  private const float TextIndent = 18f;
+
+  private const float ScreenInset = 14f;
+
   private readonly RunnerWindow owner;
+
+  // Measured while drawing, applied on the next frame. CalcHeight reads the IMGUI font
+  // style, which is only trustworthy inside OnGUI, and WindowUpdate is not.
+  private float titleHeight;
+  private float stepHeight;
 
   public RunPill(RunnerWindow owner) {
     this.owner = owner;
@@ -30,38 +37,69 @@ public class RunPill : Window {
   }
 
   /// <inheritdoc/>
+  // Margin, not a padding of our own: Window.InnerWindowOnGUI contracts the rect it
+  // hands DoWindowContents by exactly that, so a smaller guess clips the button row.
   public override Vector2 InitialSize => new Vector2(
       PillWidth,
-      (Padding * 2f) + TitleRowHeight + Gap + StepRowHeight + Gap + ButtonRowHeight);
+      (Margin * 2f) + TitleRowHeight + Gap + StepRowHeight + Gap + ButtonRowHeight);
+
+  // Verse.Text measures line heights off the loaded font at startup, so there is no
+  // constant to hardcode. Both rows fall back to one line until a draw measures them.
+  private float TitleRowHeight => titleHeight > 0f ? titleHeight : Text.LineHeightOf(GameFont.Small);
+
+  private float StepRowHeight => stepHeight > 0f ? stepHeight : Text.LineHeightOf(GameFont.Tiny);
 
   // Window.PreOpen() always centers via InitialSize; overriding this is the only
   // way to land the pill top-right instead, matching the approved mock.
+
+  /// <inheritdoc/>
+  // Both labels wrap, so the pill is only as tall as the text currently needs.
+  public override void WindowUpdate() {
+    base.WindowUpdate();
+
+    Vector2 size = InitialSize;
+    if (!Mathf.Approximately(windowRect.height, size.y)) {
+      windowRect = TopRight(size);
+    }
+  }
 
   /// <inheritdoc/>
   public override void DoWindowContents(Rect inRect) {
     RunSession? session = owner.ActiveSession;
     bool paused = session?.IsPausedForBreak ?? false;
 
+    // CalcHeight measures in the current font, so each label sets its own before asking.
+    Text.Font = GameFont.Small;
     float y = inRect.y;
+    float textWidth = inRect.width - TextIndent;
 
+    // Centred on the first line, not the whole block, or a wrapped title drags the dot
+    // down into the middle of the paragraph.
     Color dotColor = paused ? RunnerStatusColors.Failed : RunnerStatusColors.Passed;
-    RunnerStatusColors.DrawDot(new Vector2(inRect.x + 6f, y + (TitleRowHeight / 2f)), dotColor, 8f);
+    RunnerStatusColors.DrawDot(
+        new Vector2(inRect.x + 6f, y + (Text.LineHeightOf(GameFont.Small) / 2f)), dotColor, 8f);
 
     string scenarioName = session?.CurrentScenarioName ?? string.Empty;
     string title = paused
         ? "Pickle_PillPaused".Translate(scenarioName).ToString()
         : "Pickle_PillRunning".Translate(scenarioName).ToString();
     GUI.color = paused ? RunnerStatusColors.FailedText : Color.white;
-    Widgets.Label(new Rect(inRect.x + 18f, y, inRect.width - 18f, TitleRowHeight), title);
+
+    // Widgets.Label wraps on its own; the height it needs is what the pill grows to.
+    titleHeight = Mathf.Max(Text.LineHeightOf(GameFont.Small), Text.CalcHeight(title, textWidth));
+    Widgets.Label(new Rect(inRect.x + TextIndent, y, textWidth, titleHeight), title);
     GUI.color = Color.white;
-    y += TitleRowHeight + Gap;
+    y += titleHeight + Gap;
 
     Text.Font = GameFont.Tiny;
     GUI.color = RunnerStatusColors.Muted;
-    Widgets.Label(new Rect(inRect.x + 18f, y, inRect.width - 18f, StepRowHeight), session?.CurrentStepDisplay ?? string.Empty);
+    string step = session?.CurrentStepDisplay ?? string.Empty;
+
+    stepHeight = Mathf.Max(Text.LineHeightOf(GameFont.Tiny), Text.CalcHeight(step, textWidth));
+    Widgets.Label(new Rect(inRect.x + TextIndent, y, textWidth, stepHeight), step);
     GUI.color = Color.white;
     Text.Font = GameFont.Small;
-    y += StepRowHeight + Gap;
+    y += stepHeight + Gap;
 
     Rect expandRect = new Rect(inRect.x, y, ButtonWidth, ButtonRowHeight);
     Rect abortRect = new Rect(expandRect.xMax + Gap, y, ButtonWidth, ButtonRowHeight);
@@ -101,7 +139,10 @@ public class RunPill : Window {
 
   /// <inheritdoc/>
   protected override void SetInitialSizeAndPosition() {
-    Vector2 size = InitialSize;
-    windowRect = new Rect(Verse.UI.screenWidth - size.x - 14f, 14f, size.x, size.y);
+    windowRect = TopRight(InitialSize);
+  }
+
+  private static Rect TopRight(Vector2 size) {
+    return new Rect(Verse.UI.screenWidth - size.x - ScreenInset, ScreenInset, size.x, size.y);
   }
 }

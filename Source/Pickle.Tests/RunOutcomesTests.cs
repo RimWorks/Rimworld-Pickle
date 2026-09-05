@@ -149,4 +149,51 @@ public class RunOutcomesTests {
     ScenarioOutcome outcome = RunOutcomes.OutcomeFromSteps(steps);
     Assert.Equal(ScenarioOutcome.Passed, outcome);
   }
+
+  [Fact]
+  public void IsFlaky_PassedAfterARetry() {
+    Assert.True(RunOutcomes.IsFlaky(Result(ScenarioOutcome.Passed, attempts: 2)));
+  }
+
+  [Fact]
+  public void IsFlaky_PassedFirstTimeIsNotFlaky() {
+    Assert.False(RunOutcomes.IsFlaky(Result(ScenarioOutcome.Passed, attempts: 1)));
+  }
+
+  [Fact]
+  public void IsFlaky_FailedIsNeverFlakyHoweverManyAttempts() {
+    Assert.False(RunOutcomes.IsFlaky(Result(ScenarioOutcome.Failed, attempts: 4)));
+  }
+
+  [Fact]
+  public void IsFlaky_SkippedIsNotFlaky() {
+    Assert.False(RunOutcomes.IsFlaky(Result(ScenarioOutcome.Skipped, attempts: 2)));
+  }
+
+  [Fact]
+  public void IntFromTag_ReadsTheNumber() {
+    Assert.Equal(2, RunOutcomes.IntFromTag(new TagSet(["@wip", "@retry:2"]), "@retry:"));
+  }
+
+  [Fact]
+  public void IntFromTag_MissingTagIsNull() {
+    Assert.Null(RunOutcomes.IntFromTag(new TagSet(["@wip"]), "@retry:"));
+  }
+
+  [Fact]
+  public void IntFromTag_NonNumericTagIsNull() {
+    Assert.Null(RunOutcomes.IntFromTag(new TagSet(["@retry:lots"]), "@retry:"));
+  }
+
+  [Fact]
+  public void IntFromTag_DoesNotConfuseSeedWithRetry() {
+    TagSet tags = new TagSet(["@seed:99", "@retry:1"]);
+
+    Assert.Equal(99, RunOutcomes.IntFromTag(tags, "@seed:"));
+    Assert.Equal(1, RunOutcomes.IntFromTag(tags, "@retry:"));
+  }
+
+  private static ScenarioResult Result(ScenarioOutcome outcome, int attempts) {
+    return new ScenarioResult("s", "f", new TagSet([]), outcome, [], 0) { Attempts = attempts };
+  }
 }

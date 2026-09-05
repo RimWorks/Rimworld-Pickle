@@ -24,6 +24,12 @@ public sealed class PickleArgs {
 
   public int ScenarioTimeoutSeconds { get; private set; } = 120;
 
+  /// <summary>Extra attempts a failed scenario gets. Zero runs each scenario once.</summary>
+  public int Retries { get; private set; }
+
+  /// <summary>Labels this run's reports, so a merged report can tell the mod sets apart.</summary>
+  public string? SetName { get; private set; }
+
   /// <summary>How wait steps spend time. An unattended run is Fast unless -pickle-mode says otherwise.</summary>
   public PickleRunMode.Mode Mode { get; private set; } = PickleRunMode.Mode.Fast;
 
@@ -48,6 +54,16 @@ public sealed class PickleArgs {
     int? cliScenarioTimeout = GenCommandLine.TryGetCommandLineArg("-pickle-scenario-timeout", out string scenarioTimeoutValue)
         && int.TryParse(scenarioTimeoutValue, out int parsedScenarioTimeout)
             ? parsedScenarioTimeout
+            : null;
+
+    string? cliSetName = GenCommandLine.TryGetCommandLineArg("-pickle-set-name", out string setNameValue)
+        && !setNameValue.NullOrEmpty()
+            ? setNameValue
+            : null;
+
+    int? cliRetries = GenCommandLine.TryGetCommandLineArg("-pickle-retry", out string retryValue)
+        && int.TryParse(retryValue, out int parsedRetries)
+            ? parsedRetries
             : null;
 
     int? cliMaxFilm = GenCommandLine.TryGetCommandLineArg("-pickle-max-film-seconds", out string maxFilmValue)
@@ -80,6 +96,8 @@ public sealed class PickleArgs {
       IncludeWip = cliIncludeWip || (config?.IncludeWip ?? false),
       Seed = cliSeed ?? config?.Seed ?? RunSession.DefaultSeed,
       ScenarioTimeoutSeconds = cliScenarioTimeout ?? config?.ScenarioTimeoutSeconds ?? 120,
+      Retries = Math.Max(0, cliRetries ?? config?.Retries ?? 0),
+      SetName = cliSetName ?? config?.SetName,
       RunTimeoutMinutes = cliRunTimeout ?? config?.RunTimeoutMinutes ?? 60,
       MaxFilmSeconds = cliMaxFilm ?? 60,
       Mode = cliMode,

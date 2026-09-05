@@ -106,4 +106,36 @@ public class JUnitReportWriterTests {
 
     Assert.Empty(document.Root!.Elements("testsuite"));
   }
+
+  [Fact]
+  public void Write_FlakyScenario_IsAPassingTestCaseCarryingFlakyFailure() {
+    XDocument document = XDocument.Parse(JUnitReportWriter.Write(ReportWriterTestData.BuildFlakyRun()));
+
+    XElement flaky = document.Descendants("testcase").First(t => (string?)t.Attribute("name") == "flaky checkout");
+    Assert.Empty(flaky.Elements("failure"));
+    Assert.Empty(flaky.Elements("skipped"));
+
+    List<XElement> flakyFailures = [.. flaky.Elements("flakyFailure")];
+    Assert.Equal(2, flakyFailures.Count);
+    Assert.Equal("attempt 1: cart was empty", (string?)flakyFailures[0].Attribute("message"));
+    Assert.Equal("attempt 2: Scenario failed", (string?)flakyFailures[1].Attribute("message"));
+  }
+
+  [Fact]
+  public void Write_ScenarioThatNeverPassed_KeepsItsFailureElement() {
+    XDocument document = XDocument.Parse(JUnitReportWriter.Write(ReportWriterTestData.BuildFlakyRun()));
+
+    XElement broken = document.Descendants("testcase").First(t => (string?)t.Attribute("name") == "stubbornly broken");
+    Assert.Single(broken.Elements("failure"));
+    Assert.Single(broken.Elements("flakyFailure"));
+  }
+
+  [Fact]
+  public void Write_TestSuite_CountsFlakes() {
+    XDocument document = XDocument.Parse(JUnitReportWriter.Write(ReportWriterTestData.BuildFlakyRun()));
+
+    XElement suite = document.Descendants("testsuite").Single();
+    Assert.Equal("1", (string?)suite.Attribute("flakes"));
+    Assert.Equal("1", (string?)suite.Attribute("failures"));
+  }
 }

@@ -10,15 +10,20 @@ public class StepTable {
   private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
 
   private readonly List<(StepDefinition Definition, Regex Pattern)> definitions = new();
+  private readonly List<StepDefinition> ordered = new();
   private readonly PickleParameterTypeRegistry registry;
 
   public StepTable() {
     registry = new PickleParameterTypeRegistry();
   }
 
+  /// <summary>Every definition in the order it was added, for listing the catalogue.</summary>
+  public IReadOnlyList<StepDefinition> Definitions => ordered;
+
   public void Add(StepDefinition definition) {
     Regex pattern = CompilePattern(definition.Pattern);
     definitions.Add((definition, pattern));
+    ordered.Add(definition);
   }
 
   public StepResolution Resolve(string stepText) {

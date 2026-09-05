@@ -64,3 +64,9 @@ startable
 Quickstarts
 quickstart
 quickstarts
+def
+defs
+xpath
+unpatched
+degreed
+pathing

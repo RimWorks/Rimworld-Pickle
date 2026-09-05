@@ -38,4 +38,13 @@ public class ScenarioResult {
   public IReadOnlyList<(string Name, string Content)> Attachments { get; set; } = [];
 
   public IReadOnlyList<(string Source, string Content)> StateDumps { get; set; } = [];
+
+  /// <summary>What the scenario's ticks cost, or null when it drove no ticks.</summary>
+  public (int Ticks, double MeanMs, double MaxMs)? TickCost { get; set; }
+
+  /// <summary>How many times the scenario ran. Above one means a retry was spent on it.</summary>
+  public int Attempts { get; set; } = 1;
+
+  /// <summary>What each earlier attempt failed with, oldest first. Empty unless retried.</summary>
+  public IReadOnlyList<(int Attempt, string? Message)> FailedAttempts { get; set; } = [];
 }

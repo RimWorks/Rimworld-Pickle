@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using RimWorks.Pickle.Runtime;
 using Log = RimWorks.RimLogging.Log;
@@ -55,6 +56,13 @@ public sealed class FilmstripRecorder {
       return;
     }
 
+    string directory = ScreenshotCapture.FrameDirectory(featureName, scenarioName);
+    foreach (string frame in Directory.GetFiles(directory, "*.jpg")) {
+      File.Delete(frame);
+    }
+
+    File.Delete(Path.Combine(directory, "film.webm"));
+    Recorded.RemoveAll(recording => recording.Directory == directory);
     clock.Restart();
     nextCaptureAt = 0.0;
     PickleDriver.Instance.AddFrameHook(OnFrame);

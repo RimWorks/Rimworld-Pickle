@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { translator } from "./types";
+import { countOutcomes, translator } from "./types";
 import { initialTheme, writeTheme, THEMES } from "./theme";
 import { readHash, toHash } from "./hash";
 import type { Feature, Scenario, Selection, Snapshot } from "./types";
 import { Tree } from "./Tree";
 import { Detail } from "./Detail";
-import { Toolbar } from "./Toolbar";
+import { FilterBar } from "./FilterBar";
+import { post, Toolbar } from "./Toolbar";
 import { Logo } from "./Logo";
+import { Fixtures } from "./Fixtures";
+import { Console } from "./Console";
 
 const POLL_MS = 400;
 
@@ -15,11 +18,20 @@ export function App() {
   const [selected, setSelected] = useState<Selection | null>(() => readHash());
   const [aborting, setAborting] = useState(false);
   const [reportBlocked, setReportBlocked] = useState(false);
+  const [fixturesOpen, setFixturesOpen] = useState(false);
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [commandError, setCommandError] = useState("");
   const [theme, setTheme] = useState<string>(
     () => initialTheme(),
   );
   const wasRunning = useRef(false);
   const [following, setFollowing] = useState(true);
+
+  useEffect(() => {
+    const onError = (event: Event) => setCommandError((event as CustomEvent<string>).detail);
+    window.addEventListener("pickle-command-error", onError);
+    return () => window.removeEventListener("pickle-command-error", onError);
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -33,6 +45,7 @@ export function App() {
     const poll = async () => {
       try {
         const res = await fetch("/state", { cache: "no-store" });
+        if (!res.ok) throw new Error(`State request failed (${res.status})`);
         const next: Snapshot = await res.json();
         if (alive) setSnap(next);
       } catch {
@@ -66,7 +79,7 @@ export function App() {
   // The view follows the run rather than making you chase the highlight down the
   // sidebar. Clicking a scenario is a deliberate look elsewhere, so it stops following.
   useEffect(() => {
-    if (!following || snap?.status !== "running") return;
+    if (!following || (snap?.status !== "running" && snap?.status !== "paused")) return;
 
     const next = findRunning(snap);
     if (!next) return;
@@ -77,7 +90,7 @@ export function App() {
 
   // A new run is a fresh reason to watch, so following comes back on by itself.
   useEffect(() => {
-    if (snap?.status === "running" && !wasRunning.current) {
+    if ((snap?.status === "running" || snap?.status === "paused") && !wasRunning.current) {
       setFollowing(true);
       setReportBlocked(false);
     }
@@ -93,11 +106,11 @@ export function App() {
 
   // Jump to the first failure the moment a run ends, matching the in-game runner.
   useEffect(() => {
+    if (!snap) return;
     const running = snap?.status === "running" || snap?.status === "paused";
     if (wasRunning.current && !running && snap) {
-      // a hash in the address bar is an explicit request, so do not jump away from it
       const failure = findFirstFailure(snap.features);
-      if (failure && !window.location.hash) setSelected(failure);
+      if (failure && following) setSelected(failure);
       setAborting(false);
 
       // A poll is not a user gesture, so a browser is entitled to block this. window.open
@@ -105,27 +118,40 @@ export function App() {
       if (!window.open("/report", "_blank", "noopener")) setReportBlocked(true);
     }
     wasRunning.current = running;
-  }, [snap]);
+  }, [snap, following]);
 
   const abort = async () => {
     setAborting(true);
     try {
-      await fetch("/abort", { method: "POST" });
+      const response = await fetch("/abort", { method: "POST", body: "" });
+      if (!response.ok) setAborting(false);
     } catch {
       setAborting(false);
     }
   };
 
   const current = useMemo(() => findScenario(snap?.features, selected), [snap, selected]);
+  const visibleFeatures = useMemo(() => snap?.features.map((feature) => ({
+    ...feature,
+    counts: countOutcomes(feature.scenarios),
+    scenarios: feature.scenarios.filter((scenario) => scenario.visible !== false),
+  })).filter((feature) => feature.scenarios.length > 0) ?? [], [snap]);
   const running = snap?.status === "running" || snap?.status === "paused";
   const t = translator(snap);
 
   return (
-    <div className="h-screen flex flex-col bg-base-200 text-base-content">
+    <div className="min-h-dvh md:h-dvh flex flex-col bg-base-200 text-base-content">
       <Header
         snap={snap}
         aborting={aborting}
         onAbort={abort}
+        onOpenResults={() => {
+          if (snap) setSelected(findRunning(snap));
+          setFollowing(false);
+          setFixturesOpen(false);
+          setConsoleOpen(false);
+          void post("/continue?results=true");
+        }}
         theme={theme}
         onToggleTheme={() => setTheme(theme === THEMES.dark ? THEMES.light : THEMES.dark)}
       />
@@ -134,7 +160,16 @@ export function App() {
         <Offline />
       ) : (
         <div className="flex-1 flex flex-col min-h-0">
-          <Toolbar snap={snap} />
+          <Toolbar
+            snap={snap}
+            onFixtures={() => { setFixturesOpen(true); setConsoleOpen(false); }}
+            onConsole={() => { setConsoleOpen(true); setFixturesOpen(false); }}
+          />
+          <FilterBar snap={snap} />
+          {commandError && <div role="alert" className="flex items-center gap-3 px-5 py-2 text-error">
+            <span className="grow">Command failed: {commandError}. Try again.</span>
+            <button type="button" className="btn btn-sm" onClick={() => setCommandError("")}>Dismiss</button>
+          </div>}
           {reportBlocked && (
             <div className="alert alert-info rounded-none py-2 px-5">
               <span className="text-sm">{t("Pickle_ReportReady", "The run finished and the report is ready.")}</span>
@@ -146,12 +181,12 @@ export function App() {
               </button>
             </div>
           )}
-          <div className="flex-1 flex min-h-0">
-            <aside className="w-96 shrink-0 overflow-y-auto border-r border-base-content/10 bg-base-100 p-3">
+          <div className="flex-1 flex flex-col md:flex-row min-h-0">
+            <aside className="w-full md:w-80 lg:w-96 max-h-60 md:max-h-none shrink-0 overflow-y-auto border-r border-base-content/10 bg-base-100 p-3">
               <Tree
-                features={snap.features}
+                features={visibleFeatures}
                 selected={selected}
-                activeScenario={running ? snap.scenario : null}
+                activeScenario={running ? findRunning(snap) : null}
                 controllable={snap.controllable}
                 onSelect={(next) => {
                   setFollowing(false);
@@ -159,7 +194,8 @@ export function App() {
                 }}
               />
             </aside>
-            <main className="flex-1 overflow-y-auto p-6">
+            <main className="flex-1 min-w-0 overflow-y-auto p-4 md:p-6">
+              {current?.visible === false && <p className="text-sm mb-3">This scenario is hidden by the current filters.</p>}
               {running && !following && (
                 <button
                   type="button"
@@ -169,7 +205,8 @@ export function App() {
                   Follow the run
                 </button>
               )}
-              <Detail scenario={current} live={running ? snap : null} />
+              {consoleOpen && <Console running={running} onClose={() => setConsoleOpen(false)} />}
+              {!consoleOpen && (fixturesOpen ? <Fixtures running={running} onClose={() => setFixturesOpen(false)} /> : <Detail key={selected ? toHash(selected) : "empty"} scenario={current} live={running ? snap : null} feature={snap.features.find((feature) => feature.path === selected?.path)} onTag={snap.controllable ? (tag) => { void post(`/filter?tag=${encodeURIComponent(tag)}`); } : undefined} />)}
             </main>
           </div>
         </div>
@@ -185,27 +222,19 @@ function findRunning(snap: Snapshot): Selection | null {
     }
   }
 
-  // The outcome only turns Running once a step reports, so fall back to the names the
-  // snapshot carries for the scenario it is on right now.
-  for (const feature of snap.features) {
-    if (feature.name !== snap.feature) continue;
-    for (const scenario of feature.scenarios) {
-      if (scenario.name === snap.scenario) return { path: feature.path, index: scenario.index };
-    }
-  }
-
   return null;
 }
 
 function subline(snap: Snapshot | null, running: boolean): string {
   if (running && snap) return snap.step;
+  if (snap?.lastRunAt) return `${snap.features.length} features · last run ${new Date(snap.lastRunAt).toLocaleTimeString()}`;
   if (snap) return `${snap.features.length} features discovered`;
   return "";
 }
 
 function statusDotClass(snap: Snapshot | null, paused: boolean, running: boolean): string {
   if (!snap || paused) return "status-error";
-  if (running) return "status-success animate-bounce";
+  if (running) return "status-success";
   return "status-neutral";
 }
 
@@ -221,20 +250,23 @@ function Header({
   snap,
   aborting,
   onAbort,
+  onOpenResults,
   theme,
   onToggleTheme,
 }: Readonly<{
   snap: Snapshot | null;
   aborting: boolean;
   onAbort: () => void;
+  onOpenResults: () => void;
   theme: string;
   onToggleTheme: () => void;
 }>) {
   const running = snap?.status === "running" || snap?.status === "paused";
   const paused = snap?.status === "paused";
+  const counts = countOutcomes(snap?.features.flatMap((feature) => feature.scenarios) ?? []);
 
   return (
-    <header className="shrink-0 flex items-center gap-4 border-b border-base-content/10 bg-base-100 px-5 py-3">
+    <header className="shrink-0 flex flex-wrap items-center gap-4 border-b border-base-content/10 bg-base-100 px-5 py-3">
       <div className="flex items-center gap-3 min-w-0">
         <Logo />
         <span
@@ -258,6 +290,18 @@ function Header({
       <span className={`badge badge-soft ${(snap?.failed ?? 0) > 0 ? "badge-error" : ""}`}>
         {snap?.failed ?? 0} failed
       </span>
+      <span className="badge badge-soft">{counts.notRun} not run</span>
+
+      {paused && (
+        <>
+        <button type="button" className="btn btn-sm btn-primary" disabled={snap?.cancelRequested} onClick={() => post("/continue")}>
+          {translator(snap)("Pickle_ContinueRun", "Continue run")}
+        </button>
+        <button type="button" className="btn btn-sm" disabled={snap?.cancelRequested} onClick={onOpenResults}>
+          {translator(snap)("Pickle_OpenInResults", "Open in results")}
+        </button>
+        </>
+      )}
 
       <button
         type="button"
@@ -281,7 +325,7 @@ function Offline() {
       <div className="text-center">
         <span className="loading loading-ring loading-lg text-base-content/30" />
         <p className="mt-4 text-sm text-base-content/50">
-          No response from the game. Launch it with <code className="kbd kbd-sm">-pickle-http</code>.
+          No response from the game. Start RimWorld with Pickle enabled.
         </p>
       </div>
     </div>

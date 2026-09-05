@@ -64,6 +64,19 @@ Read `exitReason` when the exit code alone is not enough.
 { "total": 8, "passed": 8, "failed": 0, "skipped": 0, "exitReason": "passed" }
 ```
 
+`setName` names the mod set a run belongs to, and it is absent unless
+`-pickle-set-name` was passed. See [mod sets](autorun.md#mod-sets).
+
+`tickCost` on a scenario holds `ticks`, `meanMs` and `maxMs` for the ticks Pickle drove.
+It is absent from a scenario that drove none, such as one that runs at the main menu. A
+zero there would read as the fastest scenario in the run. See
+[performance](steps.md#performance).
+
+`flaky` counts the scenarios that failed at least once and then passed. `attempts` on a
+scenario is how many times it ran. Both are absent from a run that used no retries, apart
+from `attempts`, which is always at least 1. See
+[flaky scenarios](autorun.md#flaky-scenarios).
+
 | exitReason | Meaning |
 | --- | --- |
 | `passed` | Every scenario passed |

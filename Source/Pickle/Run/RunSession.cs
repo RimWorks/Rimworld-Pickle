@@ -39,6 +39,7 @@ public class RunSession {
   private readonly IReadOnlyList<DiscoveredSuite> suites;
   private readonly List<Type> stepsTypes;
   private readonly int runSeed;
+  private readonly int runRetries;
   private readonly Dictionary<Type, object> scenarioInstanceCache = new();
 
   private List<StepResult> currentStepResults = new();
@@ -52,12 +53,14 @@ public class RunSession {
       PickleDriver driver,
       IReadOnlyList<DiscoveredSuite> suites,
       List<Type> stepsTypes,
-      int runSeed = DefaultSeed) {
+      int runSeed = DefaultSeed,
+      int runRetries = 0) {
     this.stepTable = stepTable;
     this.driver = driver;
     this.suites = suites;
     this.stepsTypes = stepsTypes;
     this.runSeed = runSeed;
+    this.runRetries = runRetries;
 
     // Only the dev smokes armed this before, so every click step in a real run saw an
     // empty store and failed with "no tags recorded this frame".
@@ -69,6 +72,10 @@ public class RunSession {
   public string CurrentFeatureName { get; private set; } = string.Empty;
 
   public string CurrentScenarioName { get; private set; } = string.Empty;
+
+  public ScenarioPlan? CurrentScenario { get; private set; }
+
+  public string? CurrentSourcePath { get; private set; }
 
   public string CurrentStepDisplay { get; private set; } = string.Empty;
 
@@ -96,6 +103,20 @@ public class RunSession {
     CancelRequested = true;
   }
 
+  /// <summary>
+  /// Runs one step outside a scenario, for the console. The caller owns the context, so
+  /// state set by one step is still there for the next one.
+  /// </summary>
+  public Task<StepResult> RunOneStep(PickleContext ctx, string text) {
+    currentScenarioTags = new TagSet(Array.Empty<string>());
+    return RunStep(ctx, new StepPlan("When", text, Array.Empty<IReadOnlyList<string>>(), null, 0));
+  }
+
+  /// <summary>The step class instances built so far, so a caller can collect state dumps.</summary>
+  public IReadOnlyList<KeyValuePair<Type, object>> ScenarioInstances() {
+    return [.. scenarioInstanceCache];
+  }
+
   public async Task<List<ScenarioResult>> RunFeature(
       FeaturePlan plan,
       string owningModName,
@@ -116,6 +137,7 @@ public class RunSession {
       // Deselected scenarios are not run and not reported at all - this is
       // distinct from @wip/@skip below, which still produce a Skipped result.
       if (scenarioFilter != null && !scenarioFilter(scenario)) {
+        scenarioIndex++;
         continue;
       }
 
@@ -140,7 +162,8 @@ public class RunSession {
         continue;
       }
 
-      ScenarioResult result = await RunScenario(scenario, plan.Name, plan.SourcePath, scenarioIndex);
+      ScenarioResult result = await RunWithRetries(scenario, plan.Name, plan.SourcePath, scenarioIndex);
+      CurrentScenario = null;
       results.Add(result);
       onScenarioCompleted?.Invoke(result);
       LogScenarioProgress(result);
@@ -176,11 +199,14 @@ public class RunSession {
       _ => "skipped",
     };
 
+    string attempts = result.Attempts > 1 ? $" (attempt {result.Attempts})" : string.Empty;
+
     Log.Info(
-        "pickle: {Outcome} in {DurationMs}ms: {Feature}: {Scenario}",
+        "pickle: {Outcome} in {DurationMs}ms{Attempts}: {Feature}: {Scenario}",
         [
             outcome,
             result.DurationMs.ToString("F0", CultureInfo.InvariantCulture),
+            attempts,
             result.FeatureName,
             result.ScenarioName,
         ]);
@@ -195,6 +221,13 @@ public class RunSession {
     }
 
     return Task.CompletedTask;
+  }
+
+  // Null when the scenario drove no ticks, which a main-menu scenario never does. Zero
+  // would read as the fastest scenario in the run rather than as an unmeasured one.
+  private static (int Ticks, double MeanMs, double MaxMs)? CurrentTickCost() {
+    TickCostWindow window = TickCostSampler.Window(TickCostSampler.Count);
+    return window.Count == 0 ? null : (window.Count, window.MeanMs, window.MaxMs);
   }
 
   private static List<(string Name, string Content)> BuildAttachmentsWithScreenshot(
@@ -241,29 +274,56 @@ public class RunSession {
     }
   }
 
+  // A retry that reuses the world the failure left behind is not a retry. Clearing both
+  // handles forces the next fixture step to do a real load even under @same-world.
+  private async Task<ScenarioResult> RunWithRetries(
+      ScenarioPlan scenario, string featureName, string? sourcePath, int scenarioIndex) {
+    int attempts = (RunOutcomes.IntFromTag(scenario.Tags, "@retry:") ?? runRetries) + 1;
+    List<(int Attempt, string? Message)> failed = [];
+    ScenarioResult result = await RunScenario(scenario, featureName, sourcePath, scenarioIndex);
+
+    for (int attempt = 2;
+         attempt <= attempts && result.Outcome == ScenarioOutcome.Failed && !CancelRequested;
+         attempt++) {
+      failed.Add((attempt - 1, result.FailureMessage));
+      Log.Info(
+          "pickle: retrying '{Scenario}', attempt {Attempt} of {Attempts}",
+          [scenario.Name, attempt, attempts]);
+
+      currentLoadedFixture = null;
+      currentLoadedQuickstart = null;
+      result = await RunScenario(scenario, featureName, sourcePath, scenarioIndex);
+    }
+
+    result.Attempts = failed.Count + 1;
+    result.FailedAttempts = failed;
+    return result;
+  }
+
   private async Task<ScenarioResult> RunScenario(ScenarioPlan scenario, string featureName, string? sourcePath, int scenarioIndex) {
     Stopwatch scenarioTimer = Stopwatch.StartNew();
     Watchdog.BeginScenario(featureName, scenario.Name);
     PickleContext ctx = new PickleContext();
     currentScenarioTags = scenario.Tags;
     CurrentScenarioName = scenario.Name;
+    CurrentScenario = scenario;
+    CurrentSourcePath = sourcePath;
     scenarioInstanceCache.Clear();
 
-    int scenarioSeed = runSeed;
-    string? seedTag = scenario.Tags.FirstOrDefault(t => t.StartsWith("@seed:"));
-    if (seedTag != null && int.TryParse(seedTag.Substring(6), out int parsedSeed)) {
-      scenarioSeed = parsedSeed;
-    }
+    int scenarioSeed = RunOutcomes.IntFromTag(scenario.Tags, "@seed:") ?? runSeed;
 
     ctx.ScenarioSeed = scenarioSeed;
 
     List<StepResult> stepResults = new();
     currentStepResults = stepResults;
+    CurrentStepDisplay = string.Empty;
+    OnProgress?.Invoke();
     FilmstripRecorder? film = null;
     PickleRunMode.Mode modeBeforeScenario = PickleRunMode.Current;
 
     try {
       LogWatch.Arm();
+      TickCostSampler.Reset();
 
       await LoadQuickstartIfTagged(ctx, scenario.Tags);
       await RunBeforeHooks(ctx, scenario.Tags);
@@ -318,6 +378,7 @@ public class RunSession {
             outcome,
             stepResults,
             scenarioTimer.ElapsedMilliseconds) {
+          TickCost = CurrentTickCost(),
           FailureMessage = failureMsg,
           LogTail = LogWatch.ErrorsSinceArmed,
           Attachments = attachmentsWithScreenshot,
@@ -332,6 +393,7 @@ public class RunSession {
           outcome,
           stepResults,
           scenarioTimer.ElapsedMilliseconds) {
+        TickCost = CurrentTickCost(),
         FailureMessage = failureMsg,
         LogTail = LogWatch.ErrorsSinceArmed,
         Attachments = ctx.Attachments,
@@ -356,6 +418,7 @@ public class RunSession {
           ScenarioOutcome.Failed,
           stepResults,
           scenarioTimer.ElapsedMilliseconds) {
+        TickCost = CurrentTickCost(),
         FailureMessage = ex.Message,
         LogTail = LogWatch.ErrorsSinceArmed,
         Attachments = attachmentsWithScreenshot,
@@ -702,6 +765,7 @@ public class RunSession {
         ScenarioOutcome.Failed,
         stepResults,
         scenarioTimer.ElapsedMilliseconds) {
+      TickCost = CurrentTickCost(),
       FailureMessage = $"Log.Error during scenario: {errorMsg}",
       LogTail = LogWatch.ErrorsSinceArmed,
       Attachments = BuildAttachmentsWithScreenshot(ctx, screenshotPath),
@@ -719,10 +783,12 @@ public class RunSession {
     }
 
     IsPausedForBreak = true;
+    OnProgress?.Invoke();
     try {
       await OnBreak((featureName, scenarioName, sourcePath, scenarioIndex, stepResult));
     } finally {
       IsPausedForBreak = false;
+      OnProgress?.Invoke();
     }
   }
 }

@@ -1,0 +1,14 @@
+{
+  "$comment": [
+    "Mod sets the compat workflow runs the suite against, one game launch each.",
+    "extraMods is a comma separated list of owner/repo:AssetPrefix:packageId, staged from",
+    "GitHub releases by .github/scripts/stage-pickle-mods.sh. A Workshop-only mod cannot go",
+    "here: staging one needs Steam credentials the script deliberately does not take.",
+    "Every set costs a full suite run, so keep this list short."
+  ],
+  "sets": [
+    { "name": "harmony", "backend": "harmony", "extraMods": "" },
+    { "name": "concord", "backend": "concord", "extraMods": "" },
+    { "name": "both", "backend": "both", "extraMods": "" }
+  ]
+}

@@ -202,4 +202,33 @@ public class StepTableTests {
     StepResolution resolution2 = table.Resolve("I see a blue box");
     Assert.IsType<MatchedStep>(resolution2);
   }
+
+  [Fact]
+  public void Definitions_ListsEveryAddedDefinitionInOrder() {
+    StepTable table = new StepTable();
+    StepDefinition first = new StepDefinition("I have {int} cukes", StepKind.Given, "Test", [typeof(int)]);
+    StepDefinition second = new StepDefinition("I eat one", StepKind.When, "Test", Array.Empty<Type>());
+    table.Add(first);
+    table.Add(second);
+
+    Assert.Equal([first, second], table.Definitions);
+  }
+
+  [Fact]
+  public void Definitions_IncludesADefinitionAddedAfterAResolve() {
+    StepTable table = new StepTable();
+    table.Add(new StepDefinition("I eat one", StepKind.When, "Test", Array.Empty<Type>()));
+    _ = table.Resolve("I eat one");
+
+    StepDefinition late = new StepDefinition("the save {string} is loaded", StepKind.Given, "Pickle engine", [typeof(string)]);
+    table.Add(late);
+
+    Assert.Contains(late, table.Definitions);
+    Assert.Equal(2, table.Definitions.Count);
+  }
+
+  [Fact]
+  public void Definitions_IsEmptyForANewTable() {
+    Assert.Empty(new StepTable().Definitions);
+  }
 }

@@ -1,12 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Core.Model;
+using RimWorks.Pickle.Core.Reports;
 using RimWorks.Pickle.Core.Run;
+using RimWorks.Pickle.Evidence;
 using RimWorks.Pickle.Run;
 using RimWorks.Pickle.Runtime;
+using RimWorks.Pickle.UI;
 
 namespace RimWorks.Pickle.Web;
 
@@ -23,7 +28,8 @@ public static class RunnerSnapshot {
       IReadOnlyDictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> results,
       RunSession? session,
       bool isRunning,
-      Func<string, int, bool>? isSelected = null) {
+      Func<string, int, bool>? isSelected = null,
+      RunnerWindow? runner = null) {
     StringBuilder json = new StringBuilder();
     json.Append('{');
 
@@ -32,20 +38,25 @@ public static class RunnerSnapshot {
     json.Append("\"feature\":").Append(Json.Quote(session?.CurrentFeatureName ?? string.Empty)).Append(',');
     json.Append("\"scenario\":").Append(Json.Quote(session?.CurrentScenarioName ?? string.Empty)).Append(',');
     json.Append("\"step\":").Append(Json.Quote(session?.CurrentStepDisplay ?? string.Empty)).Append(',');
-    json.Append("\"passed\":").Append(session?.PassedCount ?? 0).Append(',');
-    json.Append("\"failed\":").Append(session?.FailedCount ?? 0).Append(',');
+    json.Append("\"passed\":").Append(results.Values.Count(r => r.Outcome == ScenarioOutcome.Passed)).Append(',');
+    json.Append("\"failed\":").Append(results.Values.Count(r => r.Outcome == ScenarioOutcome.Failed)).Append(',');
     json.Append("\"cancelRequested\":").Append(session?.CancelRequested == true ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"watch\":").Append(PickleRunMode.Current == PickleRunMode.Mode.Watch ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"breakOnFailure\":").Append(BreakOnFailureState.Enabled ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"includeWip\":").Append(IncludeWipState.Enabled ? TrueLiteral : FalseLiteral).Append(',');
+    json.Append("\"showRunPill\":").Append(RunPillState.Enabled ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"controllable\":").Append(isSelected != null ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"strings\":").Append(DashboardStrings.BuildJson()).Append(',');
+    json.Append("\"search\":").Append(Json.Quote(runner?.SearchText ?? string.Empty)).Append(',');
+    json.Append("\"modFilter\":").Append(Json.Quote(runner?.ModFilterSelection)).Append(',');
+    json.Append("\"tagFilters\":").Append(Json.Array((runner?.ActiveTagFilters ?? []).Select(Json.Quote))).Append(',');
+    json.Append("\"lastRunAt\":").Append(Json.Quote(runner?.LastRunAt?.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture))).Append(',');
 
     int scenarioIndex = 0;
     List<string> features = new List<string>();
     foreach ((DiscoveredSuite suite, FeaturePlan plan) in parsedFeatures) {
       string sourcePath = plan.SourcePath ?? string.Empty;
-      features.Add(BuildFeature(suite, plan, sourcePath, scenarioIndex, results, isSelected, session));
+      features.Add(BuildFeature(suite, plan, sourcePath, scenarioIndex, results, isSelected, session, runner));
       scenarioIndex += plan.Scenarios.Count;
     }
 
@@ -61,9 +72,8 @@ public static class RunnerSnapshot {
       int featureStartIndex,
       IReadOnlyDictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> results,
       Func<string, int, bool>? isSelected,
-      RunSession? session) {
-    bool featureRunning = session != null && session.CurrentFeatureName == plan.Name;
-
+      RunSession? session,
+      RunnerWindow? runner) {
     List<string> scenarios = new List<string>();
     for (int i = 0; i < plan.Scenarios.Count; i++) {
       ScenarioPlan scenario = plan.Scenarios[i];
@@ -71,12 +81,13 @@ public static class RunnerSnapshot {
       results.TryGetValue((sourcePath, index), out ScenarioResult? result);
 
       IReadOnlyList<StepResult>? liveSteps =
-          featureRunning && session!.CurrentScenarioName == scenario.Name
+          session?.CurrentSourcePath == sourcePath && ReferenceEquals(session?.CurrentScenario, scenario)
               ? session.CurrentStepResults
               : null;
 
       scenarios.Add(BuildScenario(
-          scenario, index, result, isSelected?.Invoke(sourcePath, index) ?? true, liveSteps));
+          scenario, index, result, isSelected?.Invoke(sourcePath, index) ?? true, liveSteps,
+          runner?.IsScenarioVisible(suite, plan, scenario) ?? true));
     }
 
     StringBuilder json = new StringBuilder();
@@ -95,7 +106,12 @@ public static class RunnerSnapshot {
       int index,
       ScenarioResult? result,
       bool selected,
-      IReadOnlyList<StepResult>? liveSteps) {
+      IReadOnlyList<StepResult>? liveSteps,
+      bool visible) {
+    if (liveSteps != null) {
+      result = null;
+    }
+
     // A finished scenario has real results. The one currently running has results for
     // the steps done so far, and the rest of its plan still reads Pending.
     IEnumerable<string> steps;
@@ -115,17 +131,35 @@ public static class RunnerSnapshot {
     json.Append("\"name\":").Append(Json.Quote(plan.Name)).Append(',');
     json.Append("\"index\":").Append(index).Append(',');
     json.Append("\"selected\":").Append(selected ? TrueLiteral : FalseLiteral).Append(',');
+    json.Append("\"visible\":").Append(visible ? TrueLiteral : FalseLiteral).Append(',');
     json.Append("\"line\":").Append(plan.Line).Append(',');
     json.Append("\"tags\":").Append(Json.Array(plan.Tags.Select(Json.Quote))).Append(',');
     json.Append("\"outcome\":").Append(Json.Quote(outcome)).Append(',');
     json.Append("\"durationMs\":").Append(Json.Number(result?.DurationMs ?? 0)).Append(',');
+    json.Append("\"attempts\":").Append(result?.Attempts ?? 1).Append(',');
+    json.Append("\"tickCost\":").Append(BuildTickCost(result?.TickCost)).Append(',');
+    json.Append("\"failedAttempts\":")
+        .Append(Json.Array((result?.FailedAttempts ?? []).Select(BuildFailedAttempt))).Append(',');
     json.Append("\"failureMessage\":").Append(Json.Quote(result?.FailureMessage)).Append(',');
     json.Append("\"logTail\":").Append(Json.Array((result?.LogTail ?? []).Select(Json.Quote))).Append(',');
-    json.Append("\"attachments\":").Append(Json.Array((result?.Attachments ?? []).Select(BuildAttachment))).Append(',');
+    json.Append("\"attachments\":").Append(Json.Array(EvidenceAttachments.Expand(result?.Attachments ?? []).Select(BuildAttachment))).Append(',');
     json.Append("\"stateDumps\":").Append(Json.Array((result?.StateDumps ?? []).Select(BuildStateDump))).Append(',');
     json.Append("\"steps\":").Append(Json.Array(steps));
     json.Append('}');
     return json.ToString();
+  }
+
+  private static string BuildTickCost((int Ticks, double MeanMs, double MaxMs)? cost) {
+    if (!cost.HasValue) {
+      return "null";
+    }
+
+    (int ticks, double meanMs, double maxMs) = cost.Value;
+    return "{\"ticks\":" + ticks + ",\"meanMs\":" + Json.Number(meanMs) + ",\"maxMs\":" + Json.Number(maxMs) + "}";
+  }
+
+  private static string BuildFailedAttempt((int Attempt, string? Message) attempt) {
+    return "{\"attempt\":" + attempt.Attempt + ",\"message\":" + Json.Quote(attempt.Message) + "}";
   }
 
   private static string BuildStateDump((string Source, string Content) dump) {
@@ -133,7 +167,13 @@ public static class RunnerSnapshot {
   }
 
   private static string BuildAttachment((string Name, string Content) attachment) {
-    return "{\"name\":" + Json.Quote(attachment.Name) + ",\"content\":" + Json.Quote(attachment.Content) + "}";
+    string content = attachment.Content;
+    string root = ScreenshotCapture.ReportsDirectory() + Path.DirectorySeparatorChar;
+    if (content.StartsWith(root, StringComparison.Ordinal)) {
+      content = "/screenshots/" + string.Join("/", content.Substring(root.Length).Split(Path.DirectorySeparatorChar).Select(Uri.EscapeDataString));
+    }
+
+    return "{\"name\":" + Json.Quote(attachment.Name) + ",\"content\":" + Json.Quote(content) + "}";
   }
 
   private static string BuildStep(StepResult step) {

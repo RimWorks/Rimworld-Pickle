@@ -1,6 +1,6 @@
-import { useState } from "react";
-import type { Feature, Selection } from "./types";
-import { formatMs, outcomeDot } from "./types";
+import { useEffect, useRef, useState } from "react";
+import type { Feature, Scenario, Selection } from "./types";
+import { countOutcomes, formatMs, isFlaky, outcomeDot } from "./types";
 import { post } from "./Toolbar";
 
 export function Tree({
@@ -13,7 +13,7 @@ export function Tree({
 }: Readonly<{
   features: Feature[];
   selected: Selection | null;
-  activeScenario: string | null;
+  activeScenario: Selection | null;
   controllable: boolean;
   readOnly?: boolean;
   onSelect: (selection: Selection) => void;
@@ -21,6 +21,19 @@ export function Tree({
   // Collapse is a local view preference, so it lives here rather than in the snapshot
   // the game polls; a mod key and a feature key never collide.
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
+  const selectedMod = features.find((feature) => feature.path === selected?.path)?.mod;
+  useEffect(() => {
+    if (!selected) return;
+    setCollapsed((previous) => {
+      const featureKey = `feature:${selected.path}`;
+      const modKey = `mod:${selectedMod}`;
+      if (!previous.has(featureKey) && !previous.has(modKey)) return previous;
+      const next = new Set(previous);
+      next.delete(featureKey);
+      next.delete(modKey);
+      return next;
+    });
+  }, [selected, selectedMod]);
   const toggle = (key: string) =>
     setCollapsed((prev) => {
       const next = new Set(prev);
@@ -47,7 +60,8 @@ export function Tree({
         const modScenarios = modFeatures.reduce((sum, f) => sum + f.scenarios.length, 0);
         return (
           <section key={mod}>
-            <h2>
+            <h2 className="flex items-center gap-1">
+              {!readOnly && <GroupCheckbox scenarios={modFeatures.flatMap((feature) => feature.scenarios)} disabled={!controllable} label={`Select ${mod}`} path={`/select?mod=${encodeURIComponent(mod)}`} />}
               <button
                 type="button"
                 className="flex w-full items-center gap-1 px-2 pb-1 text-left text-xs uppercase tracking-widest text-base-content/40 hover:text-base-content/70"
@@ -63,9 +77,13 @@ export function Tree({
               modFeatures.map((feature) => {
                 const featureKey = `feature:${feature.path}`;
                 const featureOpen = !collapsed.has(featureKey);
+                const counts = feature.counts ?? countOutcomes(feature.scenarios);
+                const ran = counts.total - counts.notRun;
+                const summary = counts.failed > 0 ? `${counts.failed}/${counts.total} failed` : ran > 0 ? `${ran}/${counts.total}` : "not run";
                 return (
                   <div key={feature.path} className="mb-2">
-                    <h3>
+                    <h3 className="flex items-center gap-1">
+                      {!readOnly && <GroupCheckbox scenarios={feature.scenarios} disabled={!controllable} label={`Select ${feature.name}`} path={`/select?path=${encodeURIComponent(feature.path)}`} />}
                       <button
                         type="button"
                         className="flex w-full items-center gap-1 rounded-btn px-2 py-1 text-left text-sm font-medium hover:bg-base-200"
@@ -73,12 +91,9 @@ export function Tree({
                         onClick={() => toggle(featureKey)}
                       >
                         <Chevron open={featureOpen} />
+                        <span aria-hidden="true" className={`status shrink-0 ${counts.failed > 0 ? "status-error" : ran > 0 ? "status-success" : "status-neutral"}`} />
                         <span className="truncate grow">{feature.name}</span>
-                        {!featureOpen && (
-                          <span className="text-xs font-mono text-base-content/40">
-                            {feature.scenarios.length}
-                          </span>
-                        )}
+                        <span className={`text-xs font-mono shrink-0 ${counts.failed > 0 ? "text-error" : "text-base-content/60"}`}>{summary}</span>
                       </button>
                     </h3>
                     {featureOpen && (
@@ -86,7 +101,7 @@ export function Tree({
                         {feature.scenarios.map((scenario) => {
                           const isSelected =
                             selected?.path === feature.path && selected?.index === scenario.index;
-                          const isActive = activeScenario === scenario.name;
+                          const isActive = activeScenario?.path === feature.path && activeScenario?.index === scenario.index;
                           return (
                             <li
                               key={scenario.index}
@@ -99,6 +114,7 @@ export function Tree({
                               <input
                                 type="checkbox"
                                 className="checkbox checkbox-xs"
+                                aria-label={`Select ${scenario.name}`}
                                 checked={scenario.selected}
                                 disabled={!controllable}
                                 onChange={(e) =>
@@ -115,10 +131,13 @@ export function Tree({
                               >
                                 <span
                                   className={`status ${outcomeDot[scenario.outcome]} ${
-                                    isActive ? "animate-bounce" : ""
+                                    isActive ? "ring-2 ring-info" : ""
                                   }`}
                                 />
                                 <span className="truncate grow">{scenario.name}</span>
+                                {isFlaky(scenario) && (
+                                  <span className="badge badge-xs badge-warning shrink-0">flaky</span>
+                                )}
                                 <span className="text-xs text-base-content/40 font-mono">
                                   {formatMs(scenario.durationMs)}
                                 </span>
@@ -148,4 +167,14 @@ function Chevron({ open }: Readonly<{ open: boolean }>) {
       <path d="M3 5.5h10L8 11.5z" />
     </svg>
   );
+}
+
+function GroupCheckbox({ scenarios, disabled, label, path }: Readonly<{ scenarios: Scenario[]; disabled: boolean; label: string; path: string }>) {
+  const input = useRef<HTMLInputElement>(null);
+  const any = scenarios.some((scenario) => scenario.selected);
+  const all = scenarios.every((scenario) => scenario.selected);
+  useEffect(() => {
+    if (input.current) input.current.indeterminate = any && !all;
+  }, [any, all]);
+  return <input ref={input} type="checkbox" className="checkbox checkbox-xs shrink-0" aria-label={label} checked={all} disabled={disabled} onChange={() => post(`${path}&on=${!any}`)} />;
 }

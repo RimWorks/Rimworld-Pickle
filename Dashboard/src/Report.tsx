@@ -5,27 +5,34 @@ import { readHash, toHash } from "./hash";
 import { Tree } from "./Tree";
 import { Detail } from "./Detail";
 import { Logo } from "./Logo";
+import { SetMatrix } from "./SetMatrix";
 
-type ReportSnapshot = Snapshot & { exitReason?: string };
+export type ReportSet = Snapshot & { exitReason?: string; setName?: string | null };
 
-function loadReport(): ReportSnapshot | null {
+// A merged report carries {"sets": [...]}. A single run carries the payload itself, so it
+// becomes a one-set report and every existing report renders exactly as it did.
+function loadSets(): ReportSet[] | null {
   const node = document.getElementById("pickle-report");
   if (!node?.textContent) return null;
   try {
-    return JSON.parse(node.textContent) as ReportSnapshot;
+    const raw = JSON.parse(node.textContent) as ReportSet & { sets?: ReportSet[] };
+    const sets = raw.sets ?? [raw];
+    return sets.length > 0 ? sets : null;
   } catch {
     return null;
   }
 }
 
 export function Report() {
-  const [report] = useState(loadReport);
+  const [sets] = useState(loadSets);
+  const [setIndex, setSetIndex] = useState(0);
+  const [comparing, setComparing] = useState(() => (loadSets()?.length ?? 0) > 1);
   const [selected, setSelected] = useState<Selection | null>(() => {
     // A hash in the address bar is an explicit request, so it wins over the first failure.
     const fromHash = readHash();
     if (fromHash) return fromHash;
 
-    const data = loadReport();
+    const data = loadSets()?.[0];
     return data ? (firstFailure(data.features) ?? firstScenario(data.features)) : null;
   });
   const [theme, setTheme] = useState<string>(
@@ -57,13 +64,15 @@ export function Report() {
     writeTheme(next);
   };
 
-  if (!report) {
+  if (!sets) {
     return (
       <div className="min-h-screen grid place-items-center bg-base-200 text-base-content">
         <p className="text-sm opacity-60">This report has no data embedded in it.</p>
       </div>
     );
   }
+
+  const report = sets[Math.min(setIndex, sets.length - 1)];
 
   const scenarios = report.features.flatMap((f) => f.scenarios);
   const passed = scenarios.filter((s) => s.outcome === "Passed").length;
@@ -89,6 +98,28 @@ export function Report() {
 
         <div className="grow" />
 
+        {sets.length > 1 && (
+          <>
+            <button
+              type="button"
+              className={`btn btn-sm ${comparing ? "btn-active" : ""}`}
+              onClick={() => setComparing(!comparing)}
+            >
+              Compare sets
+            </button>
+            <select
+              className="select select-sm"
+              aria-label="Mod set"
+              value={setIndex}
+              onChange={(event) => { setSetIndex(Number(event.target.value)); setComparing(false); }}
+            >
+              {sets.map((set, index) => (
+                <option key={set.setName ?? index} value={index}>{set.setName ?? `set ${index + 1}`}</option>
+              ))}
+            </select>
+          </>
+        )}
+
         <span className={`badge badge-soft ${passed > 0 ? "badge-success" : ""}`}>{passed} passed</span>
         <span className={`badge badge-soft ${failed > 0 ? "badge-error" : ""}`}>{failed} failed</span>
         {skipped > 0 && <span className="badge badge-soft">{skipped} skipped</span>}
@@ -98,6 +129,14 @@ export function Report() {
         </button>
       </header>
 
+      {comparing ? (
+        <main className="flex-1 overflow-auto p-6">
+          <SetMatrix
+            sets={sets}
+            onSelect={(column, selection) => { setSetIndex(column); setSelected(selection); setComparing(false); }}
+          />
+        </main>
+      ) : (
       <div className="flex-1 flex min-h-0">
         <aside className="w-96 shrink-0 overflow-y-auto border-r border-base-content/10 bg-base-100 p-3">
           <Tree
@@ -110,9 +149,10 @@ export function Report() {
           />
         </aside>
         <main className="flex-1 overflow-y-auto p-6">
-          <Detail scenario={findScenario(report.features, selected)} live={null} />
+          <Detail key={selected ? toHash(selected) : "empty"} scenario={findScenario(report.features, selected)} live={null} feature={report.features.find((feature) => feature.path === selected?.path)} />
         </main>
       </div>
+      )}
     </div>
   );
 }

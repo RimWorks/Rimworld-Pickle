@@ -32,7 +32,7 @@ public static class RunnerStatusColors {
   public static Color ForStep(StepStatus status) {
     return status switch {
       StepStatus.Passed => Passed,
-      StepStatus.Failed => Failed,
+      StepStatus.Failed or StepStatus.Undefined or StepStatus.Ambiguous => Failed,
       StepStatus.Skipped => Skipped,
       _ => Pending,
     };

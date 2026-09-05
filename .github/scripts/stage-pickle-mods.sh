@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 # Stages the real Harmony and Concord mods plus a ModsConfig for one Pickle backend combo.
-#   stage-pickle-mods.sh <harmony|concord|both> <mods-dir> <config-dir>
+#   stage-pickle-mods.sh <harmony|concord|both> <mods-dir> <config-dir> [extra-mods]
 # Both come from public sources, so nothing here needs Steam credentials.
+#
+# extra-mods is a comma separated list of owner/repo:AssetPrefix:packageId, staged the same
+# way and loaded after the DLC but before Pickle, so a suite sees them. GitHub releases
+# only: a Workshop item needs Steam credentials this script deliberately does not take.
 set -euo pipefail
 
 BACKENDS="${1:?usage: stage-pickle-mods.sh <harmony|concord|both> <mods-dir> <config-dir>}"
 MODS_DIR="${2:?mods dir}"
 CONFIG_DIR="${3:?config dir}"
+EXTRA_MODS="${4:-}"
 
 HARMONY_REPO="${HARMONY_REPO:-pardeike/HarmonyRimWorld}"
 CONCORD_REPO="${CONCORD_REPO:-ConcordLib/RimWorld}"
@@ -108,7 +113,26 @@ ludeon.rimworld.ideology
 ludeon.rimworld.biotech
 ludeon.rimworld.anomaly
 ludeon.rimworld.odyssey
-rimworks.rimlogging
+rimworks.rimlogging"
+
+# After the DLC and before Pickle: a content mod has to be loaded for the suite to see it,
+# and Pickle goes last so it scans everything.
+if [[ -n "$EXTRA_MODS" ]]; then
+  IFS=',' read -ra entries <<< "$EXTRA_MODS"
+  for entry in "${entries[@]}"; do
+    IFS=':' read -r repo prefix package_id <<< "$entry"
+    [[ -n "$repo" && -n "$prefix" && -n "$package_id" ]] || {
+      echo "error: extra mod '$entry' is not owner/repo:AssetPrefix:packageId" >&2
+      exit 1
+    }
+
+    stage_release_zip "$repo" "$prefix" "$MODS_DIR/${repo##*/}"
+    ACTIVE="${ACTIVE}
+${package_id}"
+  done
+fi
+
+ACTIVE="${ACTIVE}
 rimworks.pickle"
 
 cat > "$CONFIG_DIR/ModsConfig.xml" <<EOF

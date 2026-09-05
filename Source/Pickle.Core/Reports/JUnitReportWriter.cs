@@ -28,6 +28,7 @@ public static class JUnitReportWriter {
   private static XElement BuildTestSuite(string featureName, List<ScenarioResult> scenarios) {
     int failures = scenarios.Count(s => s.Outcome == ScenarioOutcome.Failed);
     int skipped = scenarios.Count(s => s.Outcome == ScenarioOutcome.Skipped);
+    int flaky = scenarios.Count(RunOutcomes.IsFlaky);
     double totalSeconds = scenarios.Sum(s => s.DurationMs) / 1000.0;
 
     XElement suite = new XElement(
@@ -36,6 +37,7 @@ public static class JUnitReportWriter {
         new XAttribute("tests", scenarios.Count),
         new XAttribute("failures", failures),
         new XAttribute("skipped", skipped),
+        new XAttribute("flakes", flaky),
         new XAttribute("time", Seconds(totalSeconds)));
 
     foreach (ScenarioResult scenario in scenarios) {
@@ -57,6 +59,16 @@ public static class JUnitReportWriter {
       testCase.Add(new XElement("failure", new XAttribute("message", message), message));
     } else if (scenario.Outcome == ScenarioOutcome.Skipped) {
       testCase.Add(new XElement("skipped"));
+    }
+
+    // A passing testcase carrying flakyFailure is the shape Jenkins and Maven surefire
+    // already read, so a flake shows as a flake rather than as a clean pass.
+    foreach ((int attempt, string? attemptMessage) in scenario.FailedAttempts) {
+      string text = attemptMessage ?? "Scenario failed";
+      testCase.Add(new XElement(
+          "flakyFailure",
+          new XAttribute("message", $"attempt {attempt}: {text}"),
+          text));
     }
 
     string? evidence = BuildEvidence(scenario);

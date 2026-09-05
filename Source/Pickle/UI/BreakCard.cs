@@ -37,7 +37,7 @@ public class BreakCard : Window {
     absorbInputAroundWindow = false;
   }
 
-  public BreakCardDecision? Decision { get; private set; }
+  public BreakCardDecision? Decision { get; internal set; }
 
   /// <inheritdoc/>
   public override Vector2 InitialSize => new Vector2(

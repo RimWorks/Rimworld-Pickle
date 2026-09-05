@@ -41,6 +41,39 @@ Every command endpoint is a POST. The game serves them through Mono, which rejec
 that carries no `Content-Length`. Send an empty body: `curl -X POST -d '' <url>`. A bare
 `curl -X POST` gets a `411 Length Required` and never reaches Pickle.
 
+## The step console
+
+The console runs one step at a time against the running game. Open it from the
+**Step console** button in the dashboard toolbar, type a step, and read what comes back.
+
+Use it to learn a real value instead of guessing one. A failing assert prints the actual
+value and any state your suite dumps, so one line answers what a whole scenario used to.
+
+```
+Then "Soldier" is drafted
+```
+
+| Result | Means |
+| --- | --- |
+| `Passed` | The step ran and every assertion held |
+| `Failed` | The step ran and something did not hold. The message carries the actual value |
+| `Undefined` | No step definition matches. The console prints the C# to write |
+| `Ambiguous` | Two definitions match the same text |
+
+The context is shared between console steps, which is the one place the console differs
+from a run. A `Given` you run stays in effect, and state a step writes with `ctx.Set` is
+readable by the next one. Select **Reset context** to start clean.
+
+Some limits:
+
+- The console is off while a run is going. It answers `409` instead of queueing.
+- An unattended run turns it off for the whole process.
+- Pickle scans the step table when you first open the console. A steps DLL you rebuild
+  after that needs a game restart, because .NET keeps the assembly it already loaded.
+
+The console is a dashboard feature only. It does not appear in `report.html`, because a
+report has no game behind it.
+
 ## Unattended
 
 Start RimWorld with `-pickle-run`. Pickle runs every scenario, writes reports, and

@@ -17,6 +17,18 @@ export default defineConfig({
     proxy: {
       "/state": "http://127.0.0.1:27750",
       "/abort": "http://127.0.0.1:27750",
+      "/continue": "http://127.0.0.1:27750",
+      "/run": "http://127.0.0.1:27750",
+      "/select": "http://127.0.0.1:27750",
+      "/filter": "http://127.0.0.1:27750",
+      "/fixtures": "http://127.0.0.1:27750",
+      "/fixture": "http://127.0.0.1:27750",
+      "/mode": "http://127.0.0.1:27750",
+      "/wip": "http://127.0.0.1:27750",
+      "/break": "http://127.0.0.1:27750",
+      "/report": "http://127.0.0.1:27750",
+      "/reports": "http://127.0.0.1:27750",
+      "/screenshots": "http://127.0.0.1:27750",
     },
   },
 });

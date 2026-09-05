@@ -9,8 +9,10 @@
   <Pickle_BreakOnFailure>Break on failure</Pickle_BreakOnFailure>
   <Pickle_SaveFixture>Save fixture…</Pickle_SaveFixture>
   <Pickle_Fixtures>Fixtures…</Pickle_Fixtures>
+  <Pickle_StepConsole>Step console</Pickle_StepConsole>
   <Pickle_RunnerMenuButton>Pickle Runner</Pickle_RunnerMenuButton>
   <Pickle_IncludeWip>Include @wip</Pickle_IncludeWip>
+  <Pickle_ShowRunPill>Show run pill</Pickle_ShowRunPill>
   <Pickle_ReportReady>The run finished and the report is ready.</Pickle_ReportReady>
   <Pickle_OpenReport>Open report</Pickle_OpenReport>
   <Pickle_Dismiss>Dismiss</Pickle_Dismiss>
@@ -78,6 +80,8 @@
   <Pickle_Attachments>Attachments</Pickle_Attachments>
   <Pickle_StateAtFailure>State at failure</Pickle_StateAtFailure>
   <Pickle_LogTail>Log tail</Pickle_LogTail>
+  <Pickle_EarlierAttempts>Passed on attempt {0}. Earlier attempts:</Pickle_EarlierAttempts>
+  <Pickle_Flaky>flaky</Pickle_Flaky>
   <Pickle_Filmstrip>filmstrip</Pickle_Filmstrip>
   <Pickle_Film>film</Pickle_Film>
   <Pickle_CloseImage>Close image</Pickle_CloseImage>

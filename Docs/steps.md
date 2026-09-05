@@ -36,7 +36,7 @@ a value, and `stat` to prove the game uses it.
 A lookup that misses searches every database for close matches, so a typo comes back as
 `closest matches: Wall (ThingDef), Walls (DrawStyleCategoryDef)` rather than a bare miss.
 
-RimWorld records that a def was patched but never by whom, and it drops every patch object
+RimWorld records that a patch touched a def but never which mod did it, and it drops every patch object
 once loading ends. Pickle reads the patch tree just before the patches run, matches each
 xpath against the document, and keeps only the operations that changed something. The three
 `was patched` steps accept a def name held by two databases, because a patch targets a name
@@ -98,9 +98,9 @@ with `ctx.Set<T>()` still points at the old game and needs setting again.
 | `{string} can do {string}` | Checks a work type is enabled |
 | `{string} cannot do {string}` | Checks a work type is disabled |
 
-A generated colonist is random, so a scenario that needs one to cook, craft or shoot
-should say so rather than hope. Backstories and traits both disable work, which is why a
-test that only set a skill level could still meet a pawn that refuses the job.
+A generated colonist is random, so a scenario that needs one to cook, craft, or shoot
+should say so rather than hope. Backstories and traits both disable work. A test that only
+set a skill level can still meet a pawn that refuses the job.
 
 Changing a backstory or trait drops the pawn's disabled-work cache, so the new
 capabilities apply straight away.
@@ -124,6 +124,36 @@ capabilities apply straight away.
 The three pawn checks wait for the state to settle before they report. RimWorld assigns
 much of a pawn's state on the next think cycle, so a check that fired at once would race
 the game.
+
+## Performance
+
+| Step | Does |
+| --- | --- |
+| `the last {int} ticks average under {float} ms` | Fails when the mean tick cost is over the budget |
+| `no tick in the last {int} took more than {float} ms` | Fails on a single slow tick, which is the hitch a player notices |
+
+Both read the most recent ticks Pickle drove itself, so they only measure in fast mode. A
+watch-mode scenario leaves the tick loop to the game and the step says so.
+
+Fewer samples than you asked for fails the step. A budget over 2000 ticks that only saw
+12 of them has measured nothing, and a pass there would be worse than a failure.
+
+The first ticks after a fixture load are expensive, because caches are cold and pathing
+grids rebuild. Spend a warmup wait first, then measure:
+
+```gherkin
+Given the save "test-colony" is loaded
+When I wait 600 ticks
+When I wait 2000 ticks
+Then the last 2000 ticks average under 4 ms
+```
+
+The window covers the most recent 2000 ticks, so the warmup falls outside it.
+
+An absolute budget depends on the machine. Pick one from a real failure rather than a
+guess. Assert a deliberately tiny budget, read the actual mean out of the message, then
+set the real number. Every run writes its numbers to `summary.json`, so a pipeline can
+watch the trend instead.
 
 ## Waiting
 
@@ -345,7 +375,7 @@ tolerance breaks on `MarketValue` in the thousands, and a relative one breaks ne
 
 A failure prints the stat breakdown and attaches the full version to the report, so you
 see which part moved the number. When the stat does not apply to the thing you asked
-about, the failure says so, because the value you are reading is the def default.
+about, the failure says so. The value you are reading is then the def default.
 
 ## Weapons and apparel
 
@@ -369,7 +399,7 @@ Naming no stuff for something built from stuff picks the default, the same as
 `I spawn a {string} at`. Stuff changes apparel stats, so name it when the numbers matter.
 
 A pawn missing the body part fails the step and says so. A clash on the same apparel layer
-is not a failure: the item already there is dropped, which is what the game does.
+is not a failure: the game drops the item already there, the same as it does in play.
 
 `apparel covers` reads everything the pawn wears, not only what you dressed it in. A
 generated colonist arrives in a shirt and pants, so `Legs` is covered before you start.

@@ -7,6 +7,59 @@ namespace RimWorks.Pickle.Tests;
 internal static class ReportWriterTestData {
   public const string JUnitFailureMessage = "a < b && c > d \"quoted\"";
 
+  /// <summary>One passed-on-retry scenario and one that failed every attempt.</summary>
+  public static List<ScenarioResult> BuildFlakyRun() {
+    return
+    [
+        new ScenarioResult(
+                "flaky checkout",
+                "Checkout",
+                new TagSet(["@retry:2"]),
+                ScenarioOutcome.Passed,
+                [new StepResult("Given", "I have items in my cart", StepStatus.Passed, 90)],
+                180) {
+              Attempts = 3,
+              FailedAttempts = [(1, "cart was empty"), (2, null)],
+            },
+
+            new ScenarioResult(
+                "stubbornly broken",
+                "Checkout",
+                new TagSet(["@retry:1"]),
+                ScenarioOutcome.Failed,
+                [new StepResult("Given", "I have items in my cart", StepStatus.Failed, 40, "still empty")],
+                40) {
+              FailureMessage = "still empty",
+              Attempts = 2,
+              FailedAttempts = [(1, "still empty")],
+            },
+        ];
+  }
+
+  /// <summary>One scenario that drove ticks and one that never loaded a world.</summary>
+  public static List<ScenarioResult> BuildTickCostRun() {
+    return
+    [
+        new ScenarioResult(
+                "waits out a thousand ticks",
+                "Sim",
+                new TagSet([]),
+                ScenarioOutcome.Passed,
+                [new StepResult("When", "I wait 1000 ticks", StepStatus.Passed, 900)],
+                900) {
+              TickCost = (1000, 3.25, 41.5),
+            },
+
+            new ScenarioResult(
+                "reads a def at the main menu",
+                "Sim",
+                new TagSet([]),
+                ScenarioOutcome.Passed,
+                [new StepResult("Then", "def \"Human\" exists", StepStatus.Passed, 4)],
+                4),
+        ];
+  }
+
   public static List<ScenarioResult> BuildTwoFeatureRun() {
     return
     [

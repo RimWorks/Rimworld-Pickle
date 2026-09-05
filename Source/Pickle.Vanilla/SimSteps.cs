@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using RimWorks.Pickle.Core.Run;
 using RimWorks.Pickle.Runtime;
 using RimWorld;
 using Verse;
@@ -30,7 +32,11 @@ public class SimSteps {
     int targetTick = Find.TickManager.TicksGame + ticks;
     while (Find.TickManager.TicksGame < targetTick) {
       for (int i = 0; i < 60 && Find.TickManager.TicksGame < targetTick; i++) {
+        // GetTimestamp rather than a Stopwatch: ten thousand allocations inside the tick
+        // loop would show up in the thing being measured.
+        long start = Stopwatch.GetTimestamp();
         Find.TickManager.DoSingleTick();
+        TickCostSampler.Record(Stopwatch.GetTimestamp() - start);
       }
 
       await ctx.WaitFrames(1);

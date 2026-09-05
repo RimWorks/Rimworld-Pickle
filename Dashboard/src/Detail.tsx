@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { formatMs, statusTone, translator } from "./types";
-import type { Attachment, Scenario, Snapshot } from "./types";
+import { formatMs, isFlaky, statusTone, translator } from "./types";
+import type { Attachment, Feature, Scenario, Snapshot } from "./types";
 
-export function Detail({ scenario, live }: Readonly<{ scenario: Scenario | null; live: Snapshot | null }>) {
+export function Detail({ scenario, live, feature, onTag }: Readonly<{ scenario: Scenario | null; live: Snapshot | null; feature?: Feature; onTag?: (tag: string) => void }>) {
   const [zoomed, setZoomed] = useState<string | null>(null);
   const t = translator(live);
 
@@ -29,15 +29,40 @@ export function Detail({ scenario, live }: Readonly<{ scenario: Scenario | null;
           {formatMs(scenario.durationMs)}
         </span>
         {scenario.tags.map((tag) => (
-          <span key={tag} className="badge badge-sm badge-soft badge-warning">
-            {tag}
-          </span>
+          onTag ? <button key={tag} type="button" className="btn btn-xs btn-ghost" onClick={() => onTag(tag)}>{tag}</button>
+            : <span key={tag} className="badge badge-sm badge-soft badge-warning">{tag}</span>
         ))}
       </div>
+
+      {feature && <p className="mt-2 text-sm break-all">{feature.mod} / {feature.path.split(/[\\/]/).pop()}:{scenario.line}</p>}
+      {scenario.steps.some((step) => /the save "([^"]+)" is loaded/.test(step.text)) && <p className="mt-1 text-sm">Fixture: {scenario.steps.map((step) => /the save "([^"]+)" is loaded/.exec(step.text)?.[1]).find(Boolean)}</p>}
 
       {scenario.failureMessage && (
         <div role="alert" className="alert alert-error alert-soft mt-4 items-start">
           <pre className="whitespace-pre-wrap break-words text-xs">{scenario.failureMessage}</pre>
+        </div>
+      )}
+
+      {scenario.tickCost && (
+        <p className="mt-3 text-xs text-base-content/50 font-mono">
+          {scenario.tickCost.ticks} ticks · mean {scenario.tickCost.meanMs}ms · max {scenario.tickCost.maxMs}ms
+        </p>
+      )}
+
+      {(scenario.failedAttempts ?? []).length > 0 && (
+        <div role="status" className="alert alert-warning alert-soft mt-4 items-start">
+          <div>
+            <p className="text-sm font-semibold">
+              {isFlaky(scenario)
+                ? `Flaky: passed on attempt ${scenario.attempts}`
+                : `Failed every attempt (${scenario.attempts})`}
+            </p>
+            {(scenario.failedAttempts ?? []).map((earlier) => (
+              <pre key={earlier.attempt} className="mt-2 whitespace-pre-wrap break-words text-xs">
+                {earlier.attempt}: {earlier.message ?? "Scenario failed"}
+              </pre>
+            ))}
+          </div>
         </div>
       )}
 
@@ -50,6 +75,7 @@ export function Detail({ scenario, live }: Readonly<{ scenario: Scenario | null;
               </span>
               <span className="grow font-mono text-sm break-words">{step.text}</span>
               <span className="text-xs text-base-content/30 font-mono shrink-0">
+                {step.status} {" "}
                 {formatMs(step.durationMs)}
               </span>
             </div>
@@ -145,8 +171,7 @@ function otherAttachments(attachments: Attachment[]): Attachment[] {
   return attachments.filter((a) => !a.name.startsWith("film-"));
 }
 
-// Frames are one per second, so a slider reads the run back far better than a column
-// of near-identical stills.
+// capture rate varies with rendering speed, so the slider counts frames.
 function Filmstrip({ frames, onOpen }: Readonly<{ frames: Attachment[]; onOpen: (src: string) => void }>) {
   const [index, setIndex] = useState(0);
   const frame = frames[Math.min(index, frames.length - 1)];
@@ -158,7 +183,6 @@ function Filmstrip({ frames, onOpen }: Readonly<{ frames: Attachment[]; onOpen: 
         <span className="font-mono">
           {index + 1}/{frames.length}
         </span>
-        <span className="text-base-content/30">after step {index}</span>
       </figcaption>
       <Zoomable src={frame.content} alt={frame.name} onOpen={onOpen} />
       <input

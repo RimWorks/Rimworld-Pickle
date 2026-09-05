@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using RimWorks.Pickle.Evidence;
 using RimWorks.Pickle.Run;
 using UnityEngine;
@@ -23,7 +24,9 @@ public static class PickleHttpServer {
 
   private const int DefaultPort = 27750;
 
-  private static readonly string[] MutatingPaths = ["/abort", "/run", "/select", "/mode", "/wip", "/break"];
+  private static readonly string[] ReportFiles = ["junit.xml", "messages.ndjson", "summary.json", "summary.md"];
+
+  private static readonly string[] MutatingPaths = ["/abort", "/continue", "/run", "/select", "/filter", "/mode", "/wip", "/break", "/pill", "/fixture", "/step", "/step/reset"];
 
   private static HttpListener? listener;
   private static volatile bool running;
@@ -111,22 +114,36 @@ public static class PickleHttpServer {
         return;
       }
 
+      ThreadPool.QueueUserWorkItem(_ => Respond(context));
+    }
+  }
+
+  private static void Respond(HttpListenerContext context) {
+    try {
+      Route(context);
+    } catch (Exception ex) {
+      Log.Error(ex, "pickle: dashboard request failed");
+      context.Response.StatusCode = 400;
+      Write(context, JsonContentType, "{\"error\":" + Json.Quote(ex.Message) + "}");
+    } finally {
       try {
-        Route(context);
-      } catch (Exception ex) {
-        Log.Error(ex, "pickle: dashboard request failed");
-      } finally {
-        try {
-          context.Response.Close();
-        } catch {
-          // the client can disconnect mid-response, which makes Close throw
-        }
+        context.Response.Close();
+      } catch (Exception) {
+        // the client may disconnect during a fixture load.
       }
     }
   }
 
   private static void Route(HttpListenerContext context) {
     string path = context.Request.Url.AbsolutePath;
+
+    string? origin = context.Request.Headers["Origin"];
+    if (Array.IndexOf(MutatingPaths, path) >= 0 && origin != null
+        && !string.Equals(origin, context.Request.Url.GetLeftPart(UriPartial.Authority), StringComparison.OrdinalIgnoreCase)) {
+      context.Response.StatusCode = 403;
+      Write(context, "text/plain", "use the dashboard origin");
+      return;
+    }
 
     // The listener binds 0.0.0.0, so a page in any browser on the network could abort a run
     // through an <img> tag if these answered a GET. A wrong-method script also fails loudly
@@ -144,14 +161,46 @@ public static class PickleHttpServer {
       return;
     }
 
+    if (path == "/fixtures" || path == "/fixture") {
+      try {
+        string catalog = FixtureCommands.Request(
+            path == "/fixture" ? context.Request.QueryString["action"] ?? string.Empty : null,
+            context.Request.QueryString["suite"], context.Request.QueryString["name"],
+            context.Request.QueryString["newName"], context.Request.QueryString["overwrite"] == "true").GetAwaiter().GetResult();
+        Write(context, JsonContentType, catalog);
+      } catch (Exception ex) {
+        context.Response.StatusCode = 400;
+        Write(context, JsonContentType, "{\"error\":" + Json.Quote(ex.Message) + "}");
+      }
+
+      return;
+    }
+
+    if (path == "/steps" || path == "/step" || path == "/step/reset") {
+      ServeConsole(context, path);
+      return;
+    }
+
     if (path == "/abort") {
-      RunnerCommands.Abort();
+      RunnerCommands.Abort().GetAwaiter().GetResult();
       Write(context, JsonContentType, OkBody);
       return;
     }
 
     if (path == "/run") {
-      RunnerCommands.Run(context.Request.QueryString["scope"] ?? "all");
+      RunnerCommands.Run(context.Request.QueryString["scope"] ?? "all").GetAwaiter().GetResult();
+      Write(context, JsonContentType, OkBody);
+      return;
+    }
+
+    if (path == "/continue") {
+      RunnerCommands.Continue(context.Request.QueryString["results"] == "true").GetAwaiter().GetResult();
+      Write(context, JsonContentType, OkBody);
+      return;
+    }
+
+    if (path == "/filter") {
+      RunnerCommands.Filter(context.Request.QueryString["search"], context.Request.QueryString["mod"], context.Request.QueryString["tag"]).GetAwaiter().GetResult();
       Write(context, JsonContentType, OkBody);
       return;
     }
@@ -161,9 +210,20 @@ public static class PickleHttpServer {
       bool on = context.Request.QueryString["on"] != "false";
 
       if (scope != null) {
-        RunnerCommands.SelectAll(scope == "all");
+        if (scope != "all" && scope != "none") {
+          throw new ArgumentException("Unknown selection scope.");
+        }
+
+        RunnerCommands.SelectAll(scope == "all").GetAwaiter().GetResult();
       } else if (int.TryParse(context.Request.QueryString["index"], out int index)) {
-        RunnerCommands.Select(context.Request.QueryString["path"] ?? string.Empty, index, on);
+        RunnerCommands.Select(context.Request.QueryString["path"] ?? string.Empty, index, on).GetAwaiter().GetResult();
+      } else {
+        if (context.Request.QueryString["index"] != null
+            || (context.Request.QueryString["path"] == null && context.Request.QueryString["mod"] == null)) {
+          throw new ArgumentException("Select a discovered scenario, feature, or mod.");
+        }
+
+        RunnerCommands.SelectAll(on, context.Request.QueryString["path"], context.Request.QueryString["mod"]).GetAwaiter().GetResult();
       }
 
       Write(context, JsonContentType, OkBody);
@@ -171,19 +231,25 @@ public static class PickleHttpServer {
     }
 
     if (path == "/mode") {
-      RunnerCommands.SetMode(context.Request.QueryString["value"] ?? "watch");
+      RunnerCommands.SetMode(context.Request.QueryString["value"] ?? "watch").GetAwaiter().GetResult();
       Write(context, JsonContentType, OkBody);
       return;
     }
 
     if (path == "/wip") {
-      RunnerCommands.SetIncludeWip(context.Request.QueryString["on"] != "false");
+      RunnerCommands.SetIncludeWip(context.Request.QueryString["on"] != "false").GetAwaiter().GetResult();
+      Write(context, JsonContentType, OkBody);
+      return;
+    }
+
+    if (path == "/pill") {
+      RunnerCommands.SetShowRunPill(context.Request.QueryString["on"] != "false").GetAwaiter().GetResult();
       Write(context, JsonContentType, OkBody);
       return;
     }
 
     if (path == "/break") {
-      RunnerCommands.SetBreakOnFailure(context.Request.QueryString["on"] != "false");
+      RunnerCommands.SetBreakOnFailure(context.Request.QueryString["on"] != "false").GetAwaiter().GetResult();
       Write(context, JsonContentType, OkBody);
       return;
     }
@@ -198,6 +264,20 @@ public static class PickleHttpServer {
       return;
     }
 
+    if (path.StartsWith("/reports/", StringComparison.Ordinal) && Array.IndexOf(ReportFiles, path.Substring(9)) >= 0) {
+      string name = path.Substring(9);
+      string file = Path.Combine(ScreenshotCapture.ReportRoot(), name);
+      if (!File.Exists(file)) {
+        context.Response.StatusCode = 404;
+        Write(context, "text/plain", "no report yet, run something first");
+      } else {
+        context.Response.AddHeader("Content-Disposition", "attachment; filename=\"" + name + "\"");
+        Write(context, ContentTypeFor(file), File.ReadAllBytes(file));
+      }
+
+      return;
+    }
+
     if (path.StartsWith(EvidencePrefix, StringComparison.Ordinal)) {
       ServeEvidence(context, path.Substring(EvidencePrefix.Length));
       return;
@@ -205,6 +285,26 @@ public static class PickleHttpServer {
 
     context.Response.StatusCode = 404;
     Write(context, "text/plain", "not found");
+  }
+
+  // A console step runs arbitrary registered steps on request, so it takes the same
+  // origin and POST guards the run routes take. A busy game answers 409, not a queue.
+  private static void ServeConsole(HttpListenerContext context, string path) {
+    try {
+      Task<string> work = path switch {
+        "/steps" => ConsoleCommands.Catalog(),
+        "/step" => ConsoleCommands.Run(context.Request.QueryString["text"]),
+        _ => ConsoleCommands.Reset(),
+      };
+
+      Write(context, JsonContentType, work.GetAwaiter().GetResult());
+    } catch (InvalidOperationException ex) {
+      context.Response.StatusCode = 409;
+      Write(context, JsonContentType, "{\"error\":" + Json.Quote(ex.Message) + "}");
+    } catch (Exception ex) {
+      context.Response.StatusCode = 400;
+      Write(context, JsonContentType, "{\"error\":" + Json.Quote(ex.Message) + "}");
+    }
   }
 
   // The last run's report, whoever wrote it. The dashboard opens this in a tab when a run
