@@ -8,6 +8,11 @@ public static class RunnerFilterBar {
   private const float RowHeight = 40f;
   private const float Padding = 8f;
 
+  // The chip's right end belongs to the remove cross. Both the width and the label rect
+  // subtract it, so the text can never be centred underneath it.
+  private const float ChipTextPadding = 8f;
+  private const float ChipCloseWidth = 22f;
+
   public static float Height(float width, RunnerWindow window) {
     float fieldsWidth = FieldsWidth(width);
     float x = 70f;
@@ -72,11 +77,17 @@ public static class RunnerFilterBar {
 
       Rect chip = new Rect(x, y + 2f, chipWidth, 26f);
       TooltipHandler.TipRegion(chip, $"Remove {tag} tag");
-      if (Widgets.ButtonText(chip, tag.Truncate(chipWidth - 28f))) {
+      if (Widgets.ButtonText(chip, string.Empty)) {
         window.SetFilter(tag: tag, additive: true);
       }
 
-      Vector2 c = new Vector2(chip.xMax - 11f, chip.center.y);
+      Rect label = new Rect(chip.x + ChipTextPadding, chip.y, chip.width - ChipTextPadding - ChipCloseWidth, chip.height);
+      TextAnchor anchor = Text.Anchor;
+      Text.Anchor = TextAnchor.MiddleLeft;
+      Widgets.Label(label, tag.Truncate(label.width));
+      Text.Anchor = anchor;
+
+      Vector2 c = new Vector2(chip.xMax - (ChipCloseWidth / 2f), chip.center.y);
       Widgets.DrawLine(c + new Vector2(-3f, -3f), c + new Vector2(3f, 3f), RunnerStatusColors.Muted, 1f);
       Widgets.DrawLine(c + new Vector2(3f, -3f), c + new Vector2(-3f, 3f), RunnerStatusColors.Muted, 1f);
       x += chipWidth + 6f;
@@ -93,7 +104,7 @@ public static class RunnerFilterBar {
 
   private static float ChipWidth(string tag, float fieldsWidth) {
     Text.Font = GameFont.Tiny;
-    float width = Mathf.Min(Text.CalcSize(tag).x + 32f, fieldsWidth);
+    float width = Mathf.Min(Text.CalcSize(tag).x + (ChipTextPadding * 2f) + ChipCloseWidth, fieldsWidth);
     Text.Font = GameFont.Small;
     return width;
   }
