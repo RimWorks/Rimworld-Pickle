@@ -10,7 +10,7 @@ export function FilterBar({ snap, children }: Readonly<{ snap: Snapshot; childre
   useEffect(() => {
     if (search.current && document.activeElement !== search.current) search.current.value = snap.search ?? "";
   }, [snap.search]);
-  const tags = [...new Set(snap.features.flatMap((feature) => feature.scenarios.flatMap((scenario) => scenario.tags)))].sort();
+  const tags = [...new Set(snap.features.flatMap((feature) => feature.scenarios.flatMap((scenario) => scenario.tags)))].sort((a, b) => a.localeCompare(b));
   const mods = [...new Set(snap.features.map((feature) => feature.mod))];
   const active = snap.tagFilters ?? [];
   const locked = !snap.controllable || snap.status !== "idle" || snap.fixtureBusy;

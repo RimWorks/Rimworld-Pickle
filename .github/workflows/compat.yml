@@ -50,7 +50,7 @@ jobs:
           cache-dependency-path: Dashboard/package-lock.json
 
       - name: Install
-        run: npm --prefix Dashboard ci
+        run: npm --prefix Dashboard ci --ignore-scripts
 
       - name: Build
         run: npm --prefix Dashboard run build

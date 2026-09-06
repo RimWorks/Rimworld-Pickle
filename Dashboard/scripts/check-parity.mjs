@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PICKLE_PLAYWRIGHT_MODULE || 'playwright');
 const html = await readFile(new URL('../dist/index.html', import.meta.url), 'utf8');
+// Not /tmp: anyone on the box can pre-create a name there and win the write.
+const shots = fileURLToPath(new URL('../parity-shots/', import.meta.url));
+await mkdir(shots, { recursive: true, mode: 0o700 });
 const scenario = (name, index, tags = []) => ({ name, index, tags, selected: true, visible: true, line: index + 3, outcome: 'Pending', durationMs: 0, failureMessage: null, logTail: [], attachments: [], stateDumps: [], attempts: 1, failedAttempts: [], tickCost: null, steps: [{ keyword: 'Given', text: 'the save "test-colony" is loaded', status: 'Pending', durationMs: 0, failureMessage: null }] });
 let snap = {
   status: 'idle', feature: '', scenario: '', step: '', passed: 0, failed: 0, cancelRequested: false,
@@ -153,9 +157,9 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-pickle-selected="true"]')?.textContent.includes('A pawn walks'));
   assert.match(await page.locator('main').innerText(), /Example mod \/ map.feature:5/);
   assert.deepEqual(errors, []);
-  await page.screenshot({ path: '/tmp/pickle-dashboard-desktop.png' });
+  await page.screenshot({ path: shots + 'desktop.png' });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.screenshot({ path: '/tmp/pickle-dashboard-mobile.png' });
+  await page.screenshot({ path: shots + 'mobile.png' });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   console.log('Browser parity checks passed: filters, group selection, fixtures, step console, flaky retries, errors, delete confirmation, pause/resume, duplicate names, responsive layout.');
 } finally {

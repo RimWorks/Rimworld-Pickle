@@ -5,6 +5,7 @@ obj/
 Assemblies/
 node_modules/
 Dashboard/dist/
+Dashboard/parity-shots/
 *.user
 Styles/Google/
 Harmony/Assemblies/

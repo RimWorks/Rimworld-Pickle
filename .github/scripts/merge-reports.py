@@ -13,6 +13,15 @@ import re
 import sys
 from pathlib import Path
 
+def _safe_path(value):
+    """Resolve a path from the command line and refuse one that escapes the work dir."""
+    root = Path.cwd().resolve()
+    path = (root / value).resolve()
+    if path != root and root not in path.parents:
+        raise SystemExit(f"merge-reports: path escapes {root}: {value}")
+    return path
+
+
 PAYLOAD = re.compile(
     r'(<script id="pickle-report" type="application/json">)(.*?)(</script>)', re.S
 )
@@ -43,9 +52,9 @@ def _prefix_film_paths(payload, set_name):
 def merge(paths):
     sets = []
     for index, path in enumerate(paths):
-        payload = _read_payload(Path(path).read_text(encoding="utf-8"))
+        payload = _read_payload(_safe_path(path).read_text(encoding="utf-8"))
         # The flag names it. Falling back to the folder beats an unlabelled column.
-        name = payload.get("setName") or Path(path).resolve().parent.name or f"set-{index + 1}"
+        name = payload.get("setName") or _safe_path(path).parent.name or f"set-{index + 1}"
         payload["setName"] = name
         _prefix_film_paths(payload, name)
         sets.append(payload)
@@ -60,9 +69,9 @@ def main(argv):
         return 2
 
     out, inputs = argv[0], argv[1:]
-    template = Path(inputs[0]).read_text(encoding="utf-8")
+    template = _safe_path(inputs[0]).read_text(encoding="utf-8")
     merged = _escape(json.dumps(merge(inputs), separators=(",", ":")))
-    Path(out).write_text(PAYLOAD.sub(lambda m: m.group(1) + merged + m.group(3), template, count=1), encoding="utf-8")
+    _safe_path(out).write_text(PAYLOAD.sub(lambda m: m.group(1) + merged + m.group(3), template, count=1), encoding="utf-8")
     print(f"merge-reports: {len(inputs)} set(s) -> {out}")
     return 0
 
@@ -74,8 +83,12 @@ def _report(payload):
 def _self_test():
     import tempfile
 
+    import os
+
+    cwd = os.getcwd()
     with tempfile.TemporaryDirectory() as tmp:
-        root = Path(tmp)
+        os.chdir(tmp)
+        root = Path(tmp).resolve()
         # A failure message holding </script> is the case the escaping exists for.
         a = {"setName": "harmony", "exitReason": "passed", "features": [
             {"name": "F", "scenarios": [{"name": "s", "failureMessage": "broke on </script>",
@@ -101,6 +114,7 @@ def _self_test():
         assert main([str(single), str(root / "harmony" / "report.html")]) == 0
         assert len(_read_payload(single.read_text(encoding="utf-8"))["sets"]) == 1
 
+    os.chdir(cwd)
     print("merge-reports: self-test passed")
     return 0
 
