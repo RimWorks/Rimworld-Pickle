@@ -1,4 +1,4 @@
-# Pickle
+# Pickle: RimWorld mod testing framework
 
 [![Steam Workshop](https://img.shields.io/badge/Steam_Workshop-Pickle-1b2838?logo=steam&logoColor=white)](https://steamcommunity.com/sharedfiles/filedetails/?id=3791648678)
 [![Discord](https://img.shields.io/badge/Discord-RimWorld-5865F2?logo=discord&logoColor=white)](https://discord.gg/rimworld)
@@ -7,11 +7,16 @@
 
 <img src="https://raw.githubusercontent.com/RimWorks/Rimworld-Pickle/main/About/ModIcon.png" alt="Pickle icon" width="96" align="right">
 
-Pickle runs [Gherkin](https://cucumber.io/docs/gherkin/) scenarios inside a live
-RimWorld session. Your tests click the real UI, wait on real game state, and assert
-against the running simulation.
+Pickle runs automated tests for your RimWorld mod inside the game. It reads
+[Gherkin](https://cucumber.io/docs/gherkin/) scenarios and plays them against a live
+session, so your tests click the real UI, wait on real game state, and assert against the
+running simulation. No mocks.
 
-It is a test runner for mod authors, not a mod for players.
+Other RimWorld test frameworks, like RimTest Redux, run unit tests against your C# code.
+Pickle works a level up, against the live game, so it catches the failures unit tests cannot
+see: a def that will not load, a conflicting patch, a job driver that stalls on tick 400.
+
+Pickle is a test runner for mod authors, not a mod for players.
 
 ![Pickle preview card](https://raw.githubusercontent.com/RimWorks/Rimworld-Pickle/main/About/Preview.png)
 
@@ -92,6 +97,14 @@ dotnet build
 
 Pickle embeds the dashboard bundles as resources, so build them first. Pickle still
 builds without them, and the dashboard serves a placeholder.
+
+## More modding tools from RimWorks
+
+| Tool | What it does |
+| --- | --- |
+| [Quickstarts](https://github.com/RimWorks/Rimworld-Quickstarts) | Boot straight into a configured colony from the dev quicktest menu, and run it as a CI smoke test |
+| [RimLogging](https://github.com/RimWorks/rimworld-logging-framework) | Structured logging, an in-game log viewer, and one-click bug report sharing |
+| [RimObs](https://github.com/RimWorks/rimworld-observability-collector) | Performance profiler and telemetry that finds which mod is eating your TPS |
 
 ## License
 
