@@ -5,6 +5,7 @@
     <Version>0.1.0</Version>
     <Authors>RimWorks</Authors>
     <Description>Compile-time reference assembly for Pickle, the in-game BDD test runner for RimWorld. Reference this to build a steps dll; the Pickle mod supplies the real assembly at runtime.</Description>
+    <PackageTags>rimworld;testing;bdd;gherkin;cucumber;integration-testing;modding</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/RimWorks/Rimworld-Pickle</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>

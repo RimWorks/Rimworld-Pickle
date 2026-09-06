@@ -3,10 +3,17 @@
   <packageId>rimworks.pickle</packageId>
   <name>Pickle</name>
   <author>RimWorks</author>
+  <url>https://github.com/RimWorks/Rimworld-Pickle</url>
   <supportedVersions>
     <li>1.6</li>
   </supportedVersions>
-  <description>In-game BDD testing for RimWorld mods. Runs Gherkin scenarios inside a live session: they click the real UI, wait on real game state, and assert against the running simulation. Needs Harmony or Concord.</description>
+  <description>Mod testing framework. Write automated tests for your RimWorld mod and run them inside the game. Pickle reads Gherkin scenarios and plays them against a live session: they click the real UI, wait on real ticks, and assert against the running simulation.
+
+Other RimWorld test frameworks run unit tests against your C# code. Pickle works a level up, against the live game, so it catches the failures unit tests cannot see: a def that will not load, a conflicting patch, a job driver that stalls on tick 400.
+
+Failures pause the game on the broken state and capture a screenshot, the log tail, and every colonist. Unattended runs write JUnit XML and Cucumber messages for CI.
+
+Mod authors only. Needs Harmony or Concord.</description>
   <modDependencies>
     <li>
       <packageId>RimWorks.RimLogging</packageId>
