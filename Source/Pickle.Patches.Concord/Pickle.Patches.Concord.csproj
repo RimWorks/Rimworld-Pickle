@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" ExcludeAssets="runtime" PrivateAssets="all" />
-    <PackageReference Include="Concord.Ref" Version="0.14.*" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Concord.Ref" Version="0.16.*" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <!-- Private=false everywhere: the core assemblies ship once, in the root
