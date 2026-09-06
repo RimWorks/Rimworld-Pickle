@@ -40,7 +40,7 @@ public class SuiteLayout {
 
     string writableFixturesDir = string.IsNullOrEmpty(writableFixturesRoot)
         ? fixturesDir
-        : Path.Combine(writableFixturesRoot!, Path.GetFileName(modRoot.TrimEnd(Path.DirectorySeparatorChar)));
+        : Path.Combine(writableFixturesRoot, Path.GetFileName(modRoot.TrimEnd(Path.DirectorySeparatorChar)));
 
     return new SuiteLayout(pickleDir, featuresDir, fixturesDir, writableFixturesDir, assembliesDir);
   }

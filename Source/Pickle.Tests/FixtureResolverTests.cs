@@ -27,7 +27,7 @@ public class FixtureResolverTests {
 
       Assert.NotNull(resolution.Fixture);
       Assert.Null(resolution.Error);
-      Assert.Equal(fixturePath, resolution.Fixture!.FullPath);
+      Assert.Equal(fixturePath, resolution.Fixture.FullPath);
     } finally {
       Directory.Delete(tempDir, true);
     }
@@ -60,7 +60,7 @@ public class FixtureResolverTests {
 
       Assert.NotNull(resolution.Fixture);
       Assert.Null(resolution.Error);
-      Assert.Equal(fixturePath, resolution.Fixture!.FullPath);
+      Assert.Equal(fixturePath, resolution.Fixture.FullPath);
     } finally {
       Directory.Delete(tempDir1, true);
       Directory.Delete(tempDir2, true);
@@ -102,9 +102,9 @@ public class FixtureResolverTests {
 
       Assert.Null(resolution.Fixture);
       Assert.NotNull(resolution.Error);
-      Assert.Equal(FixtureErrorKind.Duplicate, resolution.Error!.Kind);
-      Assert.Contains("Mod2", resolution.Error!.Message);
-      Assert.Contains("Mod3", resolution.Error!.Message);
+      Assert.Equal(FixtureErrorKind.Duplicate, resolution.Error.Kind);
+      Assert.Contains("Mod2", resolution.Error.Message);
+      Assert.Contains("Mod3", resolution.Error.Message);
     } finally {
       Directory.Delete(tempDir1, true);
       Directory.Delete(tempDir2, true);
@@ -130,8 +130,8 @@ public class FixtureResolverTests {
 
       Assert.Null(resolution.Fixture);
       Assert.NotNull(resolution.Error);
-      Assert.Equal(FixtureErrorKind.NotFound, resolution.Error!.Kind);
-      Assert.Contains("other", resolution.Error!.Message);
+      Assert.Equal(FixtureErrorKind.NotFound, resolution.Error.Kind);
+      Assert.Contains("other", resolution.Error.Message);
     } finally {
       Directory.Delete(tempDir, true);
     }
@@ -156,7 +156,7 @@ public class FixtureResolverTests {
 
       Assert.NotNull(resolution.Fixture);
       Assert.Null(resolution.Error);
-      Assert.Equal(fixturePath, resolution.Fixture!.FullPath);
+      Assert.Equal(fixturePath, resolution.Fixture.FullPath);
     } finally {
       Directory.Delete(tempDir, true);
     }

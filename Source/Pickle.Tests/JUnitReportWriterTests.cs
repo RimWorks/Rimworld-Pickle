@@ -30,7 +30,7 @@ public class JUnitReportWriterTests {
     Assert.Equal("1", login.Attribute("failures")!.Value);
     Assert.Equal("0", login.Attribute("skipped")!.Value);
 
-    XElement checkout = document.Root!.Elements("testsuite").Single(s => s.Attribute("name")!.Value == "Checkout");
+    XElement checkout = document.Root.Elements("testsuite").Single(s => s.Attribute("name")!.Value == "Checkout");
     Assert.Equal("2", checkout.Attribute("tests")!.Value);
     Assert.Equal("0", checkout.Attribute("failures")!.Value);
     Assert.Equal("1", checkout.Attribute("skipped")!.Value);

@@ -209,7 +209,8 @@ dotnet_diagnostic.SA1649.severity = none # filename matches type — generic sib
 # here raises a fresh S3267 on the loop that replaced it. Off repo-wide rather than dismissed
 # case by case. The analyzer and generator still use LINQ; they run at build time, not in a
 # patched process.
-dotnet_diagnostic.S3267.severity = none # loop should use Where — explicit loops are the rule on these paths
+dotnet_diagnostic.S3267.severity = none
+dotnet_diagnostic.S1135.severity = none # TODO comments are the house marker convention, they are meant to stay # loop should use Where — explicit loops are the rule on these paths
 dotnet_diagnostic.SA1402.severity = none # one type per file — cohesive enums/records/contracts may group
 
 # Tests, benchmarks, and probe/test mods relax the opinionated layout/ordering/doc/field rules.
@@ -428,3 +429,29 @@ dotnet_diagnostic.S2325.severity = none # ctx.Require is public API; static woul
 [Source/Pickle.Core/Run/ScenarioFilter.cs]
 dotnet_diagnostic.CA1846.severity = none # AsSpan overload of int.TryParse is not in net472
 dotnet_diagnostic.CA2249.severity = none # Contains with a StringComparison is not in net472
+
+# Chained ternaries in the false branch are the house way to pick one of three UI states.
+# S3358 reads an else-if chain as nesting; none of these nest in the true branch.
+[Source/Pickle/UI/RunnerToolbar.cs]
+dotnet_diagnostic.S3358.severity = none # else-if ternary chain picking a label or colour from run state
+
+[Source/Pickle/UI/RunnerDetailView.cs]
+dotnet_diagnostic.S3358.severity = none # same chain, picking the step line for a live or finished scenario
+
+[Source/Pickle/UI/MainMenuRunnerButton.cs]
+dotnet_diagnostic.S3011.severity = none # reads the private main menu option list to insert the runner button
+
+# Every throw here sits inside the lambda handed to Post(), so Sonar checks the paramName
+# against the lambda instead of the public method it belongs to.
+[Source/Pickle/Web/RunnerCommands.cs]
+dotnet_diagnostic.S3928.severity = none # paramName names the outer method's parameter, not the lambda's
+
+# A struct's Equals has to compare exactly, or it stops agreeing with GetHashCode.
+[Source/Pickle.Core/Run/TickCostWindow.cs]
+dotnet_diagnostic.S1244.severity = none # exact comparison is the Equals contract, not a rounding mistake
+
+# Roslyn still wants the null-forgiving operator on document.Root here; Sonar's flow
+# analysis disagrees with the compiler's and CS8602 wins.
+[Source/Pickle.Tests/JUnitReportWriterTests.cs]
+dotnet_diagnostic.S8969.severity = none # removing the ! trades this warning for CS8602
+
