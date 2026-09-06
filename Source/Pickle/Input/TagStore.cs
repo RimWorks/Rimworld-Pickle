@@ -30,7 +30,7 @@ internal static class TagStore {
     }
 
     // Convert window-local rect to game-window space using the active GUI group matrix.
-    // Rects tagged inside windows/groups are local; XdoInput expects game-window coords.
+    // Rects tagged inside windows/groups are local; a backend expects game-window coords.
     Rect screenRect = GUIUtility.GUIToScreenRect(rect);
 
     if (Store.TryGetValue(tag, out TagEntry? entry)) {

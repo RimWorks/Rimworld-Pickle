@@ -493,10 +493,11 @@ while a follow is active.
 | `no errors were logged` | Fails if the game logged an error during the scenario |
 | `I take a screenshot {string}` | Captures a screenshot and attaches it to the report |
 
-`I click`, `I click button`, `I hover` and `I press key` need a real X display. RimWorld
+`I click`, `I click button`, `I hover` and `I press key` need real OS input. RimWorld
 drops synthetic pointer events, and `Input.GetKeyDown` never sees a synthetic key event.
-Pickle sends both through XTEST instead. On Windows and macOS those four steps throw and
-name the platform. Every other step here works anywhere.
+Pickle injects both at the OS level: XTEST through `xdotool` on Linux, `SendInput` on
+Windows. Linux also needs a real X display. macOS has no backend, so those four steps
+throw there. Every other step here works anywhere.
 See [running tests](running.md).
 
 ## Dev mode

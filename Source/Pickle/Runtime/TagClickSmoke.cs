@@ -41,8 +41,8 @@ internal static class TagClickSmoke {
       PickleContext ctx = new PickleContext();
 
       try {
-        if (!XdoInput.Available) {
-          Log.Warn("pickle: tag click smoke skipped - {Reason}", [XdoInput.UnavailableReason]);
+        if (!InputBackends.Available) {
+          Log.Warn("pickle: tag click smoke skipped - {Reason}", [InputBackends.UnavailableReason]);
           TagStore.SessionActive = false;
           Find.WindowStack.TryRemove(testWindow);
           return;

@@ -89,8 +89,8 @@ public class PickleContext {
       throw new InvalidOperationException(error ?? "Failed to resolve tag");
     }
 
-    XdoInput.EnsureAvailable();
-    XdoInput.Click(rect.center);
+    InputBackends.EnsureAvailable();
+    InputBackends.Current.Click(rect.center);
     await WaitFrames(2);
   }
 
@@ -105,35 +105,18 @@ public class PickleContext {
       throw new InvalidOperationException(error ?? "Failed to resolve tag");
     }
 
-    XdoInput.EnsureAvailable();
-    XdoInput.MoveTo(rect.center);
+    InputBackends.EnsureAvailable();
+    InputBackends.Current.MoveTo(rect.center);
     await WaitFrames(1);
   }
 
   public async Task PressKey(string key) {
-    XdoInput.EnsureAvailable();
-    XdoInput.Key(MapKeysym(key));
+    InputBackends.EnsureAvailable();
+    InputBackends.Current.Key(key);
     await WaitFrames(2);
   }
 
   public void Attach(string name, string content) {
     attachments.Add((name, content));
-  }
-
-  // X11 keysyms, not KeyCode names: a synthetic Event never reaches Input.GetKey*, so the
-  // whole step goes through XTEST. Only space and BackSpace differ from the plain name.
-  private static string MapKeysym(string keyName) {
-    return keyName.ToLowerInvariant() switch {
-      "escape" => "Escape",
-      "return" or "enter" => "Return",
-      "space" => "space",
-      "tab" => "Tab",
-      "delete" => "Delete",
-      "backspace" => "BackSpace",
-      _ when keyName.Length == 1 && char.IsLetter(keyName[0]) => keyName.ToLowerInvariant(),
-      _ when keyName.Length == 1 && char.IsDigit(keyName[0]) => keyName,
-      _ => throw new ArgumentException(
-          $"Unknown key: {keyName}; supported keys: Escape, Return, Enter, Space, Tab, Delete, Backspace, A-Z, 0-9"),
-    };
   }
 }

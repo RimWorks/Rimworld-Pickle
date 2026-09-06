@@ -24,7 +24,7 @@ public static class EventSynthSmoke {
       EventSynth.SuppressDebugLogAutoOpen();
 
       Log.Info("pickle: event synth debug UIScale={UIScale}", [Prefs.UIScale]);
-      Log.Info("pickle: event synth debug xdotoolAvailable={XdotoolAvailable}", [XdoInput.Available]);
+      Log.Info("pickle: event synth debug xdotoolAvailable={XdotoolAvailable}", [InputBackends.Available]);
 
       // One KeyDown(Escape) closes a default Dialog_MessageBox in a single pass, so this
       // proves the UIRootOnGUI reinvoke works without involving a rect or hotControl.
@@ -43,7 +43,7 @@ public static class EventSynthSmoke {
         await driver.WaitFrames(1);
       }
 
-      // Click sub-check: real X11 input via XdoInput (xdotool/XTEST), aimed at the
+      // Click sub-check: real OS input via the selected backend, aimed at the
       // button rect captured live off Widgets.ButtonText.
       Dialog_MessageBox dialog = new Dialog_MessageBox("pickle synth test");
       Find.WindowStack.Add(dialog);
@@ -68,7 +68,7 @@ public static class EventSynthSmoke {
         Log.Error(
             "pickle: event synth smoke failed: click did not close the dialog. "
             + "target={Target} pointerNow=[{PointerNow}]",
-            [XdoInput.ToScreen(target), XdoInput.GetMouseLocation()]);
+            [InputBackends.ToScreen(target), InputBackends.Current.GetMouseLocation()]);
         return;
       }
 

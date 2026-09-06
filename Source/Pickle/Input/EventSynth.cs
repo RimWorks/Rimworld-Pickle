@@ -9,7 +9,7 @@ namespace RimWorks.Pickle.Input;
 
 /// <summary>
 /// Key events reach the UI by reinvoking UIRootOnGUI. Clicks cannot: GUI.Window
-/// dispatches content through a native InternalCall, so XdoInput drives real X11 input.
+/// dispatches content through a native InternalCall, so the input backend drives real OS input.
 /// </summary>
 public static class EventSynth {
   // Used to also carry ClickDown/ClickUp, arming a two-pass MouseDown-then-MouseUp
@@ -20,7 +20,7 @@ public static class EventSynth {
   private static Exception? lastFailure;
 
   // EventQueue used to be a third mechanism, tried for clicks only. Clicks no longer
-  // go through any of these (see XdoInput); this enum now exists for RequestKeyEvent.
+  // go through any of these (see InputBackends); this enum now exists for RequestKeyEvent.
   public enum Mechanism {
     UIRootReinvoke,
     WindowStackReinvoke,
@@ -31,7 +31,7 @@ public static class EventSynth {
     WindowStackReinvoke,
   }
 
-  // Clicks no longer arm this at all, see XdoInput. Key is single-shot and consumed
+  // Clicks no longer arm this at all, see InputBackends. Key is single-shot and consumed
   // in one pass, so no hotControl handshake is involved.
   private enum PendingAction {
     Key,
@@ -52,7 +52,7 @@ public static class EventSynth {
   public static void RequestClick(Vector2 screenPoint) {
     lastFailure = null;
     try {
-      XdoInput.Click(screenPoint);
+      InputBackends.Current.Click(screenPoint);
     } catch (Exception ex) {
       lastFailure = ex;
     }
