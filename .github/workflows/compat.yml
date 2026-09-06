@@ -23,7 +23,7 @@ jobs:
     outputs:
       matrix: ${{ steps.read.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Read the sets
         id: read
@@ -40,10 +40,10 @@ jobs:
     name: dashboard
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -55,7 +55,7 @@ jobs:
       - name: Build
         run: npm --prefix Dashboard run build
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dashboard-dist
           path: Dashboard/dist
@@ -79,14 +79,14 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.sets.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dashboard-dist
           path: Dashboard/dist
@@ -152,7 +152,7 @@ jobs:
           kill "$follow" 2>/dev/null || true
           echo "set $SET_NAME exited $status"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: compat-${{ matrix.set.name }}
@@ -164,9 +164,9 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           pattern: compat-*
           path: sets
@@ -210,7 +210,7 @@ jobs:
                 "**Compare sets** to see which scenario broke under which set.")
           EOF
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: merged-report

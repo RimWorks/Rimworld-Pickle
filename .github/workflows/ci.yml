@@ -37,10 +37,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -70,10 +70,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Vale
-        uses: errata-ai/vale-action@85f9f7f2c5f449ac0ae5b66662961bae3f77ca6a # reviewdog
+        uses: errata-ai/vale-action@518a9136acc6e6668ce7c00d367051e0941e87ff # reviewdog
         with:
           reporter: github-pr-check
           fail_on_error: true
@@ -89,7 +89,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # Relative links break silently when a folder is renamed, which is how the
       # docs -> Docs rename broke the template's link to the authoring guide.
@@ -118,14 +118,14 @@ jobs:
       # dorny/test-reporter publishes its results as a check run.
       checks: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dashboard-dist
           path: Dashboard/dist
@@ -185,14 +185,14 @@ jobs:
           && fromJSON('["harmony"]')
           || fromJSON('["harmony","concord","both"]')) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dashboard-dist
           path: Dashboard/dist
@@ -384,14 +384,14 @@ jobs:
       contents: read
       packages: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dashboard-dist
           path: Dashboard/dist
