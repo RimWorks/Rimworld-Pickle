@@ -1,5 +1,7 @@
 # Pickle
 
+[![Steam Workshop](https://img.shields.io/badge/Steam_Workshop-Pickle-1b2838?logo=steam&logoColor=white)](https://steamcommunity.com/sharedfiles/filedetails/?id=3791648678)
+[![Discord](https://img.shields.io/badge/Discord-RimWorld-5865F2?logo=discord&logoColor=white)](https://discord.gg/rimworld)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=RimWorks_Rimworld-Pickle&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=RimWorks_Rimworld-Pickle)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=RimWorks_Rimworld-Pickle&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=RimWorks_Rimworld-Pickle)
 
