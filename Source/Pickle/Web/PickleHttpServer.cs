@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -19,6 +20,7 @@ namespace RimWorks.Pickle.Web;
 public static class PickleHttpServer {
   private const string JsonContentType = "application/json";
   private const string OkBody = "{\"ok\":true}";
+  private const string ErrorPrefix = "{\"error\":";
 
   private const string EvidencePrefix = "/screenshots/";
 
@@ -27,6 +29,22 @@ public static class PickleHttpServer {
   private static readonly string[] ReportFiles = ["junit.xml", "messages.ndjson", "summary.json", "summary.md"];
 
   private static readonly string[] MutatingPaths = ["/abort", "/pause", "/continue", "/run", "/scope", "/select", "/filter", "/mode", "/wip", "/break", "/pill", "/fixture", "/step", "/step/reset"];
+
+  // Every route here does its work and answers OkBody, so they share one lookup rather
+  // than eleven branches in Route.
+  private static readonly Dictionary<string, Action<HttpListenerContext>> Commands = new Dictionary<string, Action<HttpListenerContext>> {
+    ["/abort"] = _ => RunnerCommands.Abort().GetAwaiter().GetResult(),
+    ["/run"] = c => RunnerCommands.Run(c.Request.QueryString["scope"] ?? "all").GetAwaiter().GetResult(),
+    ["/continue"] = _ => RunnerCommands.Continue().GetAwaiter().GetResult(),
+    ["/pause"] = _ => RunnerCommands.Pause().GetAwaiter().GetResult(),
+    ["/scope"] = c => RunnerCommands.SetScope(c.Request.QueryString["value"] ?? "all").GetAwaiter().GetResult(),
+    ["/filter"] = Filter,
+    ["/select"] = Select,
+    ["/mode"] = c => RunnerCommands.SetMode(c.Request.QueryString["value"] ?? "watch").GetAwaiter().GetResult(),
+    ["/wip"] = c => RunnerCommands.SetIncludeWip(c.Request.QueryString["on"] != "false").GetAwaiter().GetResult(),
+    ["/pill"] = c => RunnerCommands.SetShowRunPill(c.Request.QueryString["on"] != "false").GetAwaiter().GetResult(),
+    ["/break"] = c => RunnerCommands.SetBreakOnFailure(c.Request.QueryString["on"] != "false").GetAwaiter().GetResult(),
+  };
 
   private static HttpListener? listener;
   private static volatile bool running;
@@ -124,7 +142,7 @@ public static class PickleHttpServer {
     } catch (Exception ex) {
       Log.Error(ex, "pickle: dashboard request failed");
       context.Response.StatusCode = 400;
-      Write(context, JsonContentType, "{\"error\":" + Json.Quote(ex.Message) + "}");
+      Write(context, JsonContentType, ErrorPrefix + Json.Quote(ex.Message) + "}");
     } finally {
       try {
         context.Response.Close();
@@ -136,148 +154,71 @@ public static class PickleHttpServer {
 
   private static void Route(HttpListenerContext context) {
     string path = context.Request.Url.AbsolutePath;
+    if (Rejected(context, path)) {
+      return;
+    }
+
+    if (Commands.TryGetValue(path, out Action<HttpListenerContext> command)) {
+      command(context);
+      Write(context, JsonContentType, OkBody);
+      return;
+    }
+
+    Dispatch(context, path);
+  }
+
+  // The listener binds 0.0.0.0, so a page in any browser on the network could abort a run
+  // through an <img> tag if a mutating route answered a GET.
+  private static bool Rejected(HttpListenerContext context, string path) {
+    if (Array.IndexOf(MutatingPaths, path) < 0) {
+      return false;
+    }
 
     string? origin = context.Request.Headers["Origin"];
-    if (Array.IndexOf(MutatingPaths, path) >= 0 && origin != null
+    if (origin != null
         && !string.Equals(origin, context.Request.Url.GetLeftPart(UriPartial.Authority), StringComparison.OrdinalIgnoreCase)) {
       context.Response.StatusCode = 403;
       Write(context, "text/plain", "use the dashboard origin");
-      return;
+      return true;
     }
 
-    // The listener binds 0.0.0.0, so a page in any browser on the network could abort a run
-    // through an <img> tag if these answered a GET. A wrong-method script also fails loudly
-    // here rather than looking like a run that never started.
-    if (Array.IndexOf(MutatingPaths, path) >= 0
-        && !string.Equals(context.Request.HttpMethod, "POST", StringComparison.Ordinal)) {
+    if (!string.Equals(context.Request.HttpMethod, "POST", StringComparison.Ordinal)) {
       context.Response.StatusCode = 405;
       context.Response.AddHeader("Allow", "POST");
       Write(context, "text/plain", "use POST");
-      return;
+      return true;
     }
 
-    if (path == "/state") {
-      Write(context, JsonContentType, snapshot);
-      return;
+    return false;
+  }
+
+  private static void Dispatch(HttpListenerContext context, string path) {
+    switch (path) {
+      case "/state":
+        Write(context, JsonContentType, snapshot);
+        return;
+      case "/fixtures":
+      case "/fixture":
+        ServeFixtures(context, path);
+        return;
+      case "/steps":
+      case "/step":
+      case "/step/reset":
+        ServeConsole(context, path);
+        return;
+      case "/":
+        Write(context, "text/html; charset=utf-8", Dashboard.Html);
+        return;
+      case "/report":
+        ServeReport(context);
+        return;
+      default:
+        ServeFile(context, path);
+        return;
     }
+  }
 
-    if (path == "/fixtures" || path == "/fixture") {
-      try {
-        string catalog = FixtureCommands.Request(
-            path == "/fixture" ? context.Request.QueryString["action"] ?? string.Empty : null,
-            context.Request.QueryString["suite"], context.Request.QueryString["name"],
-            context.Request.QueryString["newName"], context.Request.QueryString["overwrite"] == "true").GetAwaiter().GetResult();
-        Write(context, JsonContentType, catalog);
-      } catch (Exception ex) {
-        context.Response.StatusCode = 400;
-        Write(context, JsonContentType, "{\"error\":" + Json.Quote(ex.Message) + "}");
-      }
-
-      return;
-    }
-
-    if (path == "/steps" || path == "/step" || path == "/step/reset") {
-      ServeConsole(context, path);
-      return;
-    }
-
-    if (path == "/abort") {
-      RunnerCommands.Abort().GetAwaiter().GetResult();
-      Write(context, JsonContentType, OkBody);
-      return;
-    }
-
-    if (path == "/run") {
-      RunnerCommands.Run(context.Request.QueryString["scope"] ?? "all").GetAwaiter().GetResult();
-      Write(context, JsonContentType, OkBody);
-      return;
-    }
-
-    if (path == "/continue") {
-      RunnerCommands.Continue().GetAwaiter().GetResult();
-      Write(context, JsonContentType, OkBody);
-      return;
-    }
-
-    if (path == "/pause") {
-      RunnerCommands.Pause().GetAwaiter().GetResult();
-      Write(context, JsonContentType, OkBody);
-      return;
-    }
-
-    if (path == "/scope") {
-      RunnerCommands.SetScope(context.Request.QueryString["value"] ?? "all").GetAwaiter().GetResult();
-      Write(context, JsonContentType, OkBody);
-      return;
-    }
-
-    if (path == "/filter") {
-      RunnerCommands.Filter(
-          context.Request.QueryString["search"], context.Request.QueryString["mod"], context.Request.QueryString["tag"],
-          context.Request.QueryString["additive"] == "true", context.Request.QueryString["clearTags"] == "true").GetAwaiter().GetResult();
-      Write(context, JsonContentType, OkBody);
-      return;
-    }
-
-    if (path == "/select") {
-      string? scope = context.Request.QueryString["scope"];
-      bool on = context.Request.QueryString["on"] != "false";
-
-      if (scope != null) {
-        if (scope != "all" && scope != "none") {
-          throw new ArgumentException("Unknown selection scope.");
-        }
-
-        RunnerCommands.SelectAll(scope == "all").GetAwaiter().GetResult();
-      } else if (int.TryParse(context.Request.QueryString["index"], out int index)) {
-        RunnerCommands.Select(context.Request.QueryString["path"] ?? string.Empty, index, on).GetAwaiter().GetResult();
-      } else {
-        if (context.Request.QueryString["index"] != null
-            || (context.Request.QueryString["path"] == null && context.Request.QueryString["mod"] == null)) {
-          throw new ArgumentException("Select a discovered scenario, feature, or mod.");
-        }
-
-        RunnerCommands.SelectAll(on, context.Request.QueryString["path"], context.Request.QueryString["mod"]).GetAwaiter().GetResult();
-      }
-
-      Write(context, JsonContentType, OkBody);
-      return;
-    }
-
-    if (path == "/mode") {
-      RunnerCommands.SetMode(context.Request.QueryString["value"] ?? "watch").GetAwaiter().GetResult();
-      Write(context, JsonContentType, OkBody);
-      return;
-    }
-
-    if (path == "/wip") {
-      RunnerCommands.SetIncludeWip(context.Request.QueryString["on"] != "false").GetAwaiter().GetResult();
-      Write(context, JsonContentType, OkBody);
-      return;
-    }
-
-    if (path == "/pill") {
-      RunnerCommands.SetShowRunPill(context.Request.QueryString["on"] != "false").GetAwaiter().GetResult();
-      Write(context, JsonContentType, OkBody);
-      return;
-    }
-
-    if (path == "/break") {
-      RunnerCommands.SetBreakOnFailure(context.Request.QueryString["on"] != "false").GetAwaiter().GetResult();
-      Write(context, JsonContentType, OkBody);
-      return;
-    }
-
-    if (path == "/") {
-      Write(context, "text/html; charset=utf-8", Dashboard.Html);
-      return;
-    }
-
-    if (path == "/report") {
-      ServeReport(context);
-      return;
-    }
-
+  private static void ServeFile(HttpListenerContext context, string path) {
     if (path.StartsWith("/reports/", StringComparison.Ordinal) && Array.IndexOf(ReportFiles, path.Substring(9)) >= 0) {
       string name = path.Substring(9);
       string file = Path.Combine(ScreenshotCapture.ReportRoot(), name);
@@ -301,6 +242,51 @@ public static class PickleHttpServer {
     Write(context, "text/plain", "not found");
   }
 
+  private static void ServeFixtures(HttpListenerContext context, string path) {
+    try {
+      string catalog = FixtureCommands.Request(
+          path == "/fixture" ? context.Request.QueryString["action"] ?? string.Empty : null,
+          context.Request.QueryString["suite"], context.Request.QueryString["name"],
+          context.Request.QueryString["newName"], context.Request.QueryString["overwrite"] == "true").GetAwaiter().GetResult();
+      Write(context, JsonContentType, catalog);
+    } catch (Exception ex) {
+      context.Response.StatusCode = 400;
+      Write(context, JsonContentType, ErrorPrefix + Json.Quote(ex.Message) + "}");
+    }
+  }
+
+  private static void Filter(HttpListenerContext context) {
+    RunnerCommands.Filter(
+        context.Request.QueryString["search"], context.Request.QueryString["mod"], context.Request.QueryString["tag"],
+        context.Request.QueryString["additive"] == "true", context.Request.QueryString["clearTags"] == "true").GetAwaiter().GetResult();
+  }
+
+  private static void Select(HttpListenerContext context) {
+    string? scope = context.Request.QueryString["scope"];
+    bool on = context.Request.QueryString["on"] != "false";
+
+    if (scope != null) {
+      if (scope != "all" && scope != "none") {
+        throw new ArgumentException("Unknown selection scope.");
+      }
+
+      RunnerCommands.SelectAll(scope == "all").GetAwaiter().GetResult();
+      return;
+    }
+
+    if (int.TryParse(context.Request.QueryString["index"], out int index)) {
+      RunnerCommands.Select(context.Request.QueryString["path"] ?? string.Empty, index, on).GetAwaiter().GetResult();
+      return;
+    }
+
+    if (context.Request.QueryString["index"] != null
+        || (context.Request.QueryString["path"] == null && context.Request.QueryString["mod"] == null)) {
+      throw new ArgumentException("Select a discovered scenario, feature, or mod.");
+    }
+
+    RunnerCommands.SelectAll(on, context.Request.QueryString["path"], context.Request.QueryString["mod"]).GetAwaiter().GetResult();
+  }
+
   // A console step runs arbitrary registered steps on request, so it takes the same
   // origin and POST guards the run routes take. A busy game answers 409, not a queue.
   private static void ServeConsole(HttpListenerContext context, string path) {
@@ -314,10 +300,10 @@ public static class PickleHttpServer {
       Write(context, JsonContentType, work.GetAwaiter().GetResult());
     } catch (InvalidOperationException ex) {
       context.Response.StatusCode = 409;
-      Write(context, JsonContentType, "{\"error\":" + Json.Quote(ex.Message) + "}");
+      Write(context, JsonContentType, ErrorPrefix + Json.Quote(ex.Message) + "}");
     } catch (Exception ex) {
       context.Response.StatusCode = 400;
-      Write(context, JsonContentType, "{\"error\":" + Json.Quote(ex.Message) + "}");
+      Write(context, JsonContentType, ErrorPrefix + Json.Quote(ex.Message) + "}");
     }
   }
 

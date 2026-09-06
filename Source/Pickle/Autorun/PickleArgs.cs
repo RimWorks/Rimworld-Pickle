@@ -43,46 +43,15 @@ public sealed class PickleArgs {
     bool runValued = GenCommandLine.TryGetCommandLineArg("-pickle-run", out string runValue);
 
     string? cliFilter = runValued ? runValue : null;
-    string? cliReportDir = GenCommandLine.TryGetCommandLineArg("-pickle-report-dir", out string reportDirValue)
-        ? reportDirValue
-        : null;
+    string? cliReportDir = StringArg("-pickle-report-dir");
     bool cliIncludeWip = GenCommandLine.CommandLineArgPassed("-pickle-include-wip");
-    int? cliSeed = GenCommandLine.TryGetCommandLineArg("-pickle-seed", out string seedValue)
-        && int.TryParse(seedValue, out int parsedSeed)
-            ? parsedSeed
-            : null;
-    int? cliScenarioTimeout = GenCommandLine.TryGetCommandLineArg("-pickle-scenario-timeout", out string scenarioTimeoutValue)
-        && int.TryParse(scenarioTimeoutValue, out int parsedScenarioTimeout)
-            ? parsedScenarioTimeout
-            : null;
-
-    string? cliSetName = GenCommandLine.TryGetCommandLineArg("-pickle-set-name", out string setNameValue)
-        && !setNameValue.NullOrEmpty()
-            ? setNameValue
-            : null;
-
-    int? cliRetries = GenCommandLine.TryGetCommandLineArg("-pickle-retry", out string retryValue)
-        && int.TryParse(retryValue, out int parsedRetries)
-            ? parsedRetries
-            : null;
-
-    int? cliMaxFilm = GenCommandLine.TryGetCommandLineArg("-pickle-max-film-seconds", out string maxFilmValue)
-        && int.TryParse(maxFilmValue, out int parsedMaxFilm)
-        ? parsedMaxFilm
-        : null;
-    int? cliRunTimeout = GenCommandLine.TryGetCommandLineArg("-pickle-run-timeout", out string runTimeoutValue)
-        && int.TryParse(runTimeoutValue, out int parsedRunTimeout)
-            ? parsedRunTimeout
-            : null;
-
-    PickleRunMode.Mode cliMode = PickleRunMode.Mode.Fast;
-    if (GenCommandLine.TryGetCommandLineArg("-pickle-mode", out string modeValue)) {
-      if (string.Equals(modeValue, "watch", StringComparison.OrdinalIgnoreCase)) {
-        cliMode = PickleRunMode.Mode.Watch;
-      } else if (!string.Equals(modeValue, "fast", StringComparison.OrdinalIgnoreCase)) {
-        Log.Warn("pickle: -pickle-mode={Value} is not 'fast' or 'watch', running in fast", [modeValue]);
-      }
-    }
+    int? cliSeed = IntArg("-pickle-seed");
+    int? cliScenarioTimeout = IntArg("-pickle-scenario-timeout");
+    string? cliSetName = NonEmptyArg("-pickle-set-name");
+    int? cliRetries = IntArg("-pickle-retry");
+    int? cliMaxFilm = IntArg("-pickle-max-film-seconds");
+    int? cliRunTimeout = IntArg("-pickle-run-timeout");
+    PickleRunMode.Mode cliMode = ModeArg();
 
     PickleArgsConfig? config = null;
     if (GenCommandLine.TryGetCommandLineArg("-pickle-config", out string configPath)) {
@@ -102,6 +71,34 @@ public sealed class PickleArgs {
       MaxFilmSeconds = cliMaxFilm ?? 60,
       Mode = cliMode,
     };
+  }
+
+  private static string? StringArg(string name) {
+    return GenCommandLine.TryGetCommandLineArg(name, out string value) ? value : null;
+  }
+
+  private static string? NonEmptyArg(string name) {
+    return GenCommandLine.TryGetCommandLineArg(name, out string value) && !value.NullOrEmpty() ? value : null;
+  }
+
+  private static int? IntArg(string name) {
+    return GenCommandLine.TryGetCommandLineArg(name, out string value) && int.TryParse(value, out int parsed) ? parsed : null;
+  }
+
+  private static PickleRunMode.Mode ModeArg() {
+    if (!GenCommandLine.TryGetCommandLineArg("-pickle-mode", out string value)) {
+      return PickleRunMode.Mode.Fast;
+    }
+
+    if (string.Equals(value, "watch", StringComparison.OrdinalIgnoreCase)) {
+      return PickleRunMode.Mode.Watch;
+    }
+
+    if (!string.Equals(value, "fast", StringComparison.OrdinalIgnoreCase)) {
+      Log.Warn("pickle: -pickle-mode={Value} is not 'fast' or 'watch', running in fast", [value]);
+    }
+
+    return PickleRunMode.Mode.Fast;
   }
 
   private static PickleArgsConfig? LoadConfig(string path) {

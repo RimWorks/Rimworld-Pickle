@@ -444,6 +444,55 @@ public class RunnerWindow : Window {
 
   // Keyed by (sourcePath, global scenario index), same as RunnerTreeView and results.
   // Null runs everything; a feature with nothing selected is skipped outright.
+  private void ClearPreviousResults(Func<string, int, bool>? isScenarioSelected) {
+    RunScenarioCount = 0;
+    CompletedScenarioCount = 0;
+    int clearIndex = 0;
+    foreach ((DiscoveredSuite _, FeaturePlan plan) in parsedFeatures) {
+      string path = plan.SourcePath ?? string.Empty;
+      foreach (int position in SelectedPositions(path, clearIndex, plan.Scenarios.Count, isScenarioSelected)) {
+        results.Remove((path, clearIndex + position));
+        RunScenarioCount++;
+      }
+
+      clearIndex += plan.Scenarios.Count;
+    }
+  }
+
+  // Results land per scenario rather than per feature so the dashboard's tree fills in
+  // live instead of a whole feature at a time.
+  private async Task RunOneFeature(
+      RunSession session,
+      DiscoveredSuite suite,
+      FeaturePlan plan,
+      int featureStartIndex,
+      Func<string, int, bool>? isScenarioSelected) {
+    string sourcePath = plan.SourcePath ?? string.Empty;
+    List<int> selectedPositions = SelectedPositions(sourcePath, featureStartIndex, plan.Scenarios.Count, isScenarioSelected);
+    if (selectedPositions.Count == 0) {
+      return;
+    }
+
+    Func<ScenarioPlan, bool>? scenarioFilter = BuildScenarioFilter(sourcePath, featureStartIndex, plan.Scenarios, isScenarioSelected);
+    int completed = 0;
+    await session.RunFeature(
+        plan,
+        suite.ModName,
+        IncludeWipState.Enabled,
+        onScenarioCompleted: result => {
+          if (completed < selectedPositions.Count) {
+            results[(sourcePath, featureStartIndex + selectedPositions[completed])] = result;
+            completed++;
+            CompletedScenarioCount++;
+          }
+
+          PublishSnapshot();
+        },
+        scenarioFilter: scenarioFilter);
+
+    PublishSnapshot();
+  }
+
   private async Task RunAsync(Func<string, int, bool>? isScenarioSelected) {
     if (IsRunning || FixtureCommands.IsBusy) {
       return;
@@ -454,18 +503,7 @@ public class RunnerWindow : Window {
     try {
       DiscoverAndParseFeatures();
 
-      RunScenarioCount = 0;
-      CompletedScenarioCount = 0;
-      int clearIndex = 0;
-      foreach ((DiscoveredSuite _, FeaturePlan plan) in parsedFeatures) {
-        string path = plan.SourcePath ?? string.Empty;
-        foreach (int position in SelectedPositions(path, clearIndex, plan.Scenarios.Count, isScenarioSelected)) {
-          results.Remove((path, clearIndex + position));
-          RunScenarioCount++;
-        }
-
-        clearIndex += plan.Scenarios.Count;
-      }
+      ClearPreviousResults(isScenarioSelected);
 
       List<Assembly> assemblies = BuildAssemblyList();
       StepTable stepTable = StepScanner.PopulateStepTable(assemblies);
@@ -502,39 +540,8 @@ public class RunnerWindow : Window {
           break;
         }
 
-        string sourcePath = plan.SourcePath ?? string.Empty;
-        int featureStartIndex = scenarioIndex;
-        int scenarioCount = plan.Scenarios.Count;
-
-        List<int> selectedPositions = SelectedPositions(sourcePath, featureStartIndex, scenarioCount, isScenarioSelected);
-        if (selectedPositions.Count == 0) {
-          scenarioIndex += scenarioCount;
-          continue;
-        }
-
-        Func<ScenarioPlan, bool>? scenarioFilter = BuildScenarioFilter(sourcePath, featureStartIndex, plan.Scenarios, isScenarioSelected);
-
-        // Results land per scenario rather than per feature so the dashboard's
-        // tree fills in live instead of a whole feature at a time.
-        int completed = 0;
-        await session.RunFeature(
-            plan,
-            suite.ModName,
-            IncludeWipState.Enabled,
-            onScenarioCompleted: result => {
-              if (completed < selectedPositions.Count) {
-                results[(sourcePath, featureStartIndex + selectedPositions[completed])] = result;
-                completed++;
-                CompletedScenarioCount++;
-              }
-
-              PublishSnapshot();
-            },
-            scenarioFilter: scenarioFilter);
-
-        PublishSnapshot();
-
-        scenarioIndex += scenarioCount;
+        await RunOneFeature(session, suite, plan, scenarioIndex, isScenarioSelected);
+        scenarioIndex += plan.Scenarios.Count;
       }
 
       LastRunAt = DateTime.Now;

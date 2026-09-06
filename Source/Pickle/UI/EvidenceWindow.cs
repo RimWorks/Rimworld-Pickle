@@ -41,24 +41,7 @@ public class EvidenceWindow : Window {
       Widgets.Label(picture, error.Length > 0 ? error : "Loading evidence...");
     }
 
-    float y = picture.yMax + 6f;
-    if (film && video?.isPrepared == true) {
-      if (Widgets.ButtonText(new Rect(inRect.x, y, 80f, 28f), video.isPlaying ? "Pause" : "Play")) {
-        if (video.isPlaying) {
-          video.Pause();
-        } else {
-          video.Play();
-        }
-      }
-
-      float position = Widgets.HorizontalSlider(new Rect(inRect.x + 92f, y, inRect.width - 92f, 28f), (float)video.time, 0f, (float)video.length);
-      if (Mathf.Abs(position - (float)video.time) > 0.5f) {
-        video.time = position;
-      }
-    } else if (paths.Count > 1) {
-      Widgets.Label(new Rect(inRect.x, y, 100f, 28f), $"{frame + 1} / {paths.Count}");
-      frame = Mathf.RoundToInt(Widgets.HorizontalSlider(new Rect(inRect.x + 108f, y, inRect.width - 108f, 28f), frame, 0f, paths.Count - 1));
-    }
+    Scrubber(inRect, picture.yMax + 6f);
   }
 
   public override void PostClose() {
@@ -69,6 +52,33 @@ public class EvidenceWindow : Window {
 
     if (videoObject != null) {
       UnityEngine.Object.Destroy(videoObject);
+    }
+  }
+
+  private void Scrubber(Rect inRect, float y) {
+    if (film && video?.isPrepared == true) {
+      VideoControls(inRect, y);
+      return;
+    }
+
+    if (paths.Count > 1) {
+      Widgets.Label(new Rect(inRect.x, y, 100f, 28f), $"{frame + 1} / {paths.Count}");
+      frame = Mathf.RoundToInt(Widgets.HorizontalSlider(new Rect(inRect.x + 108f, y, inRect.width - 108f, 28f), frame, 0f, paths.Count - 1));
+    }
+  }
+
+  private void VideoControls(Rect inRect, float y) {
+    if (Widgets.ButtonText(new Rect(inRect.x, y, 80f, 28f), video!.isPlaying ? "Pause" : "Play")) {
+      if (video.isPlaying) {
+        video.Pause();
+      } else {
+        video.Play();
+      }
+    }
+
+    float position = Widgets.HorizontalSlider(new Rect(inRect.x + 92f, y, inRect.width - 92f, 28f), (float)video.time, 0f, (float)video.length);
+    if (Mathf.Abs(position - (float)video.time) > 0.5f) {
+      video.time = position;
     }
   }
 

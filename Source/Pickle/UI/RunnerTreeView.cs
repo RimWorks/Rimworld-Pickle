@@ -122,73 +122,91 @@ public static class RunnerTreeView {
 
     Dictionary<FeaturePlan, int> startIndices = ComputeStartIndices(window);
     foreach (IGrouping<string, (DiscoveredSuite Suite, FeaturePlan Plan)> group in window.ParsedFeatures.GroupBy(f => f.Suite.ModName)) {
-      List<(DiscoveredSuite Suite, FeaturePlan Plan)> features = [.. group.Where(f => FeatureHasVisibleScenario(window, f.Suite, f.Plan))];
-
-      if (features.Count == 0) {
-        continue;
-      }
-
-      // Keyed to what is on screen, so filtering to a tag and ticking the mod selects that
-      // tag's scenarios and nothing hidden.
-      List<(string SourcePath, int Index)> modKeys = [];
-      List<List<(string SourcePath, int Index)>> featureKeys = [];
-      foreach ((DiscoveredSuite suite, FeaturePlan plan) in features) {
-        string featurePath = plan.SourcePath ?? string.Empty;
-        int featureStart = startIndices[plan];
-        List<(string SourcePath, int Index)> keys = [];
-        for (int i = 0; i < plan.Scenarios.Count; i++) {
-          if (IsScenarioVisible(window, suite, plan, plan.Scenarios[i])) {
-            keys.Add((featurePath, featureStart + i));
-          }
-        }
-
-        featureKeys.Add(keys);
-        modKeys.AddRange(keys);
-      }
-
-      y = AddRow(
-          new Row {
-            Kind = RowKind.Mod,
-            Height = ModRowHeight,
-            ModName = group.Key,
-            ModScenarioCount = modKeys.Count,
-            SelectionKeys = modKeys,
-          },
-          y);
-
-      if (window.CollapsedMods.Contains(group.Key)) {
-        continue;
-      }
-
-      for (int f = 0; f < features.Count; f++) {
-        (DiscoveredSuite suite, FeaturePlan plan) = features[f];
-        int startIndex = startIndices[plan];
-        y = AddRow(
-            new Row {
-              Kind = RowKind.Feature,
-              Height = FeatureRowHeight,
-              Plan = plan,
-              Index = startIndex,
-              SelectionKeys = featureKeys[f],
-            },
-            y);
-
-        if (window.CollapsedFeatures.Contains(plan.SourcePath ?? string.Empty)) {
-          continue;
-        }
-
-        for (int i = 0; i < plan.Scenarios.Count; i++) {
-          ScenarioPlan scenario = plan.Scenarios[i];
-          if (!IsScenarioVisible(window, suite, plan, scenario)) {
-            continue;
-          }
-
-          y = AddRow(new Row { Kind = RowKind.Scenario, Height = ScenarioRowHeight, Plan = plan, Scenario = scenario, Index = startIndex + i }, y);
-        }
-      }
+      y = AddModRows(window, group, startIndices, y);
     }
 
     contentHeight = y;
+  }
+
+  private static float AddModRows(
+      RunnerWindow window,
+      IGrouping<string, (DiscoveredSuite Suite, FeaturePlan Plan)> group,
+      Dictionary<FeaturePlan, int> startIndices,
+      float y) {
+    List<(DiscoveredSuite Suite, FeaturePlan Plan)> features = [.. group.Where(f => FeatureHasVisibleScenario(window, f.Suite, f.Plan))];
+    if (features.Count == 0) {
+      return y;
+    }
+
+    List<List<(string SourcePath, int Index)>> featureKeys = [.. features.Select(f => VisibleKeys(window, f.Suite, f.Plan, startIndices[f.Plan]))];
+    List<(string SourcePath, int Index)> modKeys = [.. featureKeys.SelectMany(keys => keys)];
+
+    y = AddRow(
+        new Row {
+          Kind = RowKind.Mod,
+          Height = ModRowHeight,
+          ModName = group.Key,
+          ModScenarioCount = modKeys.Count,
+          SelectionKeys = modKeys,
+        },
+        y);
+
+    if (window.CollapsedMods.Contains(group.Key)) {
+      return y;
+    }
+
+    for (int f = 0; f < features.Count; f++) {
+      (DiscoveredSuite suite, FeaturePlan plan) = features[f];
+      y = AddFeatureRows(window, suite, plan, startIndices[plan], featureKeys[f], y);
+    }
+
+    return y;
+  }
+
+  private static float AddFeatureRows(
+      RunnerWindow window,
+      DiscoveredSuite suite,
+      FeaturePlan plan,
+      int startIndex,
+      List<(string SourcePath, int Index)> keys,
+      float y) {
+    y = AddRow(
+        new Row {
+          Kind = RowKind.Feature,
+          Height = FeatureRowHeight,
+          Plan = plan,
+          Index = startIndex,
+          SelectionKeys = keys,
+        },
+        y);
+
+    if (window.CollapsedFeatures.Contains(plan.SourcePath ?? string.Empty)) {
+      return y;
+    }
+
+    for (int i = 0; i < plan.Scenarios.Count; i++) {
+      ScenarioPlan scenario = plan.Scenarios[i];
+      if (IsScenarioVisible(window, suite, plan, scenario)) {
+        y = AddRow(new Row { Kind = RowKind.Scenario, Height = ScenarioRowHeight, Plan = plan, Scenario = scenario, Index = startIndex + i }, y);
+      }
+    }
+
+    return y;
+  }
+
+  // Keyed to what is on screen, so filtering to a tag and ticking the mod selects that
+  // tag's scenarios and nothing hidden.
+  private static List<(string SourcePath, int Index)> VisibleKeys(
+      RunnerWindow window, DiscoveredSuite suite, FeaturePlan plan, int featureStart) {
+    string featurePath = plan.SourcePath ?? string.Empty;
+    List<(string SourcePath, int Index)> keys = [];
+    for (int i = 0; i < plan.Scenarios.Count; i++) {
+      if (IsScenarioVisible(window, suite, plan, plan.Scenarios[i])) {
+        keys.Add((featurePath, featureStart + i));
+      }
+    }
+
+    return keys;
   }
 
   private static float AddRow(Row row, float y) {

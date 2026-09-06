@@ -20,40 +20,8 @@ public static class RunnerToolbar {
   public static float Height(float width) => width < 760f ? 82f : 48f;
 
   public static void DrawHeader(Rect rect, RunnerWindow window) {
-    float x = rect.x + Padding;
-    foreach ((string key, string label) in new[] { ("run", "Run"), ("fixtures", "Fixtures"), ("reports", "Reports") }) {
-      Rect tab = new Rect(x, rect.y, 90f, 48f);
-      bool active = window.Workspace == key;
-      Label(tab, label, active ? RunnerStatusColors.Accent : Color.white, GameFont.Small);
-      if (active) {
-        Widgets.DrawBoxSolid(new Rect(tab.x, tab.yMax - 2f, tab.width, 2f), RunnerStatusColors.Accent);
-      }
-
-      if (Widgets.ButtonInvisible(tab)) {
-        window.Workspace = key;
-      }
-
-      x += 94f;
-    }
-
-    float summaryY = rect.width < 900f ? rect.y + 48f : rect.y + 8f;
-    float summaryX = rect.width < 900f ? rect.x + Padding : x + 18f;
-    float summaryWidth = rect.xMax - summaryX - Padding;
-    bool paused = window.ActiveSession?.IsPaused == true;
-    string state = paused ? "Paused" : window.IsRunning ? "Running" : window.FailedResultsCount > 0 ? "Failed" : "Idle";
-    if (!paused && window.ActiveSession?.PauseRequested == true) {
-      state = "Pausing after current step";
-    }
-
-    Color color = StatusColor(window);
-    RunnerStatusColors.DrawDot(new Vector2(summaryX + 4f, summaryY + 16f), color, 7f);
-    float statusWidth = Mathf.Max(100f, summaryWidth - 320f);
-    Label(new Rect(summaryX + 16f, summaryY, statusWidth - 16f, 18f), state, color, GameFont.Tiny);
-    string detail = window.IsRunning ? window.ActiveSession?.CurrentStepDisplay ?? string.Empty
-        : $"{window.ParsedFeaturesCount} features" + (window.LastRunAt.HasValue ? $" · last run {window.LastRunAt:HH:mm:ss}" : string.Empty);
-    Label(new Rect(summaryX + 16f, summaryY + 18f, statusWidth - 16f, 18f), detail, RunnerStatusColors.Muted, GameFont.Tiny);
-    Label(new Rect(summaryX + statusWidth, summaryY + 8f, 310f, 22f),
-        $"{window.PassedResultsCount} passed · {window.FailedResultsCount} failed · {window.SkippedResultsCount} skipped", Color.white, GameFont.Tiny);
+    float x = WorkspaceTabs(rect, window);
+    Summary(rect, window, x);
     Widgets.DrawLineHorizontal(rect.x, rect.yMax, rect.width, Widgets.SeparatorLineColor);
   }
 
@@ -101,43 +69,11 @@ public static class RunnerToolbar {
   }
 
   public static void DrawActions(Rect rect, RunnerWindow window) {
-    bool paused = window.ActiveSession?.IsPaused == true;
-    bool stopping = window.ActiveSession?.CancelRequested == true;
-    bool idle = !window.IsRunning && !FixtureCommands.IsBusy;
     float x = rect.xMax - ActionsWidth;
-    GUI.enabled = window.IsRunning;
-    bool follow = window.FollowRun;
-    Widgets.CheckboxLabeled(new Rect(x, rect.y, 120f, ButtonHeight), "Follow run", ref follow);
-    if (follow != window.FollowRun) {
-      window.FollowRun = follow;
-      window.PublishSnapshot();
-    }
-
-    x += 138f;
-    int count = window.RunScope == "selected" ? window.SelectedScenarioCount
-        : window.RunScope == "failed" ? window.FailedResultsCount : window.TotalScenarioCount;
-    GUI.enabled = !stopping && (paused || (idle && count > 0));
-    if (IconButton(new Rect(x, rect.y, 32f, ButtonHeight), paused ? "continue" : "run", paused ? "Continue run" : $"Run {count} scenarios", RunnerStatusColors.Accent)) {
-      if (paused) {
-        window.ContinueRun();
-      } else {
-        _ = RunnerCommands.Run(window.RunScope);
-      }
-    }
-
-    x += 36f;
-    GUI.enabled = window.IsRunning && !paused && !stopping && window.ActiveSession?.PauseRequested == false;
-    if (IconButton(new Rect(x, rect.y, 32f, ButtonHeight), "pause", "Pause after current step", Color.white)) {
-      window.ActiveSession?.RequestPause();
-    }
-
-    x += 36f;
-    GUI.enabled = window.IsRunning && !stopping;
-    if (IconButton(new Rect(x, rect.y, 32f, ButtonHeight), "abort", stopping ? "Aborting run" : "Abort run", RunnerStatusColors.FailedText)) {
-      window.ActiveSession?.RequestCancel();
-      window.PublishSnapshot();
-    }
-
+    FollowToggle(new Rect(x, rect.y, 120f, ButtonHeight), window);
+    RunButton(new Rect(x + 138f, rect.y, 32f, ButtonHeight), window);
+    PauseButton(new Rect(x + 174f, rect.y, 32f, ButtonHeight), window);
+    AbortButton(new Rect(x + 210f, rect.y, 32f, ButtonHeight), window);
     GUI.enabled = true;
   }
 
@@ -159,6 +95,98 @@ public static class RunnerToolbar {
     GUI.enabled = true;
     if (Widgets.ButtonText(new Rect(rect.x + 150f, rect.y + 76f, 180f, 30f), "Pickle_OpenReportDir".Translate())) {
       OpenReportDirectory();
+    }
+  }
+
+  private static float WorkspaceTabs(Rect rect, RunnerWindow window) {
+    float x = rect.x + Padding;
+    foreach ((string key, string label) in new[] { ("run", "Run"), ("fixtures", "Fixtures"), ("reports", "Reports") }) {
+      Rect tab = new Rect(x, rect.y, 90f, 48f);
+      bool active = window.Workspace == key;
+      Label(tab, label, active ? RunnerStatusColors.Accent : Color.white, GameFont.Small);
+      if (active) {
+        Widgets.DrawBoxSolid(new Rect(tab.x, tab.yMax - 2f, tab.width, 2f), RunnerStatusColors.Accent);
+      }
+
+      if (Widgets.ButtonInvisible(tab)) {
+        window.Workspace = key;
+      }
+
+      x += 94f;
+    }
+
+    return x;
+  }
+
+  private static void Summary(Rect rect, RunnerWindow window, float tabsEnd) {
+    float summaryY = rect.width < 900f ? rect.y + 48f : rect.y + 8f;
+    float summaryX = rect.width < 900f ? rect.x + Padding : tabsEnd + 18f;
+    float summaryWidth = rect.xMax - summaryX - Padding;
+
+    Color color = StatusColor(window);
+    RunnerStatusColors.DrawDot(new Vector2(summaryX + 4f, summaryY + 16f), color, 7f);
+    float statusWidth = Mathf.Max(100f, summaryWidth - 320f);
+    Label(new Rect(summaryX + 16f, summaryY, statusWidth - 16f, 18f), StateLabel(window), color, GameFont.Tiny);
+    string detail = window.IsRunning ? window.ActiveSession?.CurrentStepDisplay ?? string.Empty
+        : $"{window.ParsedFeaturesCount} features" + (window.LastRunAt.HasValue ? $" · last run {window.LastRunAt:HH:mm:ss}" : string.Empty);
+    Label(new Rect(summaryX + 16f, summaryY + 18f, statusWidth - 16f, 18f), detail, RunnerStatusColors.Muted, GameFont.Tiny);
+    Label(new Rect(summaryX + statusWidth, summaryY + 8f, 310f, 22f),
+        $"{window.PassedResultsCount} passed · {window.FailedResultsCount} failed · {window.SkippedResultsCount} skipped", Color.white, GameFont.Tiny);
+  }
+
+  private static string StateLabel(RunnerWindow window) {
+    bool paused = window.ActiveSession?.IsPaused == true;
+    if (!paused && window.ActiveSession?.PauseRequested == true) {
+      return "Pausing after current step";
+    }
+
+    return paused ? "Paused" : window.IsRunning ? "Running" : window.FailedResultsCount > 0 ? "Failed" : "Idle";
+  }
+
+  private static void FollowToggle(Rect rect, RunnerWindow window) {
+    GUI.enabled = window.IsRunning;
+    bool follow = window.FollowRun;
+    Widgets.CheckboxLabeled(rect, "Follow run", ref follow);
+    if (follow != window.FollowRun) {
+      window.FollowRun = follow;
+      window.PublishSnapshot();
+    }
+  }
+
+  private static void RunButton(Rect rect, RunnerWindow window) {
+    bool paused = window.ActiveSession?.IsPaused == true;
+    bool stopping = window.ActiveSession?.CancelRequested == true;
+    bool idle = !window.IsRunning && !FixtureCommands.IsBusy;
+    int count = window.RunScope == "selected" ? window.SelectedScenarioCount
+        : window.RunScope == "failed" ? window.FailedResultsCount : window.TotalScenarioCount;
+
+    GUI.enabled = !stopping && (paused || (idle && count > 0));
+    if (!IconButton(rect, paused ? "continue" : "run", paused ? "Continue run" : $"Run {count} scenarios", RunnerStatusColors.Accent)) {
+      return;
+    }
+
+    if (paused) {
+      window.ContinueRun();
+    } else {
+      _ = RunnerCommands.Run(window.RunScope);
+    }
+  }
+
+  private static void PauseButton(Rect rect, RunnerWindow window) {
+    bool paused = window.ActiveSession?.IsPaused == true;
+    bool stopping = window.ActiveSession?.CancelRequested == true;
+    GUI.enabled = window.IsRunning && !paused && !stopping && window.ActiveSession?.PauseRequested == false;
+    if (IconButton(rect, "pause", "Pause after current step", Color.white)) {
+      window.ActiveSession?.RequestPause();
+    }
+  }
+
+  private static void AbortButton(Rect rect, RunnerWindow window) {
+    bool stopping = window.ActiveSession?.CancelRequested == true;
+    GUI.enabled = window.IsRunning && !stopping;
+    if (IconButton(rect, "abort", stopping ? "Aborting run" : "Abort run", RunnerStatusColors.FailedText)) {
+      window.ActiveSession?.RequestCancel();
+      window.PublishSnapshot();
     }
   }
 

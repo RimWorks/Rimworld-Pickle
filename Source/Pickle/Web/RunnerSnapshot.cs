@@ -61,7 +61,7 @@ public static class RunnerSnapshot {
     List<string> features = new List<string>();
     foreach ((DiscoveredSuite suite, FeaturePlan plan) in parsedFeatures) {
       string sourcePath = plan.SourcePath ?? string.Empty;
-      features.Add(BuildFeature(suite, plan, sourcePath, scenarioIndex, results, isSelected, session, runner));
+      features.Add(BuildFeature(suite, plan, sourcePath, scenarioIndex, new Sources(results, isSelected, session, runner)));
       scenarioIndex += plan.Scenarios.Count;
     }
 
@@ -75,10 +75,11 @@ public static class RunnerSnapshot {
       FeaturePlan plan,
       string sourcePath,
       int featureStartIndex,
-      IReadOnlyDictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> results,
-      Func<string, int, bool>? isSelected,
-      RunSession? session,
-      RunnerWindow? runner) {
+      in Sources sources) {
+    IReadOnlyDictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> results = sources.Results;
+    Func<string, int, bool>? isSelected = sources.IsSelected;
+    RunSession? session = sources.Session;
+    RunnerWindow? runner = sources.Runner;
     List<string> scenarios = new List<string>();
     for (int i = 0; i < plan.Scenarios.Count; i++) {
       ScenarioPlan scenario = plan.Scenarios[i];
@@ -211,5 +212,28 @@ public static class RunnerSnapshot {
     }
 
     return session?.IsPaused == true ? "paused" : "running";
+  }
+
+  // Four of BuildFeature's arguments are the same for every feature in one snapshot, so
+  // they travel together rather than as four more parameters.
+  private readonly struct Sources {
+    public Sources(
+        IReadOnlyDictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> results,
+        Func<string, int, bool>? isSelected,
+        RunSession? session,
+        RunnerWindow? runner) {
+      Results = results;
+      IsSelected = isSelected;
+      Session = session;
+      Runner = runner;
+    }
+
+    public IReadOnlyDictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> Results { get; }
+
+    public Func<string, int, bool>? IsSelected { get; }
+
+    public RunSession? Session { get; }
+
+    public RunnerWindow? Runner { get; }
   }
 }
