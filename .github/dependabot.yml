@@ -1,0 +1,44 @@
+version: 2
+
+updates:
+  # csproj versions already float on patch ranges, so these PRs are the minor and major
+  # bumps that a restore will not pick up on its own.
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    groups:
+      dotnet:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    commit-message:
+      # fix cuts a patch release, which is what ships an updated runtime dependency
+      prefix: "fix(deps)"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      # chore is absent from releaseRules, so a CI-only bump does not cut a release
+      prefix: "chore(deps)"
+
+  - package-ecosystem: "npm"
+    directories:
+      - "/"
+      - "/Dashboard"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      npm:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    commit-message:
+      prefix: "chore(deps)"
