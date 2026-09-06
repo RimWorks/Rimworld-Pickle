@@ -65,20 +65,20 @@ public class UiSteps {
     await ctx.WaitFrames(2);
   }
 
+  // A page transition takes more than the one frame this used to wait, and how many more
+  // depends on the machine, so it waits on the window rather than on a frame count.
   [Then("window {string} is open")]
   public async Task AssertWindowOpen(PickleContext ctx, string windowName) {
-    await ctx.WaitFrames(1);
-    ctx.Assert(
-        IsWindowOpen(windowName),
-        $"window '{windowName}' should be open; open windows: {DescribeOpenWindows()}");
+    await ctx.AssertEventually(
+        () => IsWindowOpen(windowName),
+        () => $"window '{windowName}' should be open; open windows: {DescribeOpenWindows()}");
   }
 
   [Then("window {string} is closed")]
   public async Task AssertWindowClosed(PickleContext ctx, string windowName) {
-    await ctx.WaitFrames(1);
-    ctx.Assert(
-        !IsWindowOpen(windowName),
-        $"window '{windowName}' should be closed; open windows: {DescribeOpenWindows()}");
+    await ctx.AssertEventually(
+        () => !IsWindowOpen(windowName),
+        () => $"window '{windowName}' should be closed; open windows: {DescribeOpenWindows()}");
   }
 
   [When("I select {string}")]
