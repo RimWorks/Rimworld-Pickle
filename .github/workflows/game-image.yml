@@ -96,6 +96,8 @@ jobs:
   image-windows:
     name: rimworld 1.6 windows image
     runs-on: ubuntu-latest
+    # Never gates the Linux path. A caller reads windows-image-ref and skips when it is empty.
+    continue-on-error: true
     outputs:
       image-ref: ${{ steps.image.outputs.image-ref }}
       skipped: ${{ steps.image.outputs.skipped }}
@@ -105,7 +107,7 @@ jobs:
     steps:
       - name: Build RimWorld 1.6 Windows game image
         id: image
-        uses: RimWorks/steam-game-image-action@a22d84ce0a2d0f6ffca3652ac5023d8be2dacc55 # steam-platform support
+        uses: RimWorks/steam-game-image-action@880abef0b856d58e2b87d66c435068325a3658ab # steam-platform support
         with:
           steam-username: ${{ secrets.STEAM_USERNAME }}
           steam-config-vdf: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
