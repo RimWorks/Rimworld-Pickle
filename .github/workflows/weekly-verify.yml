@@ -1,0 +1,94 @@
+name: weekly-verify
+
+on:
+  schedule:
+    # Saturday 14:00 UTC, staggered so the repos never push Steam at once.
+    - cron: '0 14 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# shares the release group so two workflows never push the same workshop item at once
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: verify against current RimWorld, then republish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Install release dependencies
+        run: npm ci --ignore-scripts
+
+      # the dashboard bundles are embedded resources, so they must exist before compiling
+      - name: Build dashboard
+        run: npm --prefix Dashboard ci && npm --prefix Dashboard run build
+
+      # Krafs.Rimworld.Ref floats on 1.6.* with no lock file, so this is where a new
+      # RimWorld release enters and where breakage would first show up.
+      - name: dotnet restore
+        run: dotnet restore Pickle.slnx
+
+      - name: Record resolved RimWorld version
+        run: |
+          version=$(dotnet list Pickle.slnx package \
+            | awk '/Krafs.Rimworld.Ref/ {print $NF; exit}')
+          echo "RIMWORLD_REF=${version:-unknown}" >> "$GITHUB_ENV"
+          echo "resolved RimWorld ref: ${version:-unknown}"
+
+      # Assemblies/ is gitignored, so a checkout has no DLLs. Skipping this publishes a
+      # mod with no code in it.
+      - name: dotnet build
+        run: dotnet build Pickle.slnx -c Release --nologo --no-restore
+
+      - name: dotnet test
+        run: |
+          set -o pipefail
+          dotnet test Pickle.slnx -c Release --nologo --no-build \
+            --logger "console;verbosity=normal" | tee test-output.txt
+          passed=$(grep -oE 'Passed:[[:space:]]+[0-9]+' test-output.txt | grep -oE '[0-9]+' | tail -1)
+          echo "TESTS_PASSED=${passed:-unknown}" >> "$GITHUB_ENV"
+
+      - name: Set up SteamCMD
+        uses: buildalon/setup-steamcmd@6766d78d7196d611bfa37c0dcad876d7b16a27ad # v1
+
+      - name: Restore Steam config
+        env:
+          STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
+        run: |
+          mkdir -p "$STEAM_DIR/config"
+          printf '%s' "$STEAM_CONFIG_VDF_B64" | base64 -d > "$STEAM_DIR/config/config.vdf"
+          echo "STEAM_CONFIG_VDF=$STEAM_DIR/config/config.vdf" >> "$GITHUB_ENV"
+
+      - name: Steam login preflight
+        env:
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+        run: |
+          "$STEAM_CMD/steamcmd.sh" +@ShutdownOnFailedCommand 1 +@NoPromptForPassword 1 +login "$STEAM_USERNAME" +quit
+
+      - name: Republish
+        env:
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_CONFIG_VDF: ${{ env.STEAM_CONFIG_VDF }}
+          STEAMCMD_PATH: ${{ env.STEAM_CMD }}/steamcmd.sh
+          PICKLE_WORKSHOP_ID: ${{ vars.PICKLE_WORKSHOP_ID }}
+          VERIFIED_COMMIT: ${{ github.sha }}
+          VERIFIED_RIMWORLD: ${{ env.RIMWORLD_REF }}
+          VERIFIED_TESTS: ${{ env.TESTS_PASSED }}
+        run: node scripts/workshop-bump.mjs

@@ -8,6 +8,7 @@
 .vale.ini
 
 Source/
+scripts/
 Dashboard/
 Docs/
 Styles/

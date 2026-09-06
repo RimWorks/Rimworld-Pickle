@@ -25,6 +25,7 @@ export default {
                 // backends that loadFolders.xml selects between; a zip without them
                 // installs a Pickle that cannot patch anything.
                 prepareCmd: [
+                    'node scripts/write-stamp.mjs',
                     'npm --prefix Dashboard ci',
                     'npm --prefix Dashboard run build',
                     'dotnet build Pickle.slnx -c Release -p:Version=${nextRelease.version}',
