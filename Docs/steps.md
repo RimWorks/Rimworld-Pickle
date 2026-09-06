@@ -493,8 +493,11 @@ while a follow is active.
 | `no errors were logged` | Fails if the game logged an error during the scenario |
 | `I take a screenshot {string}` | Captures a screenshot and attaches it to the report |
 
-Clicks need a real X display, because RimWorld drops synthetic pointer events. Key
-presses work without one. See [running tests](running.md).
+`I click`, `I click button`, `I hover` and `I press key` need a real X display. RimWorld
+drops synthetic pointer events, and `Input.GetKeyDown` never sees a synthetic key event.
+Pickle sends both through XTEST instead. On Windows and macOS those four steps throw and
+name the platform. Every other step here works anywhere.
+See [running tests](running.md).
 
 ## Dev mode
 

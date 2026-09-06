@@ -42,7 +42,7 @@ internal static class TagClickSmoke {
 
       try {
         if (!XdoInput.Available) {
-          Log.Warn("pickle: tag click smoke skipped - xdotool not available");
+          Log.Warn("pickle: tag click smoke skipped - {Reason}", [XdoInput.UnavailableReason]);
           TagStore.SessionActive = false;
           Find.WindowStack.TryRemove(testWindow);
           return;

@@ -16,10 +16,17 @@ public static class XdoInput {
 
   private static readonly string XdotoolPath = ResolveXdotool();
 
-  private static bool? available;
   private static string? gameWindowId;
 
-  public static bool Available => available ??= Probe();
+  public static string? UnavailableReason { get; } = Probe();
+
+  public static bool Available => UnavailableReason == null;
+
+  public static void EnsureAvailable() {
+    if (UnavailableReason != null) {
+      throw new InvalidOperationException(UnavailableReason);
+    }
+  }
 
   // no --sync: it waits for a motion event, so a repeat click at the same spot hangs.
   public static void MoveTo(Vector2 guiPoint) {
@@ -96,16 +103,28 @@ public static class XdoInput {
     }
   }
 
-  private static bool Probe() {
-    return XdotoolPath.Length > 0;
+  // split three ways so a windows user never goes hunting for an xdotool package.
+  private static string? Probe() {
+    if (Environment.OSVersion.Platform != PlatformID.Unix) {
+      return "input injection needs X11, so Pickle cannot drive the mouse or keyboard on this platform yet";
+    }
+
+    if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY"))) {
+      return "no DISPLAY, so there is no X server to inject into; run under Xvfb or a real session";
+    }
+
+    if (XdotoolPath.Length == 0) {
+      return "xdotool is not on PATH; the docker image needs xdotool installed for input injection";
+    }
+
+    return null;
   }
 
   // Never touch startInfo.EnvironmentVariables. Leaving it alone is what makes the
   // child inherit DISPLAY, which XTEST needs to reach the right X server.
   private static void Run(string arguments) {
-    if (!Available) {
-      throw new InvalidOperationException(
-          $"xdotool is not on PATH; the docker image needs xdotool installed for click injection. Command: xdotool {arguments}");
+    if (UnavailableReason != null) {
+      throw new InvalidOperationException($"{UnavailableReason}. Command: xdotool {arguments}");
     }
 
     ProcessStartInfo startInfo = new ProcessStartInfo(XdotoolPath, arguments) {

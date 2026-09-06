@@ -225,5 +225,7 @@ same for every step in it, and the attribute wins where both apply.
 Tag a widget with `PickleUI.Tag("my-button", rect)` inside your own drawing code.
 Pickle tags vanilla buttons by label, as `btn:Research`.
 
-Clicks need a real X display, because RimWorld drops synthetic pointer events. Key
-presses work without one.
+Clicks and key presses both need a real X display. RimWorld drops synthetic pointer
+events, and `Input.GetKeyDown` never sees a synthetic key event. Pickle sends both
+through XTEST instead. On Windows and macOS these three calls throw and name the
+platform.

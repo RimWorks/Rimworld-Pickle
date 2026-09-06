@@ -89,11 +89,7 @@ public class PickleContext {
       throw new InvalidOperationException(error ?? "Failed to resolve tag");
     }
 
-    if (!XdoInput.Available) {
-      throw new InvalidOperationException(
-          "xdotool is not available; the docker image needs xdotool installed for click injection.");
-    }
-
+    XdoInput.EnsureAvailable();
     XdoInput.Click(rect.center);
     await WaitFrames(2);
   }
@@ -109,21 +105,13 @@ public class PickleContext {
       throw new InvalidOperationException(error ?? "Failed to resolve tag");
     }
 
-    if (!XdoInput.Available) {
-      throw new InvalidOperationException(
-          "xdotool is not available; the docker image needs xdotool installed for mouse movement.");
-    }
-
+    XdoInput.EnsureAvailable();
     XdoInput.MoveTo(rect.center);
     await WaitFrames(1);
   }
 
   public async Task PressKey(string key) {
-    if (!XdoInput.Available) {
-      throw new InvalidOperationException(
-          "xdotool is not available; the docker image needs xdotool installed for key injection.");
-    }
-
+    XdoInput.EnsureAvailable();
     XdoInput.Key(MapKeysym(key));
     await WaitFrames(2);
   }
