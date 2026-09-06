@@ -14,6 +14,9 @@ on:
       image-ref:
         description: Image ref the suite and build jobs should pull.
         value: ${{ jobs.image.outputs.image-ref }}
+      windows-image-ref:
+        description: Image ref the Windows suite should pull.
+        value: ${{ jobs.image-windows.outputs.image-ref }}
   workflow_dispatch:
     inputs:
       force:
@@ -89,3 +92,52 @@ jobs:
             echo "| steam buildid | ${{ steps.image.outputs.buildid }} |"
             echo "| rebuilt | ${{ steps.image.outputs.skipped == 'true' && 'no, buildid unchanged' || 'yes' }} |"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  image-windows:
+    name: rimworld 1.6 windows image
+    runs-on: ubuntu-latest
+    outputs:
+      image-ref: ${{ steps.image.outputs.image-ref }}
+      skipped: ${{ steps.image.outputs.skipped }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Build RimWorld 1.6 Windows game image
+        id: image
+        uses: RimWorks/steam-game-image-action@a22d84ce0a2d0f6ffca3652ac5023d8be2dacc55 # steam-platform support
+        with:
+          steam-username: ${{ secrets.STEAM_USERNAME }}
+          steam-config-vdf: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
+          app-id: '294100'
+          branch: 'version-1.6.4633'
+          # The Windows depot needs wine, which the default runtime base has none of.
+          steam-platform: windows
+          base-image: ghcr.io/rimworks/steam-game-image-action/runtime-base-proton:latest
+          image: ghcr.io/${{ github.repository_owner }}/rimworld-game-runnable-windows
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+          skip-if-unchanged: ${{ inputs.force && 'false' || 'true' }}
+
+      - name: Refuse to leave the image public
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          # Same rule as the Linux image: this holds the whole paid game.
+          name='rimworld-game-runnable-windows'
+
+          curl -sS -o "${RUNNER_TEMP}/ghcr-token-win.json" \
+            "https://ghcr.io/token?scope=repository:${OWNER}/${name}:pull&service=ghcr.io" || true
+          token="$(jq -r '.token // empty' "${RUNNER_TEMP}/ghcr-token-win.json" 2>/dev/null || true)"
+
+          code="$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer ${token}" \
+            "https://ghcr.io/v2/${OWNER}/${name}/tags/list")"
+
+          if [[ "$code" == "200" ]]; then
+            echo "::error::ghcr.io/${OWNER}/${name} is publicly pullable and contains the" \
+                 "whole game. Set the package to private before running the suite again."
+            exit 1
+          fi
+
+          echo "package is not anonymously pullable (HTTP ${code})"
+

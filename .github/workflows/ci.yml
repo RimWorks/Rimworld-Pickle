@@ -370,3 +370,111 @@ jobs:
           name: pickle-report-${{ matrix.backends }}
           path: pickle-reports/
           if-no-files-found: warn
+
+  # Not gating a merge yet. RimWorld renders on the CPU under lavapipe here, so a run is
+  # slow and unproven; it exists to catch a Windows-only input regression, not to block.
+  suite-windows:
+    name: suite (windows)
+    needs: [dashboard, game-image]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: dashboard-dist
+          path: Dashboard/dist
+
+      - name: Build the mod
+        run: dotnet build Pickle.slnx -c Release
+
+      - name: Stage mods and config
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          .github/scripts/stage-pickle-mods.sh \
+            harmony "$RUNNER_TEMP/mods" "$RUNNER_TEMP/config-src"
+
+          mkdir -p "$RUNNER_TEMP/mods/Pickle"
+          tar -c --exclude=.git --exclude=node_modules --exclude=Source \
+              --exclude=Dashboard --exclude=pickle-reports . \
+            | tar -x -C "$RUNNER_TEMP/mods/Pickle"
+
+          # -savedatafolder wants a folder holding Config/, which keeps ModsConfig a plain
+          # bind mount instead of something seeded into a wine prefix that does not exist yet.
+          mkdir -p "$RUNNER_TEMP/config/Config"
+          cp "$RUNNER_TEMP/config-src"/* "$RUNNER_TEMP/config/Config/"
+          chmod -R 777 "$RUNNER_TEMP/config"
+
+      - name: Run the suite
+        env:
+          GAME_IMAGE: ${{ needs.game-image.outputs.windows-image-ref }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          echo "pulling $GAME_IMAGE ..."
+          docker pull -q "$GAME_IMAGE"
+
+          mkdir -p "$PWD/pickle-reports"
+          chmod 777 "$PWD/pickle-reports"
+
+          : > "$RUNNER_TEMP/container.log"
+          # Runs as the image's uid 1000 so Proton owns its own prefix under $HOME. Paths
+          # handed to the exe are wine paths; Z: is the container root.
+          docker run --rm --init --name pickle-suite-win \
+            -v "$RUNNER_TEMP/mods:/game/Mods:ro" \
+            -v "$RUNNER_TEMP/config:/config" \
+            -v "$PWD/pickle-reports:/out" \
+            "$GAME_IMAGE" \
+            run-headless-windows 'Z:\game\RimWorldWin64.exe' \
+              '-savedatafolder=Z:\config' '-pickle-run' \
+              '-pickle-report-dir=Z:\out' '-logfile' 'Z:\out\Player.log' \
+            > "$RUNNER_TEMP/container.log" 2>&1 &
+          game=$!
+
+          ( until [[ -f pickle-reports/Player.log ]]; do sleep 2; done
+            tail -n +1 -f pickle-reports/Player.log \
+              | grep --line-buffered -oE 'pickle: .*' ) &
+          follow=$!
+
+          status=0
+          wait "$game" || status=$?
+          sleep 1
+          kill "$follow" 2>/dev/null || true
+          exit "$status"
+
+      - name: Publish the counts
+        if: always()
+        run: |
+          {
+            echo "## Pickle suite (windows)"
+            if [ -f pickle-reports/summary.md ]; then
+              tail -n +2 pickle-reports/summary.md
+            else
+              echo "The run produced no summary. Read Player.log in the artifact below."
+              echo
+              echo "Last lines of the container log:"
+              echo '```'
+              tail -20 "$RUNNER_TEMP/container.log" 2>/dev/null || echo "(none)"
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pickle-report-windows
+          path: pickle-reports/
+          if-no-files-found: warn
+
