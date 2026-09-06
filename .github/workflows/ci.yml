@@ -373,6 +373,8 @@ jobs:
 
   # Not gating a merge yet. RimWorld renders on the CPU under lavapipe here, so a run is
   # slow and unproven; it exists to catch a Windows-only input regression, not to block.
+  # No film: encoding 25 videos under wine cost 45 minutes and blew the timeout, and the
+  # Linux suites already produce the same films.
   suite-windows:
     name: suite (windows)
     needs: [dashboard, game-image]
@@ -439,6 +441,7 @@ jobs:
             "$GAME_IMAGE" \
             run-headless-windows 'Z:\game\RimWorldWin64.exe' \
               '-savedatafolder=Z:\config' '-pickle-run' \
+              '-pickle-max-film-seconds=0' \
               '-pickle-report-dir=Z:\out' '-logfile' 'Z:\out\Player.log' \
             > "$RUNNER_TEMP/container.log" 2>&1 &
           game=$!
