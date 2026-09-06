@@ -107,7 +107,7 @@ jobs:
     steps:
       - name: Build RimWorld 1.6 Windows game image
         id: image
-        uses: RimWorks/steam-game-image-action@770ffe68afbc91faa1da2c05ec1292ceea591ba8 # steam-platform support
+        uses: RimWorks/steam-game-image-action@5fcae0edf5f2665b01bbcbe8391587a977bbfd5d # steam-platform support
         with:
           steam-username: ${{ secrets.STEAM_USERNAME }}
           steam-config-vdf: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
