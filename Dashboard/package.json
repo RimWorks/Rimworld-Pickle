@@ -18,13 +18,13 @@
     "@tailwindcss/vite": "^4.1.14",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^5.0.4",
+    "@vitejs/plugin-react": "^6.1.1",
     "daisyui": "^5.1.29",
     "oxlint": "^1.57.0",
     "oxlint-tsgolint": "^7.0.2001",
     "tailwindcss": "^4.1.14",
     "typescript": "^7.0.2",
-    "vite": "^7.1.9",
+    "vite": "^8.2.2",
     "vite-plugin-singlefile": "^2.3.0"
   }
 }
