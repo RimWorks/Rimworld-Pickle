@@ -8,10 +8,13 @@ public static class RunnerFilterBar {
   private const float RowHeight = 40f;
   private const float Padding = 8f;
 
-  // The chip's right end belongs to the remove cross. Both the width and the label rect
-  // subtract it, so the text can never be centred underneath it.
-  private const float ChipTextPadding = 8f;
-  private const float ChipCloseWidth = 22f;
+  private const float ChipPadding = 20f;
+  private const float ChipHeight = 30f;
+  private const float ChipRowStep = 34f;
+
+  // The cross rides in the label rather than being drawn over it. Two DrawLine calls got
+  // clipped at the chip's midline and left a half cross behind.
+  private const string ChipSuffix = "  \u00d7";
 
   public static float Height(float width, RunnerWindow window) {
     float fieldsWidth = FieldsWidth(width);
@@ -20,7 +23,7 @@ public static class RunnerFilterBar {
     foreach (string tag in window.ActiveTagFilters) {
       float chipWidth = ChipWidth(tag, fieldsWidth);
       if (x + chipWidth > fieldsWidth) {
-        height += 30f;
+        height += ChipRowStep;
         x = 0f;
       }
 
@@ -28,7 +31,7 @@ public static class RunnerFilterBar {
     }
 
     if (window.ActiveTagFilters.Count > 0) {
-      height += 30f;
+      height += ChipRowStep;
     }
 
     return height + (width < 1000f ? RowHeight : 0f);
@@ -56,7 +59,7 @@ public static class RunnerFilterBar {
 
     Rect tagRect = new Rect(modRect.xMax + 8f, searchRect.y, 144f, 30f);
     GUI.enabled = !window.IsRunning && !Web.FixtureCommands.IsBusy;
-    string tagLabel = window.ActiveTagFilters.Count == 0 ? "Select by tag" : $"{window.ActiveTagFilters.Count} tags · match any";
+    string tagLabel = window.ActiveTagFilters.Count == 0 ? "Select by tag" : $"{window.ActiveTagFilters.Count} tags · match all";
     if (Widgets.ButtonText(tagRect, tagLabel)) {
       Find.WindowStack.Add(new RunnerTagMenu(window, GUIUtility.GUIToScreenPoint(new Vector2(tagRect.x, tagRect.yMax))));
     }
@@ -65,31 +68,22 @@ public static class RunnerFilterBar {
     float y = rect.y + RowHeight;
     Text.Font = GameFont.Tiny;
     if (window.ActiveTagFilters.Count > 0) {
-      Widgets.Label(new Rect(rect.x + Padding, y + 5f, 65f, 24f), "Match any");
+      Widgets.Label(new Rect(rect.x + Padding, y + 5f, 65f, 24f), "Match all");
     }
 
     foreach (string tag in new List<string>(window.ActiveTagFilters)) {
       float chipWidth = ChipWidth(tag, fieldsWidth);
       if (x + chipWidth > rect.x + Padding + fieldsWidth) {
         x = rect.x + Padding;
-        y += 30f;
+        y += ChipRowStep;
       }
 
-      Rect chip = new Rect(x, y + 2f, chipWidth, 26f);
+      Rect chip = new Rect(x, y + 2f, chipWidth, ChipHeight);
       TooltipHandler.TipRegion(chip, $"Remove {tag} tag");
-      if (Widgets.ButtonText(chip, string.Empty)) {
+      if (Widgets.ButtonText(chip, (tag + ChipSuffix).Truncate(chipWidth))) {
         window.SetFilter(tag: tag, additive: true);
       }
 
-      Rect label = new Rect(chip.x + ChipTextPadding, chip.y, chip.width - ChipTextPadding - ChipCloseWidth, chip.height);
-      TextAnchor anchor = Text.Anchor;
-      Text.Anchor = TextAnchor.MiddleLeft;
-      Widgets.Label(label, tag.Truncate(label.width));
-      Text.Anchor = anchor;
-
-      Vector2 c = new Vector2(chip.xMax - (ChipCloseWidth / 2f), chip.center.y);
-      Widgets.DrawLine(c + new Vector2(-3f, -3f), c + new Vector2(3f, 3f), RunnerStatusColors.Muted, 1f);
-      Widgets.DrawLine(c + new Vector2(3f, -3f), c + new Vector2(-3f, 3f), RunnerStatusColors.Muted, 1f);
       x += chipWidth + 6f;
     }
 
@@ -102,10 +96,13 @@ public static class RunnerFilterBar {
     return width - (Padding * 2f) - (width < 1000f ? 0f : RunnerToolbar.ActionsWidth + 18f);
   }
 
+  // Restores whatever the caller was using. Hardcoding Small here measured the tag in Tiny
+  // and then drew it in Small, so every chip came out too narrow for its own label.
   private static float ChipWidth(string tag, float fieldsWidth) {
+    GameFont previous = Text.Font;
     Text.Font = GameFont.Tiny;
-    float width = Mathf.Min(Text.CalcSize(tag).x + (ChipTextPadding * 2f) + ChipCloseWidth, fieldsWidth);
-    Text.Font = GameFont.Small;
+    float width = Mathf.Min(Text.CalcSize(tag + ChipSuffix).x + ChipPadding, fieldsWidth);
+    Text.Font = previous;
     return width;
   }
 }

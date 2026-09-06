@@ -36,7 +36,11 @@ public class RunnerWindow : Window {
 
   // Deselected, not selected: a scenario is on the moment it is discovered, with no
   // backfill on reparse. Mod and feature checkboxes derive from their children.
+  // Only explicit toggles live here. Visibility is applied on top, so widening a search
+  // brings scenarios back instead of needing them re-ticked.
   private readonly HashSet<(string SourcePath, int ScenarioIndex)> deselectedScenarios = [];
+
+  private HashSet<(string SourcePath, int ScenarioIndex)>? visibleScenarios;
   private RunPill? activePill;
   private bool restoreWindowAfterRun;
   private BreakCard? activeBreakCard;
@@ -107,7 +111,7 @@ public class RunnerWindow : Window {
 
   internal int CompletedScenarioCount { get; private set; }
 
-  internal int SelectedScenarioCount => TotalScenarioCount - deselectedScenarios.Count;
+  internal int SelectedScenarioCount => VisibleScenarios.Count(key => !deselectedScenarios.Contains(key));
 
   internal int PassedResultsCount => results.Values.Count(r => r.Outcome == ScenarioOutcome.Passed);
 
@@ -136,6 +140,32 @@ public class RunnerWindow : Window {
   internal (string SourcePath, int ScenarioIndex)? Selected { get; set; }
 
   internal bool FollowRun { get; set; } = true;
+
+  internal bool HasActiveFilter =>
+      ActiveTagFilters.Count > 0 || !string.IsNullOrEmpty(SearchText) || ModFilterSelection != null;
+
+  internal HashSet<(string SourcePath, int ScenarioIndex)> VisibleScenarios {
+    get {
+      if (visibleScenarios != null) {
+        return visibleScenarios;
+      }
+
+      visibleScenarios = [];
+      int index = 0;
+      foreach ((DiscoveredSuite suite, FeaturePlan plan) in parsedFeatures) {
+        string sourcePath = plan.SourcePath ?? string.Empty;
+        for (int i = 0; i < plan.Scenarios.Count; i++) {
+          if (IsScenarioVisible(suite, plan, plan.Scenarios[i])) {
+            visibleScenarios.Add((sourcePath, index + i));
+          }
+        }
+
+        index += plan.Scenarios.Count;
+      }
+
+      return visibleScenarios;
+    }
+  }
 
   // Preserved for RunnerWindowSmoke.cs, which relies on a full unconditional run.
   internal int ParsedFeaturesCount => parsedFeatures.Count;
@@ -232,7 +262,8 @@ public class RunnerWindow : Window {
   }
 
   internal bool IsScenarioSelected(string sourcePath, int scenarioIndex) {
-    return !deselectedScenarios.Contains((sourcePath, scenarioIndex));
+    (string, int) key = (sourcePath, scenarioIndex);
+    return VisibleScenarios.Contains(key) && !deselectedScenarios.Contains(key);
   }
 
   internal bool IsScenarioVisible(DiscoveredSuite suite, FeaturePlan plan, ScenarioPlan scenario) {
@@ -240,7 +271,7 @@ public class RunnerWindow : Window {
       return false;
     }
 
-    if (ActiveTagFilters.Count > 0 && !ActiveTagFilters.Any(t => scenario.Tags.Contains(t))) {
+    if (ActiveTagFilters.Count > 0 && !ActiveTagFilters.All(t => scenario.Tags.Contains(t))) {
       return false;
     }
 
@@ -250,20 +281,6 @@ public class RunnerWindow : Window {
 
     return scenario.Name.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0
         || plan.Name.IndexOf(SearchText, StringComparison.OrdinalIgnoreCase) >= 0;
-  }
-
-  // Picking a tag is how you say "run these", so the filter becomes the selection outright
-  // rather than leaving whatever was ticked before it.
-  internal void SelectOnlyVisible() {
-    int index = 0;
-    foreach ((DiscoveredSuite suite, FeaturePlan plan) in parsedFeatures) {
-      string sourcePath = plan.SourcePath ?? string.Empty;
-      for (int i = 0; i < plan.Scenarios.Count; i++) {
-        SetScenarioSelected(sourcePath, index + i, IsScenarioVisible(suite, plan, plan.Scenarios[i]));
-      }
-
-      index += plan.Scenarios.Count;
-    }
   }
 
   internal void SetScenarioSelected(string sourcePath, int scenarioIndex, bool selected) {
@@ -328,13 +345,14 @@ public class RunnerWindow : Window {
       if (!additive || !ActiveTagFilters.Remove(tag)) {
         ActiveTagFilters.Add(tag);
       }
+    }
 
-      int index = 0;
-      foreach ((DiscoveredSuite _, FeaturePlan plan) in parsedFeatures) {
-        foreach (ScenarioPlan scenario in plan.Scenarios) {
-          SetScenarioSelected(plan.SourcePath ?? string.Empty, index++, ActiveTagFilters.Any(t => scenario.Tags.Contains(t)));
-        }
-      }
+    visibleScenarios = null;
+
+    // A narrowed view means "run these", so the scope follows it. Leaving it on All read as
+    // if the whole suite would run while the tree showed two scenarios.
+    if (HasActiveFilter) {
+      RunScope = "selected";
     }
 
     PublishSnapshot();
@@ -434,6 +452,7 @@ public class RunnerWindow : Window {
   // Reparsing keeps results, so a reload does not blank mods it never ran. A feature
   // whose scenario order changed can show a stale row until the next full run.
   private void DiscoverAndParseFeatures() {
+    visibleScenarios = null;
     DiscoveredSuites = SuiteScanner.DiscoverSuites();
     parsedFeatures.Clear();
 

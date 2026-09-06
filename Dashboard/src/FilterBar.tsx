@@ -28,10 +28,10 @@ export function FilterBar({ snap, children }: Readonly<{ snap: Snapshot; childre
           {mods.map((mod) => <option key={mod} value={mod}>{mod}</option>)}
         </select>
         <details ref={menu} className="runner-menu tag-menu" onKeyDown={(event) => { if (event.key === "Escape" && menu.current) menu.current.open = false; }}>
-          <summary className="btn btn-sm">{active.length ? `${active.length} tags · match any` : "Select by tag"}</summary>
+          <summary className="btn btn-sm">{active.length ? `${active.length} tags · match all` : "Select by tag"}</summary>
           <div className="runner-popover">
             <strong>Select scenarios by tag</strong>
-            <p>Click for one tag. Shift-click to add or remove tags. Matches any selected tag and replaces scenario selection.</p>
+            <p>Click for one tag. Shift-click to add or remove tags. Matches scenarios carrying every selected tag, and replaces scenario selection.</p>
             <label><input type="checkbox" checked={multiple} disabled={locked} onChange={(event) => setMultiple(event.target.checked)} />Select multiple tags</label>
             <div className="tag-options">
               {tags.map((tag) => <button key={tag} type="button" className="btn btn-sm" aria-pressed={active.includes(tag)} disabled={locked} onClick={(event) => chooseTag(tag, multiple || event.shiftKey)}>{tag}</button>)}
@@ -40,8 +40,8 @@ export function FilterBar({ snap, children }: Readonly<{ snap: Snapshot; childre
             <button type="button" className="btn btn-sm btn-ghost" disabled={!active.length || locked} onClick={() => post("/filter?clearTags=true")}>Clear tag filters</button>
           </div>
         </details>
-        {active.length > 0 && <div className="active-tags" role="group" aria-label="Active tags, match any">
-          <span>Match any</span>
+        {active.length > 0 && <div className="active-tags" role="group" aria-label="Active tags, match all">
+          <span>Match all</span>
           {active.map((tag) => <button key={tag} type="button" className="btn btn-sm" aria-label={`Remove ${tag} tag`} disabled={locked} onClick={() => chooseTag(tag, true)}>{tag}<svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 6 8 8m0-8-8 8" /></svg></button>)}
         </div>}
       </div>

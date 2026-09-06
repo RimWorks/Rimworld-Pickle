@@ -22,7 +22,7 @@ public class RunnerTagMenu : Window {
 
   public override void DoWindowContents(Rect inRect) {
     Text.Font = GameFont.Tiny;
-    Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, 48f), "Click for one tag. Shift-click to add or remove tags. Matches any selected tag and replaces scenario selection.");
+    Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, 48f), "Click for one tag. Shift-click to add or remove tags. Matches scenarios carrying every selected tag, and replaces scenario selection.");
     Text.Font = GameFont.Small;
     GUI.enabled = !owner.IsRunning && !Web.FixtureCommands.IsBusy;
     Widgets.CheckboxLabeled(new Rect(inRect.x, inRect.y + 52f, inRect.width, 28f), "Select multiple tags", ref multiple);
