@@ -164,8 +164,8 @@ export function App() {
             <button type="button" className="btn btn-sm" onClick={() => setCommandError("")}>Dismiss</button>
           </div>}
           {reportBlocked && (
-            <div className="runner-notice alert alert-info py-2 px-5">
-              <span className="text-sm">{t("Pickle_ReportReady", "The run finished and the report is ready.")}</span>
+            <div className="runner-notice flex items-center gap-3 px-5 py-2">
+              <span className="grow text-sm">{t("Pickle_ReportReady", "The run finished and the report is ready.")}</span>
               <a className="btn btn-sm" href="/report" target="_blank" rel="noreferrer">
                 {t("Pickle_OpenReport", "Open report")}
               </a>

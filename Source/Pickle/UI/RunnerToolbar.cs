@@ -103,7 +103,7 @@ public static class RunnerToolbar {
     foreach ((string key, string label) in new[] { ("run", "Run"), ("fixtures", "Fixtures"), ("reports", "Reports") }) {
       Rect tab = new Rect(x, rect.y, 90f, 48f);
       bool active = window.Workspace == key;
-      Label(tab, label, active ? RunnerStatusColors.Accent : Color.white, GameFont.Small);
+      Label(tab, label, active ? RunnerStatusColors.Accent : Color.white, GameFont.Small, TextAnchor.MiddleCenter);
       if (active) {
         Widgets.DrawBoxSolid(new Rect(tab.x, tab.yMax - 2f, tab.width, 2f), RunnerStatusColors.Accent);
       }
@@ -130,8 +130,20 @@ public static class RunnerToolbar {
     string detail = window.IsRunning ? window.ActiveSession?.CurrentStepDisplay ?? string.Empty
         : $"{window.ParsedFeaturesCount} features" + (window.LastRunAt.HasValue ? $" · last run {window.LastRunAt:HH:mm:ss}" : string.Empty);
     Label(new Rect(summaryX + 16f, summaryY + 18f, statusWidth - 16f, 18f), detail, RunnerStatusColors.Muted, GameFont.Tiny);
-    Label(new Rect(summaryX + statusWidth, summaryY + 8f, 310f, 22f),
-        $"{window.PassedResultsCount} passed · {window.FailedResultsCount} failed · {window.SkippedResultsCount} skipped", Color.white, GameFont.Tiny);
+    Label(new Rect(summaryX + statusWidth, summaryY + 8f, summaryWidth - statusWidth, 22f),
+        Counts(window), Color.white, GameFont.Tiny, TextAnchor.MiddleRight);
+  }
+
+  // Rich text rather than four rects: the colours have to survive Truncate collapsing the
+  // line when the header is narrow.
+  private static string Counts(RunnerWindow window) {
+    int passed = window.PassedResultsCount;
+    int failed = window.FailedResultsCount;
+    int skipped = window.SkippedResultsCount;
+    int notRun = Mathf.Max(0, window.TotalScenarioCount - passed - failed - skipped);
+    string pass = ColorUtility.ToHtmlStringRGB(RunnerStatusColors.Passed);
+    string fail = ColorUtility.ToHtmlStringRGB(RunnerStatusColors.FailedText);
+    return $"<color=#{pass}>{passed} passed</color> · <color=#{fail}>{failed} failed</color> · {skipped} skipped · {notRun} not run";
   }
 
   private static string StateLabel(RunnerWindow window) {
@@ -197,8 +209,12 @@ public static class RunnerToolbar {
   }
 
   private static void Label(Rect rect, string label, Color color, GameFont font) {
+    Label(rect, label, color, font, TextAnchor.MiddleLeft);
+  }
+
+  private static void Label(Rect rect, string label, Color color, GameFont font, TextAnchor anchor) {
     Text.Font = font;
-    Text.Anchor = TextAnchor.MiddleLeft;
+    Text.Anchor = anchor;
     GUI.color = color;
     Widgets.Label(rect, label.Truncate(rect.width));
     GUI.color = Color.white;
