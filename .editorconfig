@@ -455,3 +455,6 @@ dotnet_diagnostic.S1244.severity = none # exact comparison is the Equals contrac
 [Source/Pickle.Tests/JUnitReportWriterTests.cs]
 dotnet_diagnostic.S8969.severity = none # removing the ! trades this warning for CS8602
 
+[Source/Pickle.Core/Run/RunOutcomes.cs]
+dotnet_diagnostic.CA1846.severity = none # AsSpan overload of the compared method is not in net472
+
