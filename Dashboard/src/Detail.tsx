@@ -50,7 +50,7 @@ export function Detail({ scenario, live, feature, onTag }: Readonly<{ scenario: 
       )}
 
       {(scenario.failedAttempts ?? []).length > 0 && (
-        <div role="status" className="alert alert-warning alert-soft mt-4 items-start">
+        <output className="alert alert-warning alert-soft mt-4 items-start">
           <div>
             <p className="text-sm font-semibold">
               {isFlaky(scenario)
@@ -63,7 +63,7 @@ export function Detail({ scenario, live, feature, onTag }: Readonly<{ scenario: 
               </pre>
             ))}
           </div>
-        </div>
+        </output>
       )}
 
       <ol className="mt-5 flex flex-col gap-1">

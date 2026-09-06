@@ -261,7 +261,7 @@ function Header({ snap, workspace, onWorkspace, theme, onToggleTheme }: Readonly
   return (
     <header className="runner-header">
       <Logo />
-      <div role="tablist" aria-label="Runner workspace" className="workspace-tabs" onKeyDown={(event) => {
+      <div role="tablist" aria-label="Runner workspace" className="workspace-tabs" tabIndex={-1} onKeyDown={(event) => {
         if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
         event.preventDefault();
         const index = tabs.findIndex(([key]) => key === workspace);
@@ -272,11 +272,11 @@ function Header({ snap, workspace, onWorkspace, theme, onToggleTheme }: Readonly
         {tabs.map(([key, label]) => <button key={key} type="button" id={`tab-${key}`} role="tab" aria-selected={workspace === key} aria-controls="runner-workspace" tabIndex={workspace === key ? 0 : -1} disabled={!snap} onClick={() => onWorkspace(key)}>{label}</button>)}
       </div>
       <div className="workspace-summary">
-        <div className={`run-status ${state}`} role="status">
+        <output className={`run-status ${state}`}>
           <span className="run-status-dot" />
           <strong title={title}>{title}</strong>
           <small title={subline(snap, busy)}>{subline(snap, busy)}</small>
-        </div>
+        </output>
         <div className="run-scores"><span className="text-success">{counts.passed} passed</span><span className="text-error">{counts.failed} failed</span><span>{counts.skipped} skipped</span><span>{counts.notRun} not run</span></div>
       </div>
       <button type="button" className="btn btn-sm btn-ghost" onClick={onToggleTheme}>{theme === THEMES.dark ? "Light" : "Dark"}</button>

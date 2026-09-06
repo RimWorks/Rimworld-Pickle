@@ -92,7 +92,7 @@ export function Console({ running, onClose }: Readonly<{ running: boolean; onClo
 
       {running && <p role="alert" className="text-error mb-3">A run owns the game. The console is off until it finishes.</p>}
       {error && <p role="alert" className="text-error mb-3">{error}</p>}
-      <p role="status" className="text-sm mb-3">{pending ? "Running..." : notice}</p>
+      <output className="block text-sm mb-3">{pending ? "Running..." : notice}</output>
 
       <form
         className="flex flex-wrap items-end gap-2 mb-6"

@@ -66,7 +66,7 @@ export function Fixtures({ running, onClose }: Readonly<{ running: boolean; onCl
         <button type="button" className="btn btn-sm btn-ghost" disabled={pending} onClick={onClose}>Back to results</button>
       </div>
       {error && <p role="alert" className="text-error mb-3">{error}</p>}
-      <p role="status" className="text-sm mb-3">{pending ? "Working..." : notice}</p>
+      <output className="block text-sm mb-3">{pending ? "Working..." : notice}</output>
       {catalog && <>
         <form className="flex flex-wrap items-end gap-2 mb-6" onSubmit={(event) => {
           event.preventDefault();
