@@ -37,6 +37,12 @@ updates:
       interval: "weekly"
       day: "monday"
     groups:
+      vite:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+          - "vite-plugin-*"
+          - "@tailwindcss/vite"
       npm:
         patterns: ["*"]
         update-types: ["minor", "patch"]
