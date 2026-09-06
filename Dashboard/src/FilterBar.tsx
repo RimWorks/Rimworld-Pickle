@@ -40,10 +40,10 @@ export function FilterBar({ snap, children }: Readonly<{ snap: Snapshot; childre
             <button type="button" className="btn btn-sm btn-ghost" disabled={!active.length || locked} onClick={() => post("/filter?clearTags=true")}>Clear tag filters</button>
           </div>
         </details>
-        {active.length > 0 && <div className="active-tags" role="group" aria-label="Active tags, match all">
+        {active.length > 0 && <fieldset className="active-tags" aria-label="Active tags, match all">
           <span>Match all</span>
           {active.map((tag) => <button key={tag} type="button" className="btn btn-sm" aria-label={`Remove ${tag} tag`} disabled={locked} onClick={() => chooseTag(tag, true)}>{tag}<svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 6 8 8m0-8-8 8" /></svg></button>)}
-        </div>}
+        </fieldset>}
       </div>
       <div className="bottom-actions">{children}</div>
     </div>

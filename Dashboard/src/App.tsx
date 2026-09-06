@@ -174,9 +174,7 @@ export function App() {
               </button>
             </div>
           )}
-          <div className={`runner-progress ${runState(snap)}`} role="progressbar" aria-label="Run progress" aria-valuemin={0} aria-valuemax={snap.runTotal || 1} aria-valuenow={snap.runCompleted}>
-            <span style={{ width: `${snap.runTotal > 0 ? Math.min(100, snap.runCompleted / snap.runTotal * 100) : 0}%` }} />
-          </div>
+          <progress className={`runner-progress ${runState(snap)}`} aria-label="Run progress" max={snap.runTotal || 1} value={snap.runCompleted} />
           <div id="runner-workspace" role="tabpanel" aria-labelledby={`tab-${workspace}`} className="runner-content flex-1 flex flex-col md:flex-row min-h-0">
             {workspace === "run" && <aside className="w-full md:w-80 lg:w-96 max-h-60 md:max-h-none shrink-0 overflow-y-auto border-r border-base-content/10 bg-base-100 p-3">
               <Tree

@@ -44,10 +44,10 @@ export function Toolbar({ snap, following, onFollow, onAbort, aborting }: Readon
         </label>
         <div className="control-group behavior-group">
           <span className="control-label">Mode</span>
-          <div className="mode-switch" role="group" aria-label="Run speed">
+          <fieldset className="mode-switch" aria-label="Run speed">
             <button type="button" className="btn btn-sm" aria-pressed={snap.watch} disabled={locked} onClick={() => post("/mode?value=watch")}>{t("Pickle_ModeWatch", "Watch")}</button>
             <button type="button" className="btn btn-sm" aria-pressed={!snap.watch} disabled={locked} onClick={() => post("/mode?value=fast")}>{t("Pickle_ModeFast", "Fast")}</button>
-          </div>
+          </fieldset>
           <details className="runner-menu">
             <summary className="btn btn-sm">Options</summary>
             <div className="runner-popover">
@@ -65,13 +65,13 @@ export function Toolbar({ snap, following, onFollow, onAbort, aborting }: Readon
       </div>
       <FilterBar snap={snap}>
         <label className="follow-control"><input type="checkbox" checked={following} disabled={!busy} onChange={(event) => onFollow(event.target.checked)} />Follow run</label>
-        <div className="run-actions" role="group" aria-label="Run actions">
-          <div className="transport-actions" role="group" aria-label="Run playback">
+        <fieldset className="run-actions" aria-label="Run actions">
+          <fieldset className="transport-actions" aria-label="Run playback">
             <button type="button" className="btn btn-sm btn-primary transport-action" aria-label={runLabel} title={runLabel} disabled={!snap.controllable || stopping || (paused ? false : locked || count === 0)} onClick={() => post(paused ? "/continue" : `/run?scope=${scope}`)}><RunIcon name={paused ? "continue" : "run"} /></button>
             <button type="button" className="btn btn-sm transport-action" aria-label="Pause run" title={pauseLabel} disabled={!snap.controllable || snap.status !== "running" || stopping || snap.pauseRequested} onClick={() => post("/pause")}><RunIcon name="pause" /></button>
             <button type="button" className="btn btn-sm btn-outline btn-error transport-action" aria-label={stopping ? "Aborting run" : "Abort run"} title={stopping ? "Aborting run" : "Abort run"} disabled={!busy || stopping} onClick={onAbort}><RunIcon name="abort" /></button>
-          </div>
-        </div>
+          </fieldset>
+        </fieldset>
       </FilterBar>
     </div>
   );
