@@ -512,6 +512,23 @@ public class RunnerWindow : Window {
     PublishSnapshot();
   }
 
+  private RunSession StartSession() {
+    List<Assembly> assemblies = BuildAssemblyList();
+    RunSession session = new RunSession(
+        StepScanner.PopulateStepTable(assemblies),
+        PickleDriver.Instance,
+        DiscoveredSuites,
+        StepScanner.GetPickleStepsTypes(assemblies),
+        runRetries: PickleArgs.Parse().Retries);
+
+    ActiveSession = session;
+    session.OnBreak = HandleBreak;
+    session.OnProgress = PublishSnapshot;
+    PickleHttpServer.ActiveSession = session;
+    PublishSnapshot();
+    return session;
+  }
+
   private async Task RunAsync(Func<string, int, bool>? isScenarioSelected) {
     if (IsRunning || FixtureCommands.IsBusy) {
       return;
@@ -524,18 +541,7 @@ public class RunnerWindow : Window {
 
       ClearPreviousResults(isScenarioSelected);
 
-      List<Assembly> assemblies = BuildAssemblyList();
-      StepTable stepTable = StepScanner.PopulateStepTable(assemblies);
-      List<Type> stepsTypes = StepScanner.GetPickleStepsTypes(assemblies);
-
-      RunSession session = new RunSession(
-          stepTable, PickleDriver.Instance, DiscoveredSuites, stepsTypes,
-          runRetries: PickleArgs.Parse().Retries);
-      ActiveSession = session;
-      session.OnBreak = HandleBreak;
-      session.OnProgress = PublishSnapshot;
-      PickleHttpServer.ActiveSession = session;
-      PublishSnapshot();
+      RunSession session = StartSession();
 
       // Only restore what was on screen, or a dashboard run pops the window open at the end.
       // WindowStack is null until a UIRoot exists, which a headless run precedes.

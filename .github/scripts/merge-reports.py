@@ -22,6 +22,9 @@ def _safe_path(value):
     return path
 
 
+SCRIPT_CLOSE = "</script>"
+REPORT_NAME = "report.html"
+
 PAYLOAD = re.compile(
     r'(<script id="pickle-report" type="application/json">)(.*?)(</script>)', re.S
 )
@@ -77,7 +80,7 @@ def main(argv):
 
 
 def _report(payload):
-    return '<!doctype html><script id="pickle-report" type="application/json">' + _escape(json.dumps(payload)) + "</script>"
+    return '<!doctype html><script id="pickle-report" type="application/json">' + _escape(json.dumps(payload)) + SCRIPT_CLOSE
 
 
 def _self_test():
@@ -91,27 +94,27 @@ def _self_test():
         root = Path(tmp).resolve()
         # A failure message holding </script> is the case the escaping exists for.
         a = {"setName": "harmony", "exitReason": "passed", "features": [
-            {"name": "F", "scenarios": [{"name": "s", "failureMessage": "broke on </script>",
+            {"name": "F", "scenarios": [{"name": "s", "failureMessage": "broke on " + SCRIPT_CLOSE,
                                          "attachments": [{"name": "film-frames", "content": "screenshots/film/f/0000.jpg"}]}]}]}
         b = {"exitReason": "failed", "features": []}
         (root / "harmony").mkdir()
         (root / "concord").mkdir()
-        (root / "harmony" / "report.html").write_text(_report(a), encoding="utf-8")
-        (root / "concord" / "report.html").write_text(_report(b), encoding="utf-8")
+        (root / "harmony" / REPORT_NAME).write_text(_report(a), encoding="utf-8")
+        (root / "concord" / REPORT_NAME).write_text(_report(b), encoding="utf-8")
 
         out = root / "merged.html"
-        assert main([str(out), str(root / "harmony" / "report.html"), str(root / "concord" / "report.html")]) == 0
+        assert main([str(out), str(root / "harmony" / REPORT_NAME), str(root / "concord" / REPORT_NAME)]) == 0
 
         merged = _read_payload(out.read_text(encoding="utf-8"))
         assert [s["setName"] for s in merged["sets"]] == ["harmony", "concord"], merged
-        assert merged["sets"][0]["features"][0]["scenarios"][0]["failureMessage"] == "broke on </script>"
+        assert merged["sets"][0]["features"][0]["scenarios"][0]["failureMessage"] == "broke on " + SCRIPT_CLOSE
         assert merged["sets"][0]["features"][0]["scenarios"][0]["attachments"][0]["content"] \
             == "screenshots/harmony/film/f/0000.jpg"
-        assert "</script>" not in out.read_text(encoding="utf-8").split("</script>")[0]
+        assert SCRIPT_CLOSE not in out.read_text(encoding="utf-8").split(SCRIPT_CLOSE)[0]
 
         # One report in still reads as one report, so a single-set merge is not a special case.
         single = root / "single.html"
-        assert main([str(single), str(root / "harmony" / "report.html")]) == 0
+        assert main([str(single), str(root / "harmony" / REPORT_NAME)]) == 0
         assert len(_read_payload(single.read_text(encoding="utf-8"))["sets"]) == 1
 
     os.chdir(cwd)

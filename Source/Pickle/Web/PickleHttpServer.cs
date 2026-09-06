@@ -21,6 +21,8 @@ public static class PickleHttpServer {
   private const string JsonContentType = "application/json";
   private const string OkBody = "{\"ok\":true}";
   private const string ErrorPrefix = "{\"error\":";
+  private const string OffValue = "false";
+  private const string PlainText = "text/plain";
 
   private const string EvidencePrefix = "/screenshots/";
 
@@ -41,9 +43,9 @@ public static class PickleHttpServer {
     ["/filter"] = Filter,
     ["/select"] = Select,
     ["/mode"] = c => RunnerCommands.SetMode(c.Request.QueryString["value"] ?? "watch").GetAwaiter().GetResult(),
-    ["/wip"] = c => RunnerCommands.SetIncludeWip(c.Request.QueryString["on"] != "false").GetAwaiter().GetResult(),
-    ["/pill"] = c => RunnerCommands.SetShowRunPill(c.Request.QueryString["on"] != "false").GetAwaiter().GetResult(),
-    ["/break"] = c => RunnerCommands.SetBreakOnFailure(c.Request.QueryString["on"] != "false").GetAwaiter().GetResult(),
+    ["/wip"] = c => RunnerCommands.SetIncludeWip(c.Request.QueryString["on"] != OffValue).GetAwaiter().GetResult(),
+    ["/pill"] = c => RunnerCommands.SetShowRunPill(c.Request.QueryString["on"] != OffValue).GetAwaiter().GetResult(),
+    ["/break"] = c => RunnerCommands.SetBreakOnFailure(c.Request.QueryString["on"] != OffValue).GetAwaiter().GetResult(),
   };
 
   private static HttpListener? listener;
@@ -178,14 +180,14 @@ public static class PickleHttpServer {
     if (origin != null
         && !string.Equals(origin, context.Request.Url.GetLeftPart(UriPartial.Authority), StringComparison.OrdinalIgnoreCase)) {
       context.Response.StatusCode = 403;
-      Write(context, "text/plain", "use the dashboard origin");
+      Write(context, PlainText, "use the dashboard origin");
       return true;
     }
 
     if (!string.Equals(context.Request.HttpMethod, "POST", StringComparison.Ordinal)) {
       context.Response.StatusCode = 405;
       context.Response.AddHeader("Allow", "POST");
-      Write(context, "text/plain", "use POST");
+      Write(context, PlainText, "use POST");
       return true;
     }
 
@@ -224,7 +226,7 @@ public static class PickleHttpServer {
       string file = Path.Combine(ScreenshotCapture.ReportRoot(), name);
       if (!File.Exists(file)) {
         context.Response.StatusCode = 404;
-        Write(context, "text/plain", "no report yet, run something first");
+        Write(context, PlainText, "no report yet, run something first");
       } else {
         context.Response.AddHeader("Content-Disposition", "attachment; filename=\"" + name + "\"");
         Write(context, ContentTypeFor(file), File.ReadAllBytes(file));
@@ -239,7 +241,7 @@ public static class PickleHttpServer {
     }
 
     context.Response.StatusCode = 404;
-    Write(context, "text/plain", "not found");
+    Write(context, PlainText, "not found");
   }
 
   private static void ServeFixtures(HttpListenerContext context, string path) {
@@ -314,7 +316,7 @@ public static class PickleHttpServer {
 
     if (!File.Exists(file)) {
       context.Response.StatusCode = 404;
-      Write(context, "text/plain", "no report yet, run something first");
+      Write(context, PlainText, "no report yet, run something first");
       return;
     }
 
@@ -331,13 +333,13 @@ public static class PickleHttpServer {
       full = Path.GetFullPath(Path.Combine(root, Uri.UnescapeDataString(relative)));
     } catch (Exception) {
       context.Response.StatusCode = 400;
-      Write(context, "text/plain", "bad path");
+      Write(context, PlainText, "bad path");
       return;
     }
 
     if (!full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.Ordinal) || !File.Exists(full)) {
       context.Response.StatusCode = 404;
-      Write(context, "text/plain", "not found");
+      Write(context, PlainText, "not found");
       return;
     }
 

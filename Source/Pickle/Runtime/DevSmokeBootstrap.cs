@@ -9,6 +9,7 @@ namespace RimWorks.Pickle.Runtime;
 [StaticConstructorOnStartup]
 public static class DevSmokeBootstrap {
   private const string LoadingEvent = "LoadingLongEvent";
+  private const string SmokeFailed = "pickle: dev smoke failed";
 
   static DevSmokeBootstrap() {
     string? marker = Environment.GetEnvironmentVariable("MARKER");
@@ -93,7 +94,7 @@ public static class DevSmokeBootstrap {
 
       _ = SaveFixtureSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: dev smoke failed");
+      Log.Error(ex, SmokeFailed);
     }
   }
 
@@ -107,7 +108,7 @@ public static class DevSmokeBootstrap {
 
       _ = PumpSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: dev smoke failed");
+      Log.Error(ex, SmokeFailed);
     }
   }
 
@@ -121,7 +122,7 @@ public static class DevSmokeBootstrap {
 
       _ = FixtureSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: dev smoke failed");
+      Log.Error(ex, SmokeFailed);
     }
   }
 
@@ -135,7 +136,7 @@ public static class DevSmokeBootstrap {
 
       _ = RunSessionSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: dev smoke failed");
+      Log.Error(ex, SmokeFailed);
     }
   }
 
@@ -149,7 +150,7 @@ public static class DevSmokeBootstrap {
 
       RunnerWindowSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: dev smoke failed");
+      Log.Error(ex, SmokeFailed);
     }
   }
 
@@ -163,7 +164,7 @@ public static class DevSmokeBootstrap {
 
       EventSynthSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: dev smoke failed");
+      Log.Error(ex, SmokeFailed);
     }
   }
 
@@ -177,7 +178,7 @@ public static class DevSmokeBootstrap {
 
       WidgetCaptureSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: dev smoke failed");
+      Log.Error(ex, SmokeFailed);
     }
   }
 
@@ -191,7 +192,7 @@ public static class DevSmokeBootstrap {
 
       _ = TagStoreSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: dev smoke failed");
+      Log.Error(ex, SmokeFailed);
     }
   }
 
@@ -205,7 +206,7 @@ public static class DevSmokeBootstrap {
 
       _ = TagClickSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: dev smoke failed");
+      Log.Error(ex, SmokeFailed);
     }
   }
 
@@ -219,7 +220,7 @@ public static class DevSmokeBootstrap {
 
       _ = EvidenceSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: dev smoke failed");
+      Log.Error(ex, SmokeFailed);
     }
   }
 
@@ -233,7 +234,7 @@ public static class DevSmokeBootstrap {
 
       _ = FixtureManagerSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: dev smoke failed");
+      Log.Error(ex, SmokeFailed);
     }
   }
 
@@ -247,7 +248,7 @@ public static class DevSmokeBootstrap {
 
       await SuiteRunner.Run();
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: dev smoke failed");
+      Log.Error(ex, SmokeFailed);
     }
   }
 }
