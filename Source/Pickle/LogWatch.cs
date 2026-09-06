@@ -7,6 +7,10 @@ namespace RimWorks.Pickle;
 public static class LogWatch {
   private static readonly object Gate = new object();
   private static readonly CircularBuffer<string> ErrorBuffer = new CircularBuffer<string>(50);
+
+  // Engine noise no mod can prevent, so a scenario must not fail on it. Wine answers the
+  // multi-monitor call with a failure whose own text reads "Success".
+  private static readonly string[] IgnoredErrors = ["MonitorFromWindow failed"];
   private static bool armed;
   private static long totalRecorded;
 
@@ -75,11 +79,23 @@ public static class LogWatch {
 
   public static void RecordError(string message) {
     lock (Gate) {
-      if (armed) {
-        ErrorBuffer.Enqueue(message);
-        totalRecorded++;
+      if (!armed || IsIgnored(message)) {
+        return;
+      }
+
+      ErrorBuffer.Enqueue(message);
+      totalRecorded++;
+    }
+  }
+
+  private static bool IsIgnored(string message) {
+    foreach (string ignored in IgnoredErrors) {
+      if (message.IndexOf(ignored, StringComparison.Ordinal) >= 0) {
+        return true;
       }
     }
+
+    return false;
   }
 
   private sealed class CircularBuffer<T> {
