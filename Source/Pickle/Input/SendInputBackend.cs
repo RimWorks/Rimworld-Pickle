@@ -45,8 +45,8 @@ public sealed class SendInputBackend : IInputBackend {
     // A click that resolves its tag and then activates nothing is the failure this path
     // has, so every send records what it aimed at and where the pointer ended up.
     Log.Info(
-        "pickle: sendinput click gui={Gui} screen={Screen} metrics={Width}x{Height} cursor={Cursor}",
-        [guiPoint, screen, GetSystemMetrics(SmCxScreen), GetSystemMetrics(SmCyScreen), GetMouseLocation()]);
+        "pickle: sendinput click gui={Gui} client={Client} desktop={Desktop} metrics={Width}x{Height} cursor={Cursor}",
+        [guiPoint, screen, ToDesktop(screen), GetSystemMetrics(SmCxScreen), GetSystemMetrics(SmCyScreen), GetMouseLocation()]);
 
     Send(MouseEvent(down));
     Send(MouseEvent(up));
@@ -118,16 +118,27 @@ public sealed class SendInputBackend : IInputBackend {
 
   // Absolute coordinates are 0-65535 over the primary monitor, not pixels. The full
   // desktop would need MOUSEEVENTF_VIRTUALDESK on top.
-  private static void SendMouseMove(Vector2 screenPoint) {
+  private static void SendMouseMove(Vector2 clientPoint) {
+    Vector2 desktop = ToDesktop(clientPoint);
     int width = GetSystemMetrics(SmCxScreen);
     int height = GetSystemMetrics(SmCyScreen);
 
     Input1 input = default;
     input.Type = InputMouse;
-    input.Union.Mouse.X = (int)(screenPoint.x * 65535 / width);
-    input.Union.Mouse.Y = (int)(screenPoint.y * 65535 / height);
+    input.Union.Mouse.X = (int)(desktop.x * 65535 / width);
+    input.Union.Mouse.Y = (int)(desktop.y * 65535 / height);
     input.Union.Mouse.Flags = MouseEventMove | MouseEventAbsolute;
     Send(input);
+  }
+
+  // A GUI point is relative to the client area, which starts below the title bar whenever
+  // the window is decorated, but SendInput takes desktop coordinates. xdotool never needed
+  // this because --window makes it window-relative already.
+  private static Vector2 ToDesktop(Vector2 clientPoint) {
+    Point point = new() { X = (int)clientPoint.x, Y = (int)clientPoint.y };
+    return ClientToScreen(GetActiveWindow(), ref point)
+        ? new Vector2(point.X, point.Y)
+        : clientPoint;
   }
 
   // A zero screen means no interactive desktop, which is the one case SendInput cannot
@@ -150,6 +161,13 @@ public sealed class SendInputBackend : IInputBackend {
   [DllImport("user32.dll")]
   [return: MarshalAs(UnmanagedType.Bool)]
   private static extern bool GetCursorPos(out Point point);
+
+  [DllImport("user32.dll")]
+  private static extern IntPtr GetActiveWindow();
+
+  [DllImport("user32.dll")]
+  [return: MarshalAs(UnmanagedType.Bool)]
+  private static extern bool ClientToScreen(IntPtr window, ref Point point);
 
   private void EnsureUsable() {
     if (UnavailableReason != null) {
