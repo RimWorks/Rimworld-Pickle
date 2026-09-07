@@ -68,30 +68,10 @@ jobs:
           passed=$(grep -oE 'Passed:[[:space:]]+[0-9]+' test-output.txt | grep -oE '[0-9]+' | tail -1)
           echo "TESTS_PASSED=${passed:-unknown}" >> "$GITHUB_ENV"
 
-      - name: Set up SteamCMD
-        uses: buildalon/setup-steamcmd@2a16e8f482192d9a5710a17f0119890ceb1f48a1 # v1
-
-      - name: Restore Steam config
-        env:
-          STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
-        run: |
-          mkdir -p "$STEAM_DIR/config"
-          printf '%s' "$STEAM_CONFIG_VDF_B64" | base64 -d > "$STEAM_DIR/config/config.vdf"
-          echo "STEAM_CONFIG_VDF=$STEAM_DIR/config/config.vdf" >> "$GITHUB_ENV"
-
-      - name: Steam login preflight
-        env:
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
-        run: |
-          "$STEAM_CMD/steamcmd.sh" +@ShutdownOnFailedCommand 1 +@NoPromptForPassword 1 +login "$STEAM_USERNAME" +quit
-
-      - name: Republish
-        env:
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
-          STEAM_CONFIG_VDF: ${{ env.STEAM_CONFIG_VDF }}
-          STEAMCMD_PATH: ${{ env.STEAM_CMD }}/steamcmd.sh
-          PICKLE_WORKSHOP_ID: ${{ vars.PICKLE_WORKSHOP_ID }}
-          VERIFIED_COMMIT: ${{ github.sha }}
-          VERIFIED_RIMWORLD: ${{ env.RIMWORLD_REF }}
-          VERIFIED_TESTS: ${{ env.TESTS_PASSED }}
-        run: node scripts/workshop-bump.mjs
+      - uses: RimWorks/mod-ci/.github/actions/steam-republish@817b60ffe7212ed6cc23f31f3e9a773f146f994c
+        with:
+          workshop-id: ${{ vars.WORKSHOP_ID }}
+          steam-username: ${{ secrets.STEAM_USERNAME }}
+          steam-config-vdf-b64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
+          verified-rimworld: ${{ env.RIMWORLD_REF }}
+          verified-tests: ${{ env.TESTS_PASSED }}

@@ -2,7 +2,7 @@
 import { bumpWorkshop } from '@rimworks/mod-ci';
 
 const stagePath = await bumpWorkshop({
-  workshopId: process.env.PICKLE_WORKSHOP_ID ?? '3791648678',
+  workshopId: process.env.WORKSHOP_ID || '3791648678',
   solution: 'Pickle.slnx',
 });
 
