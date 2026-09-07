@@ -10,8 +10,6 @@
   <ItemGroup>
     <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="RimWorks.RimLogging" Version="2.*" ExcludeAssets="runtime" PrivateAssets="all" />
-    <!-- net472 has no ValueTuple, and relying on another mod to have loaded it is luck -->
-    <PackageReference Include="System.ValueTuple" Version="4.6.*" GeneratePathProperty="true" />
     <PackageReference Include="Gherkin" Version="42.0.*" />
     <PackageReference Include="Cucumber.CucumberExpressions" Version="20.1.*" />
   </ItemGroup>
@@ -25,10 +23,4 @@
     <EmbeddedResource Include="..\..\Dashboard\dist\index.html" LogicalName="Pickle.Dashboard.html" Condition="Exists('..\..\Dashboard\dist\index.html')" />
     <EmbeddedResource Include="..\..\Dashboard\dist\report.html" LogicalName="Pickle.ReportTemplate.html" Condition="Exists('..\..\Dashboard\dist\report.html')" />
   </ItemGroup>
-    <!-- net472 counts ValueTuple as framework provided so the SDK skips it, but RimWorld's
-         Mono has no copy. Ship it rather than hoping another mod loaded a compatible one. -->
-    <Target Name="ShipValueTuple" AfterTargets="Build" Condition="'$(PkgSystem_ValueTuple)' != ''">
-        <Copy SourceFiles="$(PkgSystem_ValueTuple)/lib/net47/System.ValueTuple.dll"
-              DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
-    </Target>
 </Project>
