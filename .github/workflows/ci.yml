@@ -380,7 +380,6 @@ jobs:
     needs: [dashboard, game-image]
     if: needs.game-image.outputs.windows-image-ref != ''
     runs-on: ubuntu-latest
-    continue-on-error: true
     timeout-minutes: 60
     permissions:
       contents: read
