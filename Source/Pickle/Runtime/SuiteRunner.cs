@@ -71,18 +71,18 @@ public static class SuiteRunner {
       }
 
       if (totalFailed == 0) {
-        Log.Info("pickle: suite passed");
+        Log.InfoTo("Pickle", "suite passed");
       } else {
-        Log.Info("pickle: suite failed");
+        Log.InfoTo("Pickle", "suite failed");
         foreach ((string name, string? message) in failedScenarios) {
-          Log.Error("pickle: failed: {Name}", [name]);
+          Log.ErrorTo("Pickle", "failed: {Name}", [name]);
           if (!string.IsNullOrEmpty(message)) {
             Log.Error("  {Message}", [message]);
           }
         }
       }
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, "pickle: suite runner error");
+      Log.ErrorTo("Pickle", ex, "suite runner error");
       throw;
     }
 
@@ -125,7 +125,7 @@ public static class SuiteRunner {
           Assembly loaded = Assembly.LoadFrom(stepsDll);
           assemblies.Add(loaded);
         } catch (Exception ex) {
-          Log.Warn(ex, $"pickle: failed to load steps dll {Path.GetFileName(stepsDll)}");
+          Log.WarnTo("Pickle", ex, $"failed to load steps dll {Path.GetFileName(stepsDll)}");
         }
       }
     }

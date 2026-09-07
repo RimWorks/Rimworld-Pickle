@@ -9,77 +9,77 @@ namespace RimWorks.Pickle.Runtime;
 [StaticConstructorOnStartup]
 public static class DevSmokeBootstrap {
   private const string LoadingEvent = "LoadingLongEvent";
-  private const string SmokeFailed = "pickle: dev smoke failed";
+  private const string SmokeFailed = "dev smoke failed";
 
   static DevSmokeBootstrap() {
     string? marker = Environment.GetEnvironmentVariable("MARKER");
-    if (marker == "pickle: pump smoke passed") {
+    if (marker == "pump smoke passed") {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunQuickTestSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
-    if (marker == "pickle: fixture smoke passed") {
+    if (marker == "fixture smoke passed") {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunFixtureSmokeTest(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
-    if (marker == "pickle: run session smoke passed") {
+    if (marker == "run session smoke passed") {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunRunSessionSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
-    if (marker == "pickle: runner window smoke passed") {
+    if (marker == "runner window smoke passed") {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunRunnerWindowSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
-    if (marker == "pickle: event synth smoke passed") {
+    if (marker == "event synth smoke passed") {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunEventSynthSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
-    if (marker == "pickle: widget capture smoke passed") {
+    if (marker == "widget capture smoke passed") {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunWidgetCaptureSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
-    if (marker == "pickle: tag store smoke passed") {
+    if (marker == "tag store smoke passed") {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunTagStoreSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
-    if (marker == "pickle: tag click smoke passed") {
+    if (marker == "tag click smoke passed") {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunTagClickSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
-    if (marker == "pickle: evidence smoke passed") {
+    if (marker == "evidence smoke passed") {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunEvidenceSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
-    if (marker == "pickle: save fixture smoke passed") {
+    if (marker == "save fixture smoke passed") {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunSaveFixtureSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
-    if (marker == "pickle: fixture manager smoke passed") {
+    if (marker == "fixture manager smoke passed") {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunFixtureManagerSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
-    if (marker == "pickle: suite passed") {
+    if (marker == "suite passed") {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunSuite(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
     }
@@ -94,7 +94,7 @@ public static class DevSmokeBootstrap {
 
       _ = SaveFixtureSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, SmokeFailed);
+      Log.ErrorTo("Pickle", ex, SmokeFailed);
     }
   }
 
@@ -108,7 +108,7 @@ public static class DevSmokeBootstrap {
 
       _ = PumpSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, SmokeFailed);
+      Log.ErrorTo("Pickle", ex, SmokeFailed);
     }
   }
 
@@ -122,7 +122,7 @@ public static class DevSmokeBootstrap {
 
       _ = FixtureSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, SmokeFailed);
+      Log.ErrorTo("Pickle", ex, SmokeFailed);
     }
   }
 
@@ -136,7 +136,7 @@ public static class DevSmokeBootstrap {
 
       _ = RunSessionSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, SmokeFailed);
+      Log.ErrorTo("Pickle", ex, SmokeFailed);
     }
   }
 
@@ -150,7 +150,7 @@ public static class DevSmokeBootstrap {
 
       RunnerWindowSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, SmokeFailed);
+      Log.ErrorTo("Pickle", ex, SmokeFailed);
     }
   }
 
@@ -164,7 +164,7 @@ public static class DevSmokeBootstrap {
 
       EventSynthSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, SmokeFailed);
+      Log.ErrorTo("Pickle", ex, SmokeFailed);
     }
   }
 
@@ -178,7 +178,7 @@ public static class DevSmokeBootstrap {
 
       WidgetCaptureSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, SmokeFailed);
+      Log.ErrorTo("Pickle", ex, SmokeFailed);
     }
   }
 
@@ -192,7 +192,7 @@ public static class DevSmokeBootstrap {
 
       _ = TagStoreSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, SmokeFailed);
+      Log.ErrorTo("Pickle", ex, SmokeFailed);
     }
   }
 
@@ -206,7 +206,7 @@ public static class DevSmokeBootstrap {
 
       _ = TagClickSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, SmokeFailed);
+      Log.ErrorTo("Pickle", ex, SmokeFailed);
     }
   }
 
@@ -220,7 +220,7 @@ public static class DevSmokeBootstrap {
 
       _ = EvidenceSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, SmokeFailed);
+      Log.ErrorTo("Pickle", ex, SmokeFailed);
     }
   }
 
@@ -234,7 +234,7 @@ public static class DevSmokeBootstrap {
 
       _ = FixtureManagerSmoke.Run();
     } catch (Exception ex) {
-      Log.Error(ex, SmokeFailed);
+      Log.ErrorTo("Pickle", ex, SmokeFailed);
     }
   }
 
@@ -248,7 +248,7 @@ public static class DevSmokeBootstrap {
 
       await SuiteRunner.Run();
     } catch (Exception ex) {
-      Log.Error(ex, SmokeFailed);
+      Log.ErrorTo("Pickle", ex, SmokeFailed);
     }
   }
 }

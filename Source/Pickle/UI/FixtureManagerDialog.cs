@@ -164,7 +164,7 @@ public class FixtureManagerDialog : Window {
     try {
       await FixtureCommands.Execute("load", SuitePath(entry), entry.Name, null, false);
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: loading fixture failed");
+      Log.ErrorTo("Pickle", ex, "loading fixture failed");
       Messages.Message("Pickle_LoadFixtureFailed".Translate(), MessageTypeDefOf.RejectInput, false);
     }
   }
@@ -301,7 +301,7 @@ public class FixtureManagerDialog : Window {
       try {
         await FixtureCommands.Execute("rename", SuitePath(entry), entry.Name, newName, false);
       } catch (Exception ex) {
-        Log.Error(ex, "pickle: renaming fixture failed");
+        Log.ErrorTo("Pickle", ex, "renaming fixture failed");
         Messages.Message("Pickle_FixtureRenameFailed".Translate(entry.Name), MessageTypeDefOf.RejectInput, false);
       }
     }
@@ -320,7 +320,7 @@ public class FixtureManagerDialog : Window {
     try {
       await FixtureCommands.Execute("delete", SuitePath(entry), entry.Name, null, false);
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: deleting fixture failed");
+      Log.ErrorTo("Pickle", ex, "deleting fixture failed");
       Messages.Message("Pickle_FixtureDeleteFailed".Translate(entry.Name), MessageTypeDefOf.RejectInput, false);
     }
 

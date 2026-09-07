@@ -96,7 +96,7 @@ public static class FixtureLoader {
         File.Delete(path);
       }
     } catch {
-      Log.Warn("pickle: failed to delete temporary save file: {Path}", [path]);
+      Log.WarnTo("Pickle", "failed to delete temporary save file: {Path}", [path]);
     }
   }
 }

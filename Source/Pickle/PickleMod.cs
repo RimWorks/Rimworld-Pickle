@@ -19,7 +19,7 @@ public class PickleMod : Mod {
     // during startup is only recorded once the sink is registered.
     Logging.RegisterSink(new PickleLogSink());
 
-    Log.Info("pickle: loaded");
+    Log.InfoTo("Pickle", "loaded");
 
     // Last point before RimWorld applies XML patches, which is the only chance to see
     // which mod patches which def.
@@ -49,9 +49,9 @@ public class PickleMod : Mod {
     Match match = regex.Match("I have cukes");
 
     if (match.Success) {
-      Log.Info("pickle: parsed {ScenarioCount} scenarios", [scenarioCount]);
+      Log.InfoTo("Pickle", "parsed {ScenarioCount} scenarios", [scenarioCount]);
     } else {
-      Log.Error("pickle: expression match failed");
+      Log.ErrorTo("Pickle", "expression match failed");
     }
 
     List<DiscoveredSuite> suites = SuiteScanner.DiscoverSuites();

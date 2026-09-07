@@ -72,7 +72,7 @@ public static class PickleDebugActions {
     try {
       await SuiteRunner.Run();
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: run suite debug action failed");
+      Log.ErrorTo("Pickle", ex, "run suite debug action failed");
     }
   }
 }

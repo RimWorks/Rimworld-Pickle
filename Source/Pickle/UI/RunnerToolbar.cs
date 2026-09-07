@@ -294,7 +294,7 @@ public static class RunnerToolbar {
         UseShellExecute = true,
       });
     } catch (System.Exception ex) {
-      Log.Warn("pickle: could not open report dir {Dir}: {Error}", [dir, ex.Message]);
+      Log.WarnTo("Pickle", "could not open report dir {Dir}: {Error}", [dir, ex.Message]);
     }
 
     Messages.Message("Pickle_ReportDirMessage".Translate(dir), MessageTypeDefOf.NeutralEvent, false);

@@ -141,6 +141,6 @@ public class PickleContext {
       throw new InvalidOperationException(DescribePointer("the pointer never reached", guiPoint));
     }
 
-    Log.Info($"pickle: {DescribePointer("pointer at", guiPoint)}");
+    Log.InfoTo("Pickle", $"{DescribePointer("pointer at", guiPoint)}");
   }
 }

@@ -41,12 +41,12 @@ public static class FeatureParser {
 
       // One bad feature must not take the suite down, so this drops the file and keeps going.
       foreach (string problem in problems) {
-        Log.Error("pickle: {FileName} cannot run: {Problem}", [fileName, problem]);
+        Log.ErrorTo("Pickle", "{FileName} cannot run: {Problem}", [fileName, problem]);
       }
 
       return null;
     } catch (Exception ex) {
-      Log.Error(ex, $"pickle: failed to parse {fileName}");
+      Log.ErrorTo("Pickle", ex, $"failed to parse {fileName}");
       return null;
     }
   }

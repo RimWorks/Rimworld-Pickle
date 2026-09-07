@@ -23,8 +23,8 @@ public static class EventSynthSmoke {
       // dialog. Suppress it before spawning anything.
       EventSynth.SuppressDebugLogAutoOpen();
 
-      Log.Info("pickle: event synth debug UIScale={UIScale}", [Prefs.UIScale]);
-      Log.Info("pickle: event synth debug xdotoolAvailable={XdotoolAvailable}", [InputBackends.Available]);
+      Log.InfoTo("Pickle", "event synth debug UIScale={UIScale}", [Prefs.UIScale]);
+      Log.InfoTo("Pickle", "event synth debug xdotoolAvailable={XdotoolAvailable}", [InputBackends.Available]);
 
       // One KeyDown(Escape) closes a default Dialog_MessageBox in a single pass, so this
       // proves the UIRootOnGUI reinvoke works without involving a rect or hotControl.
@@ -36,7 +36,7 @@ public static class EventSynthSmoke {
       await driver.WaitFrames(2);
 
       bool keyClosed = !Find.WindowStack.IsOpen<Dialog_MessageBox>();
-      Log.Info("pickle: event synth key event: {Result}", [keyClosed ? "dialog closed" : "dialog still open"]);
+      Log.InfoTo("Pickle", "event synth key event: {Result}", [keyClosed ? "dialog closed" : "dialog still open"]);
 
       if (!keyClosed) {
         keyTestDialog.Close(false);
@@ -56,25 +56,25 @@ public static class EventSynthSmoke {
 
       if (EventSynth.TryTakeFailure(out Exception? failure)) {
         LogWindowStack(dialog);
-        Log.Error("pickle: event synth smoke failed: click threw: {Failure}", [failure]);
+        Log.ErrorTo("Pickle", "event synth smoke failed: click threw: {Failure}", [failure]);
         return;
       }
 
       bool closed = !Find.WindowStack.IsOpen<Dialog_MessageBox>();
-      Log.Info("pickle: event synth click: {Result}", [closed ? "dialog closed" : "dialog still open"]);
+      Log.InfoTo("Pickle", "event synth click: {Result}", [closed ? "dialog closed" : "dialog still open"]);
 
       if (!closed) {
         LogWindowStack(dialog);
-        Log.Error(
-            "pickle: event synth smoke failed: click did not close the dialog. "
+        Log.ErrorTo("Pickle",
+            "event synth smoke failed: click did not close the dialog. "
             + "target={Target} pointerNow=[{PointerNow}]",
             [InputBackends.ToScreen(target), InputBackends.Current.GetMouseLocation()]);
         return;
       }
 
-      Log.Info("pickle: event synth smoke passed");
+      Log.InfoTo("Pickle", "event synth smoke passed");
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: event synth smoke failed with exception");
+      Log.ErrorTo("Pickle", ex, "event synth smoke failed with exception");
     }
   }
 
@@ -85,22 +85,22 @@ public static class EventSynthSmoke {
     string stack = string.Join(", ", windows.Select(w => w.GetType().Name));
     bool dialogTopmost = windows.Count > 0 && windows[windows.Count - 1] == dialog;
 
-    Log.Info(
-        "pickle: event synth debug windowstack=[{Stack}] (index 0 = bottom, last = topmost)",
+    Log.InfoTo("Pickle",
+        "event synth debug windowstack=[{Stack}] (index 0 = bottom, last = topmost)",
         [stack]);
-    Log.Info("pickle: event synth debug dialog topmost={Topmost}", [dialogTopmost]);
+    Log.InfoTo("Pickle", "event synth debug dialog topmost={Topmost}", [dialogTopmost]);
 
     Vector2 target = ButtonCenter(dialog);
     foreach (Window window in windows) {
       bool covers = window.windowRect.Contains(target);
-      Log.Info(
-          "pickle: event synth debug window {Window} layer={Layer} rect={Rect} coversTarget={CoversTarget}",
+      Log.InfoTo("Pickle",
+          "event synth debug window {Window} layer={Layer} rect={Rect} coversTarget={CoversTarget}",
           [window.GetType().Name, window.layer, window.windowRect, covers]);
     }
 
     Window? windowAtTarget = Find.WindowStack.GetWindowAt(target);
-    Log.Info(
-        "pickle: event synth debug target={Target} windowAtTarget={WindowAtTarget} isDialog={IsDialog}",
+    Log.InfoTo("Pickle",
+        "event synth debug target={Target} windowAtTarget={WindowAtTarget} isDialog={IsDialog}",
         [target, windowAtTarget?.GetType().Name ?? "none", windowAtTarget == dialog]);
   }
 
@@ -112,14 +112,14 @@ public static class EventSynthSmoke {
 
     bool found = TagStore.TryGet("btn:OK", out Rect capturedRect, out bool duplicate);
     if (found && !duplicate) {
-      Log.Info(
-          "pickle: event synth debug windowRect={WindowRect} capturedRect={CapturedRect}",
+      Log.InfoTo("Pickle",
+          "event synth debug windowRect={WindowRect} capturedRect={CapturedRect}",
           [windowRect, capturedRect]);
       return capturedRect.center;
     }
 
-    Log.Info(
-        "pickle: event synth debug windowRect={WindowRect} computedCenter={ComputedCenter} "
+    Log.InfoTo("Pickle",
+        "event synth debug windowRect={WindowRect} computedCenter={ComputedCenter} "
         + "capturedFound={CapturedFound} capturedDuplicate={CapturedDuplicate}",
         [windowRect, computed, found, duplicate]);
     return computed;

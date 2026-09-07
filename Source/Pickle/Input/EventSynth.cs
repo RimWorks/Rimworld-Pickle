@@ -111,8 +111,8 @@ public static class EventSynth {
 
       // Diagnostic only. hotControl is backed by native code, so reading it after each
       // pass is the only way to see whether MouseDown grabbed control.
-      Log.Info(
-          "pickle: event synth debug kind={Kind} action={Action} hotControl={HotControl}",
+      Log.InfoTo("Pickle",
+          "event synth debug kind={Kind} action={Action} hotControl={HotControl}",
           [kind, action, GUIUtility.hotControl]);
 
       pendingAction = null;

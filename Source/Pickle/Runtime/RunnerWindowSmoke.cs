@@ -25,19 +25,19 @@ public static class RunnerWindowSmoke {
       await window.RunAllAndWait();
 
       if (window.ParsedFeaturesCount < 1) {
-        Log.Error("pickle: runner window smoke failed: no features parsed");
+        Log.ErrorTo("Pickle", "runner window smoke failed: no features parsed");
         return;
       }
 
       int failedCount = window.FailedResultsCount;
       if (failedCount > 0) {
-        Log.Error("pickle: runner window smoke failed: {FailedCount} scenarios failed", [failedCount]);
+        Log.ErrorTo("Pickle", "runner window smoke failed: {FailedCount} scenarios failed", [failedCount]);
         return;
       }
 
-      Log.Info("pickle: runner window smoke passed");
+      Log.InfoTo("Pickle", "runner window smoke passed");
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: runner window smoke failed with exception");
+      Log.ErrorTo("Pickle", ex, "runner window smoke failed with exception");
     }
   }
 }

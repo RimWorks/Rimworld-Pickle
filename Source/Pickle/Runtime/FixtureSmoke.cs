@@ -17,9 +17,9 @@ public static class FixtureSmoke {
     PickleDriver driver = PickleDriver.Instance;
     try {
       await RunAsync(driver);
-      Log.Info("pickle: fixture smoke passed");
+      Log.InfoTo("Pickle", "fixture smoke passed");
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: fixture smoke failed");
+      Log.ErrorTo("Pickle", ex, "fixture smoke failed");
     }
   }
 
@@ -52,13 +52,13 @@ public static class FixtureSmoke {
       await FixtureLoader.LoadFixture(resolution.Fixture.FullPath, driver);
 
       LogWatch.Arm();
-      Log.Error("pickle: deliberate watchdog test error");
+      Log.ErrorTo("Pickle", "deliberate watchdog test error");
 
       if (LogWatch.ErrorCount != 1) {
         throw new InvalidOperationException($"Expected 1 error in LogWatch, but got {LogWatch.ErrorCount}");
       }
 
-      string? foundError = LogWatch.ErrorsSinceArmed.FirstOrDefault(e => e.Contains("pickle: deliberate watchdog test error"));
+      string? foundError = LogWatch.ErrorsSinceArmed.FirstOrDefault(e => e.Contains("deliberate watchdog test error"));
       if (foundError == null) {
         throw new InvalidOperationException("Deliberate test error not found in LogWatch");
       }
@@ -70,10 +70,10 @@ public static class FixtureSmoke {
         throw new InvalidOperationException("LogWatch.ErrorsSince reported an error logged before the mark");
       }
 
-      Log.Error("pickle: deliberate marked test error");
+      Log.ErrorTo("Pickle", "deliberate marked test error");
 
       IReadOnlyList<string> sinceMark = LogWatch.ErrorsSince(mark);
-      if (sinceMark.Count != 1 || !sinceMark[0].Contains("pickle: deliberate marked test error")) {
+      if (sinceMark.Count != 1 || !sinceMark[0].Contains("deliberate marked test error")) {
         throw new InvalidOperationException(
             $"Expected 1 error since the mark, but got {sinceMark.Count}");
       }

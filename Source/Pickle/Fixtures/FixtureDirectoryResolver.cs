@@ -49,8 +49,8 @@ public static class FixtureDirectoryResolver {
       fallback = Path.Combine(Directory.GetCurrentDirectory(), "pickle-fixtures");
     }
 
-    Log.Warn(
-        "pickle: {ModRoot} is not writable, so its recorded fixtures go to {Fallback}. " +
+    Log.WarnTo("Pickle",
+        "{ModRoot} is not writable, so its recorded fixtures go to {Fallback}. " +
         "Copy one into the mod's Pickle/Fixtures/ and commit it when you are happy with it.",
         [modRoot, fallback]);
 

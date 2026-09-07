@@ -43,7 +43,7 @@ public static class AutorunBootstrap {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunAutorun(args, reportDir), "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: autorun failed to start");
+      Log.ErrorTo("Pickle", ex, "autorun failed to start");
     }
   }
 
@@ -67,19 +67,18 @@ public static class AutorunBootstrap {
               Web.DashboardStrings.BuildJson(),
               setName));
     } catch (Exception ex) {
-      string msg = $"pickle: failed writing reports: {ex.Message}";
       if (onError != null) {
-        onError(msg);
+        onError($"pickle: failed writing reports: {ex.Message}");
       } else {
-        Log.Error("{Message}", [msg]);
+        Log.ErrorTo("Pickle", "failed writing reports: {Message}", [ex.Message]);
       }
     }
   }
 
   private static async Task RunAutorun(PickleArgs args, string reportDir) {
-    Log.Info("pickle: autorun report dir = {ReportDir}", [reportDir]);
-    Log.Info("pickle: autorun seed = {Seed}", [args.Seed]);
-    Log.Info("pickle: autorun retries = {Retries}", [args.Retries]);
+    Log.InfoTo("Pickle", "autorun report dir = {ReportDir}", [reportDir]);
+    Log.InfoTo("Pickle", "autorun seed = {Seed}", [args.Seed]);
+    Log.InfoTo("Pickle", "autorun retries = {Retries}", [args.Retries]);
 
     List<ScenarioResult> accumulated = new();
     int exitCode;
@@ -105,7 +104,7 @@ public static class AutorunBootstrap {
 
       exitCode = accumulated.Any(r => r.Outcome == ScenarioOutcome.Failed) ? 1 : 0;
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: autorun infrastructure error");
+      Log.ErrorTo("Pickle", ex, "autorun infrastructure error");
       exitCode = 2;
     } finally {
       AutorunState.IsAutorunning = false;
@@ -126,7 +125,7 @@ public static class AutorunBootstrap {
         },
         setName: args.SetName);
 
-    Log.Info("pickle: autorun exit code = {ExitCode}", [exitCode]);
+    Log.InfoTo("Pickle", "autorun exit code = {ExitCode}", [exitCode]);
     Quit(exitCode);
   }
 
@@ -137,22 +136,22 @@ public static class AutorunBootstrap {
     }
 
     if (!FilmEncoder.Available) {
-      Log.Warn(
-          "pickle: {Count} scenario(s) were filmed but ffmpeg is not on the PATH; frames were kept",
+      Log.WarnTo("Pickle",
+          "{Count} scenario(s) were filmed but ffmpeg is not on the PATH; frames were kept",
           [films.Count]);
       return;
     }
 
-    Log.Info("pickle: encoding {Count} film(s) before exit", [films.Count]);
+    Log.InfoTo("Pickle", "encoding {Count} film(s) before exit", [films.Count]);
     for (int i = 0; i < films.Count; i++) {
       (string dir, double fps) = films[i];
-      Log.Info(
-          "pickle: encoding film {Index}/{Count} at {Fps} fps",
+      Log.InfoTo("Pickle",
+          "encoding film {Index}/{Count} at {Fps} fps",
           [i + 1, films.Count, fps.ToString("0.#", CultureInfo.InvariantCulture)]);
       FilmEncoder.TryEncode(dir, fps);
     }
 
-    Log.Info("pickle: encoded {Count} film(s)", [films.Count]);
+    Log.InfoTo("Pickle", "encoded {Count} film(s)", [films.Count]);
   }
 
   // Environment.Exit does not end the process under Unity's Mono, so a passing run

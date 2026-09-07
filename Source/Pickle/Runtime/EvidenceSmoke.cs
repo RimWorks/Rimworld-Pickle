@@ -43,74 +43,74 @@ Feature: Evidence Capture Test
       List<ScenarioResult> results = await session.RunFeature(plan, "Pickle");
 
       if (results.Count != 1) {
-        Log.Error("pickle: evidence smoke failed: expected 1 scenario, got {Count}", [results.Count]);
+        Log.ErrorTo("Pickle", "evidence smoke failed: expected 1 scenario, got {Count}", [results.Count]);
         return;
       }
 
       ScenarioResult result = results[0];
 
       if (result.Outcome != ScenarioOutcome.Failed) {
-        Log.Error(
-            "pickle: evidence smoke failed: scenario outcome is {Outcome}, expected Failed",
+        Log.ErrorTo("Pickle",
+            "evidence smoke failed: scenario outcome is {Outcome}, expected Failed",
             [result.Outcome]);
         return;
       }
 
       string failureMessage = result.FailureMessage ?? string.Empty;
       if (failureMessage.Length == 0 || !failureMessage.Contains("deliberate evidence failure")) {
-        Log.Error(
-            "pickle: evidence smoke failed: failure message missing or incorrect: {Message}",
+        Log.ErrorTo("Pickle",
+            "evidence smoke failed: failure message missing or incorrect: {Message}",
             [result.FailureMessage]);
         return;
       }
 
       if (result.LogTail == null || result.LogTail.Count == 0) {
-        Log.Error("pickle: evidence smoke failed: LogTail is null or empty");
+        Log.ErrorTo("Pickle", "evidence smoke failed: LogTail is null or empty");
         return;
       }
 
       (string Name, string Content) noteAttachment = result.Attachments.FirstOrDefault(a => a.Name == "note");
       if (noteAttachment.Name == null) {
-        Log.Error("pickle: evidence smoke failed: 'note' attachment not found");
+        Log.ErrorTo("Pickle", "evidence smoke failed: 'note' attachment not found");
         return;
       }
 
       if (noteAttachment.Content != "attached-value") {
-        Log.Error(
-            "pickle: evidence smoke failed: 'note' attachment has wrong value: {Value}",
+        Log.ErrorTo("Pickle",
+            "evidence smoke failed: 'note' attachment has wrong value: {Value}",
             [noteAttachment.Content]);
         return;
       }
 
       (string Source, string Content) evidenceDump = result.StateDumps.FirstOrDefault(d => d.Content == "evidence-dump-ok");
       if (evidenceDump.Content == null) {
-        Log.Error("pickle: evidence smoke failed: state dump with 'evidence-dump-ok' not found");
+        Log.ErrorTo("Pickle", "evidence smoke failed: state dump with 'evidence-dump-ok' not found");
         return;
       }
 
       (string Name, string Content) screenshotAttachment = result.Attachments.FirstOrDefault(a => a.Name == "screenshot");
       if (screenshotAttachment.Name == null) {
-        Log.Error("pickle: evidence smoke failed: screenshot attachment not found");
+        Log.ErrorTo("Pickle", "evidence smoke failed: screenshot attachment not found");
         return;
       }
 
       string screenshotPath = screenshotAttachment.Content;
       if (!File.Exists(screenshotPath)) {
-        Log.Error(
-            "pickle: evidence smoke failed: screenshot file does not exist at {Path}",
+        Log.ErrorTo("Pickle",
+            "evidence smoke failed: screenshot file does not exist at {Path}",
             [screenshotPath]);
         return;
       }
 
       FileInfo fileInfo = new FileInfo(screenshotPath);
       if (fileInfo.Length == 0) {
-        Log.Error("pickle: evidence smoke failed: screenshot file is empty (0 bytes)");
+        Log.ErrorTo("Pickle", "evidence smoke failed: screenshot file is empty (0 bytes)");
         return;
       }
 
-      Log.Info("pickle: evidence smoke passed");
+      Log.InfoTo("Pickle", "evidence smoke passed");
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: evidence smoke failed");
+      Log.ErrorTo("Pickle", ex, "evidence smoke failed");
     }
   }
 }

@@ -25,8 +25,8 @@ public static class FilmEncoder {
   public static string? TryEncode(string frameDirectory, double framesPerSecond) {
     string ffmpeg = ResolveFfmpeg();
     if (ffmpeg.Length == 0) {
-      Log.Warn(
-          "pickle: no ffmpeg on PATH, so {FrameDirectory} keeps its frames and gets no video.",
+      Log.WarnTo("Pickle",
+          "no ffmpeg on PATH, so {FrameDirectory} keeps its frames and gets no video.",
           [frameDirectory]);
       return null;
     }
@@ -54,7 +54,7 @@ public static class FilmEncoder {
       string errors = process.StandardError.ReadToEnd();
 
       if (!process.WaitForExit(TimeoutMs) || process.ExitCode != 0) {
-        Log.Warn("pickle: ffmpeg could not encode {FrameDirectory}: {Errors}", [frameDirectory, Tail(errors)]);
+        Log.WarnTo("Pickle", "ffmpeg could not encode {FrameDirectory}: {Errors}", [frameDirectory, Tail(errors)]);
         return null;
       }
 
@@ -65,7 +65,7 @@ public static class FilmEncoder {
       PurgeFrames(frameDirectory);
       return output;
     } catch (Exception ex) {
-      Log.Warn(ex, $"pickle: ffmpeg failed for {frameDirectory}");
+      Log.WarnTo("Pickle", ex, $"ffmpeg failed for {frameDirectory}");
       return null;
     }
   }
@@ -78,7 +78,7 @@ public static class FilmEncoder {
         File.Delete(frame);
       }
     } catch (Exception ex) {
-      Log.Warn(ex, $"pickle: kept frames in {frameDirectory}");
+      Log.WarnTo("Pickle", ex, $"kept frames in {frameDirectory}");
     }
   }
 

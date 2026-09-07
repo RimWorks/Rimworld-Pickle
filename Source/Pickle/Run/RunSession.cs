@@ -163,7 +163,7 @@ public class RunSession {
       // skipped rather than failed.
       string? missingMod = RunOutcomes.MissingRequirement(scenario.Tags, IsModPresent);
       if (missingMod != null) {
-        Log.Info("pickle: skipping '{Scenario}', '{MissingMod}' is not loaded", [scenario.Name, missingMod]);
+        Log.InfoTo("Pickle", "skipping '{Scenario}', '{MissingMod}' is not loaded", [scenario.Name, missingMod]);
       }
 
       if (missingMod != null || RunOutcomes.ShouldSkip(scenario.Tags, includeWip)) {
@@ -201,8 +201,8 @@ public class RunSession {
     int failedCount = results.Count(r => r.Outcome == ScenarioOutcome.Failed);
     int skippedCount = results.Count(r => r.Outcome == ScenarioOutcome.Skipped);
 
-    Log.Info(
-        "pickle: run finished: {Passed} passed, {Failed} failed, {Skipped} skipped",
+    Log.InfoTo("Pickle",
+        "run finished: {Passed} passed, {Failed} failed, {Skipped} skipped",
         [passedCount, failedCount, skippedCount]);
 
     return results;
@@ -219,8 +219,8 @@ public class RunSession {
 
     string attempts = result.Attempts > 1 ? $" (attempt {result.Attempts})" : string.Empty;
 
-    Log.Info(
-        "pickle: {Outcome} in {DurationMs}ms{Attempts}: {Feature}: {Scenario}",
+    Log.InfoTo("Pickle",
+        "{Outcome} in {DurationMs}ms{Attempts}: {Feature}: {Scenario}",
         [
             outcome,
             result.DurationMs.ToString("F0", CultureInfo.InvariantCulture),
@@ -304,8 +304,8 @@ public class RunSession {
          attempt <= attempts && result.Outcome == ScenarioOutcome.Failed && !CancelRequested;
          attempt++) {
       failed.Add((attempt - 1, result.FailureMessage));
-      Log.Info(
-          "pickle: retrying '{Scenario}', attempt {Attempt} of {Attempts}",
+      Log.InfoTo("Pickle",
+          "retrying '{Scenario}', attempt {Attempt} of {Attempts}",
           [scenario.Name, attempt, attempts]);
 
       currentLoadedFixture = null;
@@ -740,7 +740,7 @@ public class RunSession {
       List<KeyValuePair<Type, object>> instances = [.. scenarioInstanceCache];
       stateDumps = StateDumpCollector.Collect(instances);
     } catch (Exception ex) {
-      Log.Warn(ex, "pickle: error capturing evidence");
+      Log.WarnTo("Pickle", ex, "error capturing evidence");
     }
 
     return (screenshotPath, stateDumps);

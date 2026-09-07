@@ -51,7 +51,7 @@ Feature: Run Session Smoke Test
       List<ScenarioResult> results = await session.RunFeature(plan, "Pickle");
 
       if (results.Count != 3) {
-        Log.Error("pickle: run session smoke failed: expected 3 scenarios, got {Count}", [results.Count]);
+        Log.ErrorTo("Pickle", "run session smoke failed: expected 3 scenarios, got {Count}", [results.Count]);
         return;
       }
 
@@ -59,21 +59,21 @@ Feature: Run Session Smoke Test
       ScenarioResult second = results[1];
 
       if (first.Outcome != ScenarioOutcome.Passed) {
-        Log.Error(
-            "pickle: run session smoke failed: first scenario outcome is {Outcome}, expected Passed",
+        Log.ErrorTo("Pickle",
+            "run session smoke failed: first scenario outcome is {Outcome}, expected Passed",
             [first.Outcome]);
         return;
       }
 
       if (second.Outcome != ScenarioOutcome.Failed) {
-        Log.Error(
-            "pickle: run session smoke failed: second scenario outcome is {Outcome}, expected Failed",
+        Log.ErrorTo("Pickle",
+            "run session smoke failed: second scenario outcome is {Outcome}, expected Failed",
             [second.Outcome]);
         return;
       }
 
       if (second.Steps.Count < 2 || second.Steps[1].Status != StepStatus.Skipped) {
-        Log.Error("pickle: run session smoke failed: second scenario's later step was not skipped");
+        Log.ErrorTo("Pickle", "run session smoke failed: second scenario's later step was not skipped");
         return;
       }
 
@@ -81,8 +81,8 @@ Feature: Run Session Smoke Test
       // reported its own wrapper text instead of the assertion's.
       string failureMessage = second.FailureMessage ?? string.Empty;
       if (failureMessage.Length == 0 || !failureMessage.Contains("deliberate smoke failure")) {
-        Log.Error(
-            "pickle: run session smoke failed: second scenario failure message should name "
+        Log.ErrorTo("Pickle",
+            "run session smoke failed: second scenario failure message should name "
             + "the assert, got: {FailureMessage}",
             [second.FailureMessage]);
         return;
@@ -90,16 +90,16 @@ Feature: Run Session Smoke Test
 
       ScenarioResult third = results[2];
       if (third.Outcome != ScenarioOutcome.Passed) {
-        Log.Error(
-            "pickle: run session smoke failed: fluent scenario outcome is {Outcome}, "
+        Log.ErrorTo("Pickle",
+            "run session smoke failed: fluent scenario outcome is {Outcome}, "
             + "expected Passed ({FailureMessage})",
             [third.Outcome, third.FailureMessage]);
         return;
       }
 
-      Log.Info("pickle: run session smoke passed");
+      Log.InfoTo("Pickle", "run session smoke passed");
     } catch (Exception ex) {
-      Log.Error(ex, "pickle: run session smoke failed");
+      Log.ErrorTo("Pickle", ex, "run session smoke failed");
     }
   }
 }

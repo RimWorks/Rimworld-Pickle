@@ -45,7 +45,7 @@ public static class PatchBackends {
     }
 
     if (found.Count == 0) {
-      Log.Warn("pickle: no patching backend found yet; patch attribution is off for this run.");
+      Log.WarnTo("Pickle", "no patching backend found yet; patch attribution is off for this run.");
       return;
     }
 
@@ -55,14 +55,14 @@ public static class PatchBackends {
       try {
         backend.ApplyEarly();
         PatchAttribution.Arm();
-        Log.Info("pickle: early hooks applied via {Backend}", [backend.Name]);
+        Log.InfoTo("Pickle", "early hooks applied via {Backend}", [backend.Name]);
         return;
       } catch (Exception ex) {
-        Log.Error(ex, $"pickle: {backend.Name} backend failed to apply early patches");
+        Log.ErrorTo("Pickle", ex, $"{backend.Name} backend failed to apply early patches");
       }
     }
 
-    Log.Error("pickle: every patching backend failed to apply early hooks; attribution is off.");
+    Log.ErrorTo("Pickle", "every patching backend failed to apply early hooks; attribution is off.");
   }
 
   public static void ApplyBest() {
@@ -73,7 +73,7 @@ public static class PatchBackends {
     applied = true;
 
     if (Registered.Count == 0) {
-      Log.Error("pickle: no patching backend loaded; Pickle needs Harmony or Concord active.");
+      Log.ErrorTo("Pickle", "no patching backend loaded; Pickle needs Harmony or Concord active.");
       MissingBackendNotice.ShowIfDevMode();
       return;
     }
@@ -84,23 +84,23 @@ public static class PatchBackends {
       try {
         backend.Apply();
       } catch (Exception ex) {
-        Log.Error(ex, $"pickle: {backend.Name} backend failed to apply patches");
+        Log.ErrorTo("Pickle", ex, $"{backend.Name} backend failed to apply patches");
         continue;
       }
 
       string others = string.Join(", ", Registered.Where(r => r.Backend != backend).Select(r => r.Backend.Name));
       if (others.Length == 0) {
-        Log.Info("pickle: patched via {Backend}", [backend.Name]);
+        Log.InfoTo("Pickle", "patched via {Backend}", [backend.Name]);
       } else {
-        Log.Info(
-            "pickle: patched via {Backend} (priority {Priority}); idle: {Others}",
+        Log.InfoTo("Pickle",
+            "patched via {Backend} (priority {Priority}); idle: {Others}",
             [backend.Name, priority, others]);
       }
 
       return;
     }
 
-    Log.Error("pickle: every patching backend failed to apply; Pickle cannot run steps.");
+    Log.ErrorTo("Pickle", "every patching backend failed to apply; Pickle cannot run steps.");
     MissingBackendNotice.ShowIfDevMode();
   }
 
@@ -120,7 +120,7 @@ public static class PatchBackends {
       try {
         into.Add(((IPatchBackend)Activator.CreateInstance(type)!, PriorityOf(type)));
       } catch (Exception ex) {
-        Log.Warn(ex, $"pickle: could not create backend {type.Name}");
+        Log.WarnTo("Pickle", ex, $"could not create backend {type.Name}");
       }
     }
   }

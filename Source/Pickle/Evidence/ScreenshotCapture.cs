@@ -35,8 +35,8 @@ public static class ScreenshotCapture {
     }
 
     string fallback = Path.Combine(Path.GetTempPath(), "pickle-reports", "screenshots");
-    Log.Warn(
-        "pickle: cannot write evidence to {Preferred}; using {Fallback} instead",
+    Log.WarnTo("Pickle",
+        "cannot write evidence to {Preferred}; using {Fallback} instead",
         [preferred, fallback]);
     TryCreate(fallback);
     resolvedDir = fallback;
