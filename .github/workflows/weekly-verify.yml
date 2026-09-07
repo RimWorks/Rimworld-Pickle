@@ -37,8 +37,11 @@ jobs:
         run: npm ci --ignore-scripts
 
       # the dashboard bundles are embedded resources, so they must exist before compiling
+      - name: Install dashboard dependencies
+        run: npm --prefix Dashboard ci --ignore-scripts
+
       - name: Build dashboard
-        run: npm --prefix Dashboard ci && npm --prefix Dashboard run build
+        run: npm --prefix Dashboard run build
 
       # Krafs.Rimworld.Ref floats on 1.6.* with no lock file, so this is where a new
       # RimWorld release enters and where breakage would first show up.
