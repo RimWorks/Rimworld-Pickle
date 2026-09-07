@@ -45,22 +45,14 @@ jobs:
         with:
           user: aequasi
 
-      - name: Set up SteamCMD
-        uses: buildalon/setup-steamcmd@2a16e8f482192d9a5710a17f0119890ceb1f48a1 # v1
-
-      - name: Restore Steam config
-        env:
-          STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
-        run: |
-          mkdir -p "$STEAM_DIR/config"
-          printf '%s' "$STEAM_CONFIG_VDF_B64" | base64 -d > "$STEAM_DIR/config/config.vdf"
-          echo "STEAM_CONFIG_VDF=$STEAM_DIR/config/config.vdf" >> "$GITHUB_ENV"
+      - uses: RimWorks/mod-ci/.github/actions/steam-login@79a54854b2795cf5cc12025b3d86ede3b354af94
+        with:
+          steam-config-vdf-b64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
 
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+          WORKSHOP_ID: ${{ vars.WORKSHOP_ID }}
           STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
-          STEAM_CONFIG_VDF: ${{ env.STEAM_CONFIG_VDF }}
-          STEAMCMD_PATH: ${{ env.STEAM_CMD }}/steamcmd.sh
         run: ./node_modules/.bin/semantic-release

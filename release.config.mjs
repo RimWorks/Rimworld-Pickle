@@ -1,6 +1,6 @@
 // semantic-release-steam updates an existing item and never creates one, so this
 // id comes from the first manual upload. See Docs/releasing.md.
-const WORKSHOP_ID = process.env.PICKLE_WORKSHOP_ID ?? '3791648678';
+const WORKSHOP_ID = process.env.WORKSHOP_ID || '3791648678';
 
 /** @type {import('semantic-release').GlobalConfig} */
 export default {
