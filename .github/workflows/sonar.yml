@@ -19,62 +19,18 @@ jobs:
           # Sonar needs full history to blame lines and scope new code.
           fetch-depth: 0
 
-      - name: Setup JDK
-        uses: actions/setup-java@v6
-        with:
-          java-version: 17
-          distribution: zulu
-
-      - name: Cache Sonar packages
-        uses: actions/cache@v6
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-
-      - name: Cache Sonar scanner
-        id: cache-sonar-scanner
-        uses: actions/cache@v6
-        with:
-          path: ${{ runner.temp }}/scanner
-          key: ${{ runner.os }}-sonar-scanner
-          restore-keys: ${{ runner.os }}-sonar-scanner
-
-      - name: Install Sonar scanner
-        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
-        run: dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}/scanner
-
       # Ignored on purpose: S3358 else-if ternary chains match the C# house style;
       # S7718 wants catch (error_); S6772 flags JSX newlines where spacing is a CSS class;
       # S6819 prefers <fieldset>/<progress>, both of which change the rendering; S6847 reads
       # <details> as non-interactive. The correctly-roled ARIA cases were fixed instead.
-      - name: Build and analyze
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          ${{ runner.temp }}/scanner/dotnet-sonarscanner begin \
-            /k:"RimWorks_Rimworld-Pickle" \
-            /o:"rimworks" \
-            /d:sonar.token="$SONAR_TOKEN" \
-            /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.exclusions="Dashboard/dist/**,Dashboard/node_modules/**,Styles/**,artifacts/**,**/bin/**,**/obj/**" \
-            /d:sonar.coverage.exclusions="Source/Pickle/**,Source/Pickle.Vanilla/**,Source/Pickle.Patches.*/**,Source/Pickle.Ref/**,Dashboard/**,.github/**" \
-            /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/**/coverage.opencover.xml" \
-            /d:sonar.issue.ignore.multicriteria="todo,ternary,catchname,jsxspacing,ariarole,detailskeys" \
-            /d:sonar.issue.ignore.multicriteria.todo.ruleKey="csharpsquid:S1135" \
-            /d:sonar.issue.ignore.multicriteria.todo.resourceKey="**/*.cs" \
-            /d:sonar.issue.ignore.multicriteria.ternary.ruleKey="typescript:S3358" \
-            /d:sonar.issue.ignore.multicriteria.ternary.resourceKey="**/*.tsx" \
-            /d:sonar.issue.ignore.multicriteria.catchname.ruleKey="typescript:S7718" \
-            /d:sonar.issue.ignore.multicriteria.catchname.resourceKey="**/*.tsx" \
-            /d:sonar.issue.ignore.multicriteria.jsxspacing.ruleKey="typescript:S6772" \
-            /d:sonar.issue.ignore.multicriteria.jsxspacing.resourceKey="**/*.tsx" \
-            /d:sonar.issue.ignore.multicriteria.ariarole.ruleKey="typescript:S6819" \
-            /d:sonar.issue.ignore.multicriteria.ariarole.resourceKey="**/*.tsx" \
-            /d:sonar.issue.ignore.multicriteria.detailskeys.ruleKey="typescript:S6847" \
-            /d:sonar.issue.ignore.multicriteria.detailskeys.resourceKey="**/*.tsx"
-          dotnet build Pickle.slnx -c Release
-          dotnet test Pickle.slnx -c Release --no-build \
-            --collect:"XPlat Code Coverage;Format=opencover" \
-            --results-directory artifacts/coverage
-          ${{ runner.temp }}/scanner/dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+      # TODO(~770 StyleCop doc errors): drop analyzer-severity once those are cleared.
+      - uses: RimWorks/mod-ci/.github/actions/dotnet-sonar@2a4af7891b92cd20917a0dd9f726532314a602a1 # v1.2.0
+        with:
+          solution: Pickle.slnx
+          project-key: RimWorks_Rimworld-Pickle
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+          analyzer-severity: none
+          exclusions: Dashboard/dist/**,Dashboard/node_modules/**,Styles/**,artifacts/**,**/bin/**,**/obj/**
+          coverage-exclusions: Source/Pickle/**,Source/Pickle.Vanilla/**,Source/Pickle.Patches.*/**,Source/Pickle.Ref/**,Dashboard/**,.github/**
+          extra-begin-args: >-
+            /d:sonar.issue.ignore.multicriteria="todo,ternary,catchname,jsxspacing,ariarole,detailskeys" /d:sonar.issue.ignore.multicriteria.todo.ruleKey="csharpsquid:S1135" /d:sonar.issue.ignore.multicriteria.todo.resourceKey="**/*.cs" /d:sonar.issue.ignore.multicriteria.ternary.ruleKey="typescript:S3358" /d:sonar.issue.ignore.multicriteria.ternary.resourceKey="**/*.tsx" /d:sonar.issue.ignore.multicriteria.catchname.ruleKey="typescript:S7718" /d:sonar.issue.ignore.multicriteria.catchname.resourceKey="**/*.tsx" /d:sonar.issue.ignore.multicriteria.jsxspacing.ruleKey="typescript:S6772" /d:sonar.issue.ignore.multicriteria.jsxspacing.resourceKey="**/*.tsx" /d:sonar.issue.ignore.multicriteria.ariarole.ruleKey="typescript:S6819" /d:sonar.issue.ignore.multicriteria.ariarole.resourceKey="**/*.tsx" /d:sonar.issue.ignore.multicriteria.detailskeys.ruleKey="typescript:S6847" /d:sonar.issue.ignore.multicriteria.detailskeys.resourceKey="**/*.tsx"
