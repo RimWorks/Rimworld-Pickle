@@ -4,6 +4,8 @@
     <RootNamespace>RimWorks.Pickle.Core</RootNamespace>
     <TargetFrameworks>net472;net10.0</TargetFrameworks>
     <TargetFramework></TargetFramework>
+    <!-- CA1875 wants Regex.Count, which the net472 build the mod ships does not have. -->
+    <NoWarn Condition="'$(TargetFramework)' != 'net472'">$(NoWarn);CA1875</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.*" PrivateAssets="all" />
