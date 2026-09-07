@@ -1,0 +1,10 @@
+name: ship-list
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    uses: RimWorks/mod-ci/.github/workflows/ship-list.yml@v1.1.0
