@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using RimWorks.Pickle.Input;
 using RimWorks.Pickle.Runtime;
 using UnityEngine;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle;
 
@@ -89,7 +90,7 @@ public class PickleContext {
       throw new InvalidOperationException(error ?? "Failed to resolve tag");
     }
 
-    InputBackends.EnsureAvailable();
+    await MovePointerTo(rect.center);
     InputBackends.Current.Click(rect.center);
     await WaitFrames(2);
   }
@@ -105,8 +106,7 @@ public class PickleContext {
       throw new InvalidOperationException(error ?? "Failed to resolve tag");
     }
 
-    InputBackends.EnsureAvailable();
-    InputBackends.Current.MoveTo(rect.center);
+    await MovePointerTo(rect.center);
     await WaitFrames(1);
   }
 
@@ -118,5 +118,29 @@ public class PickleContext {
 
   public void Attach(string name, string content) {
     attachments.Add((name, content));
+  }
+
+  // An unfocused window is the one state where the OS moves the cursor and the game never
+  // reads it, so focus is recorded beside both readings rather than guessed from them.
+  private static string DescribePointer(string lead, Vector2 guiPoint) {
+    return $"{lead} {guiPoint}: the OS reports {InputBackends.Current.GetMouseLocation()}, "
+        + $"the game reads {Verse.UI.MousePositionOnUIInverted}, focused={Application.isFocused}";
+  }
+
+  // The OS cursor moving is not the same as the game seeing it move: a click sent before
+  // Unity has read the new position lands with the pointer still where it was and
+  // activates nothing, which is silent. Three pixels covers the rounding SendInput's
+  // 0-65535 grid costs.
+  private async Task MovePointerTo(Vector2 guiPoint) {
+    InputBackends.EnsureAvailable();
+    InputBackends.Current.MoveTo(guiPoint);
+
+    try {
+      await WaitUntil(() => (Verse.UI.MousePositionOnUIInverted - guiPoint).sqrMagnitude <= 9f, 2f);
+    } catch (TimeoutException) {
+      throw new InvalidOperationException(DescribePointer("the pointer never reached", guiPoint));
+    }
+
+    Log.Info($"pickle: {DescribePointer("pointer at", guiPoint)}");
   }
 }
