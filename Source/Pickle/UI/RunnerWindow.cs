@@ -583,21 +583,7 @@ public class RunnerWindow : Window {
           [.. results.Values],
           session.CancelRequested ? "cancelled" : "completed");
 
-      // Back to the main menu so the next run starts clean. Break on failure means the world
-      // the failure left is the thing you want to look at, so that case stays loaded.
-      if (!BreakOnFailureState.Enabled && !session.CancelRequested
-          && Current.ProgramState == ProgramState.Playing) {
-        GenScene.GoToMainMenu();
-
-        // Waited, not ExecuteWhenFinished: that fires before the menu scene swaps, so the
-        // window it adds is wiped by the load that follows.
-        try {
-          await PickleDriver.Instance.WaitUntil(() => Current.ProgramState == ProgramState.Entry, 60f);
-          RestoreAfterMainMenu();
-        } catch (TimeoutException) {
-          Log.Warn("pickle: the main menu never came up, so the runner window stayed closed");
-        }
-      }
+      await ReturnToMainMenu(session);
     } catch (Exception ex) {
       Log.Error(ex, "pickle: runner window run failed");
     } finally {
@@ -615,6 +601,26 @@ public class RunnerWindow : Window {
       if (restoreWindowAfterRun && !Find.WindowStack.IsOpen(this)) {
         Find.WindowStack.Add(this);
       }
+    }
+  }
+
+  // Back to the main menu so the next run starts clean. Break on failure means the world
+  // the failure left is the thing you want to look at, so that case stays loaded.
+  private async Task ReturnToMainMenu(RunSession session) {
+    if (BreakOnFailureState.Enabled || session.CancelRequested
+        || Current.ProgramState != ProgramState.Playing) {
+      return;
+    }
+
+    GenScene.GoToMainMenu();
+
+    // Waited, not ExecuteWhenFinished: that fires before the menu scene swaps, so the
+    // window it adds is wiped by the load that follows.
+    try {
+      await PickleDriver.Instance.WaitUntil(() => Current.ProgramState == ProgramState.Entry, 60f);
+      RestoreAfterMainMenu();
+    } catch (TimeoutException) {
+      Log.Warn("pickle: the main menu never came up, so the runner window stayed closed");
     }
   }
 
