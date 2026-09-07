@@ -1,6 +1,6 @@
 # Pickle: RimWorld mod testing framework
 
-Write automated tests for your RimWorld mod and run them inside the game. Pickle reads Gherkin scenarios and plays them against a live session, so your tests click the real UI, wait on real game state, and check the running simulation. No mocks.
+Write automated tests for your RimWorld mod and run them inside the game. Pickle reads Gherkin scenarios and plays them against a live session. Your tests click the real UI, wait on real game state, and check the running simulation. No mocks.
 
 ```
 Scenario: a drafted colonist waits for combat
@@ -20,21 +20,21 @@ Mod authors. Pickle adds nothing to a normal game, so there is no reason to subs
 
 RimTest Redux and the other RimWorld test frameworks run unit tests. You write C# test methods and assert against your own code, which is the right tool when the thing you are checking is a function.
 
-Pickle works a level up. A scenario loads a save, drafts a real colonist, clicks a real button, waits real ticks, and asserts against the colony that came out. That catches the bugs unit tests cannot see: a def that fails to load, a patch that conflicts, a job driver that stalls on tick 400.
+Pickle works a level up. A scenario loads a save, drafts a real colonist, clicks a real button, waits real ticks, and asserts against the colony that came out. That catches bugs unit tests cannot see. A def that fails to load, a patch that conflicts, a job driver that stalls on tick 400.
 
 The two fit together. Unit test your math, run Pickle against your colony.
 
-## How do I test a RimWorld mod?
+## How to test a RimWorld mod
 
 Pickle gives you a test runner window in development mode. It lists every mod that ships a suite, runs the scenarios you pick, and shows each step with its timing.
 
 When a step fails, Pickle pauses the game on the broken state so you can look at the colony that caused it. It also captures a screenshot, the log tail, and the state of every colonist.
 
-## Do I need to write C#?
+## Do you need to write C#?
 
 Not to start. Feature files on their own need no build. Pickle ships steps for saves, world setup, colonist stats, surgery, thoughts, jobs, bills, zones, weapons, apparel, alerts, the camera, and the interface. Write your own step definitions in C# when you need something it does not cover.
 
-## Can I run it in CI?
+## Can you run it in CI?
 
 Yes. Runs go unattended and write a JUnit file, Cucumber messages, and a report page you can open straight from disk. A failed scenario turns into an annotation on the pull request instead of a line in a log nobody opens.
 

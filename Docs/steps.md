@@ -96,6 +96,9 @@ with `ctx.Set<T>()` still points at the old game and needs setting again.
 | `{string} gender is {word}` | `male` or `female` |
 | `{string} has {word} passion for {string}` | `none`, `minor` or `major` |
 | `{string} can do {string}` | Checks a work type is enabled |
+<!-- RimWorld calls a work type a pawn refuses "disabled", so Google's "turn off"
+     wording would name the wrong thing. -->
+<!-- vale Google.WordListCase = NO -->
 | `{string} cannot do {string}` | Checks a work type is disabled |
 
 A generated colonist is random, so a scenario that needs one to cook, craft, or shoot
@@ -104,6 +107,7 @@ set a skill level can still meet a pawn that refuses the job.
 
 Changing a backstory or trait drops the pawn's disabled-work cache, so the new
 capabilities apply straight away.
+<!-- vale Google.WordListCase = YES -->
 
 ## Simulation
 

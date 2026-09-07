@@ -9,11 +9,11 @@
 
 Pickle runs automated tests for your RimWorld mod inside the game. It reads
 [Gherkin](https://cucumber.io/docs/gherkin/) scenarios and plays them against a live
-session, so your tests click the real UI, wait on real game state, and assert against the
+session. Your tests click the real UI, wait on real game state, and assert against the
 running simulation. No mocks.
 
 Other RimWorld test frameworks, like RimTest Redux, run unit tests against your C# code.
-Pickle works a level up, against the live game, so it catches the failures unit tests cannot
+Pickle works a level up, against the live game. It catches the failures unit tests cannot
 see: a def that will not load, a conflicting patch, a job driver that stalls on tick 400.
 
 Pickle is a test runner for mod authors, not a mod for players.
