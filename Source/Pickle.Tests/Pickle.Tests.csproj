@@ -7,8 +7,8 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.*" PrivateAssets="all" />
     <PackageReference Include="xunit" Version="2.9.*" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.*" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.*" />
-    <PackageReference Include="coverlet.collector" Version="10.*" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.*" />
+    <PackageReference Include="coverlet.collector" Version="10.0.*" PrivateAssets="all" />
     <PackageReference Include="Gherkin" Version="42.0.*" />
   </ItemGroup>
   <ItemGroup>
