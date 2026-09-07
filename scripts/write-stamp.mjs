@@ -73,8 +73,9 @@ export async function writeStamp(modPath = process.cwd()) {
     for (const { name, label, requested, resolved } of packages) {
       // a floating request is where a new game or Harmony release enters
       const via = VIA[name];
-      const note = via ? `  (${via} ${requested})`
-        : requested.includes('*') ? `  (requested ${requested})` : '';
+      let note = '';
+      if (via) note = `  (${via} ${requested})`;
+      else if (requested.includes('*')) note = `  (requested ${requested})`;
       lines.push(`  ${label.padEnd(nameWidth)}  ${resolved.padEnd(note ? versionWidth : 0)}${note}`);
     }
   }
