@@ -16,3 +16,6 @@ Pickle-*.zip
 
 # written at publish time; belongs in the release zip and Steam, never the repo
 About/PublishStamp.txt
+
+# docker-game writes the launch log here, per .docker-game.yml
+game.log
