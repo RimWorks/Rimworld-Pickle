@@ -12,8 +12,9 @@ on:
         type: string
         default: ''
 
+# literal, and deliberately not per ref: one game launch at a time whatever triggered it.
 concurrency:
-  group: ${{ github.workflow }}
+  group: compat
   cancel-in-progress: true
 
 jobs:

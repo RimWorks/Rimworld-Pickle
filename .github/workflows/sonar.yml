@@ -1,34 +1,30 @@
 name: sonar
 
 on:
-  push:
-    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_call:
 
 permissions:
   contents: read
 
+# literal prefix: github.workflow is the caller's name when this is called.
+concurrency:
+  group: sonar-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
-    name: build and analyze
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          # Sonar needs full history to blame lines and scope new code.
-          fetch-depth: 0
-
-      # Ignored on purpose: S3358 else-if ternary chains match the C# house style;
-      # S7718 wants catch (error_); S6772 flags JSX newlines where spacing is a CSS class;
-      # S6819 prefers <fieldset>/<progress>, both of which change the rendering; S6847 reads
-      # <details> as non-interactive. The correctly-roled ARIA cases were fixed instead.
-      - uses: RimWorks/mod-ci/.github/actions/dotnet-sonar@5698991b43ade4de809d49d9695ac88e0895b298 # v1.2.1
-        with:
-          solution: Pickle.slnx
-          project-key: RimWorks_Rimworld-Pickle
-          sonar-token: ${{ secrets.SONAR_TOKEN }}
-          exclusions: Dashboard/dist/**,Dashboard/node_modules/**,Styles/**,artifacts/**,**/bin/**,**/obj/**
-          coverage-exclusions: Source/Pickle/**,Source/Pickle.Vanilla/**,Source/Pickle.Patches.*/**,Source/Pickle.Ref/**,Dashboard/**,.github/**
-          extra-begin-args: >-
-            /d:sonar.issue.ignore.multicriteria=todo,ternary,catchname,jsxspacing,ariarole,detailskeys /d:sonar.issue.ignore.multicriteria.todo.ruleKey=csharpsquid:S1135 /d:sonar.issue.ignore.multicriteria.todo.resourceKey=**/*.cs /d:sonar.issue.ignore.multicriteria.ternary.ruleKey=typescript:S3358 /d:sonar.issue.ignore.multicriteria.ternary.resourceKey=**/*.tsx /d:sonar.issue.ignore.multicriteria.catchname.ruleKey=typescript:S7718 /d:sonar.issue.ignore.multicriteria.catchname.resourceKey=**/*.tsx /d:sonar.issue.ignore.multicriteria.jsxspacing.ruleKey=typescript:S6772 /d:sonar.issue.ignore.multicriteria.jsxspacing.resourceKey=**/*.tsx /d:sonar.issue.ignore.multicriteria.ariarole.ruleKey=typescript:S6819 /d:sonar.issue.ignore.multicriteria.ariarole.resourceKey=**/*.tsx /d:sonar.issue.ignore.multicriteria.detailskeys.ruleKey=typescript:S6847 /d:sonar.issue.ignore.multicriteria.detailskeys.resourceKey=**/*.tsx
+    # Ignored on purpose: S3358 else-if ternary chains match the C# house style;
+    # S7718 wants catch (error_); S6772 flags JSX newlines where spacing is a CSS class;
+    # S6819 prefers <fieldset>/<progress>, both of which change the rendering; S6847 reads
+    # <details> as non-interactive. The correctly-roled ARIA cases were fixed instead.
+    uses: RimWorks/mod-ci/.github/workflows/sonar.yml@dbb33c36ad8165dd9ffbe567c07055cbfb0b5c21 # v1.4.0
+    with:
+      solution: Pickle.slnx
+      project-key: RimWorks_Rimworld-Pickle
+      exclusions: Dashboard/dist/**,Dashboard/node_modules/**,Styles/**,artifacts/**,**/bin/**,**/obj/**
+      coverage-exclusions: Source/Pickle/**,Source/Pickle.Vanilla/**,Source/Pickle.Patches.*/**,Source/Pickle.Ref/**,Dashboard/**,.github/**
+      extra-begin-args: >-
+        /d:sonar.issue.ignore.multicriteria=todo,ternary,catchname,jsxspacing,ariarole,detailskeys /d:sonar.issue.ignore.multicriteria.todo.ruleKey=csharpsquid:S1135 /d:sonar.issue.ignore.multicriteria.todo.resourceKey=**/*.cs /d:sonar.issue.ignore.multicriteria.ternary.ruleKey=typescript:S3358 /d:sonar.issue.ignore.multicriteria.ternary.resourceKey=**/*.tsx /d:sonar.issue.ignore.multicriteria.catchname.ruleKey=typescript:S7718 /d:sonar.issue.ignore.multicriteria.catchname.resourceKey=**/*.tsx /d:sonar.issue.ignore.multicriteria.jsxspacing.ruleKey=typescript:S6772 /d:sonar.issue.ignore.multicriteria.jsxspacing.resourceKey=**/*.tsx /d:sonar.issue.ignore.multicriteria.ariarole.ruleKey=typescript:S6819 /d:sonar.issue.ignore.multicriteria.ariarole.resourceKey=**/*.tsx /d:sonar.issue.ignore.multicriteria.detailskeys.ruleKey=typescript:S6847 /d:sonar.issue.ignore.multicriteria.detailskeys.resourceKey=**/*.tsx
+    secrets: inherit

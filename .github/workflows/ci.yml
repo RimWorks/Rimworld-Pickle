@@ -1,10 +1,30 @@
 name: ci
 
 on:
-  push:
-    branches: [main]
+  # no push trigger: release.yml calls this on push to main, so keeping it would double every run.
   pull_request:
     branches: [main]
+  workflow_call:
+    # same names and defaults as the dispatch inputs below, or the suite steps read empty.
+    inputs:
+      live-dashboard:
+        description: Expose Pickle's dashboard over a temporary public URL while the suite runs.
+        type: boolean
+        default: true
+      film:
+        description: Record filmed scenarios.
+        type: boolean
+        default: true
+      suite-filter:
+        description: Passed to -pickle-run. Empty runs the whole suite.
+        type: string
+        default: ''
+      backend:
+        # string, not choice: workflow_call has no choice type. empty means all three,
+        # so a called release run is never narrower than a push to main.
+        description: Which patch backend to run. Empty runs all three.
+        type: string
+        default: ''
   workflow_dispatch:
     inputs:
       live-dashboard:
@@ -25,9 +45,13 @@ on:
         options: [harmony, concord, both]
         default: harmony
 
+permissions:
+  contents: read
+
 # A superseded run is going to be replaced anyway, and the suite is expensive.
+# literal prefix: github.workflow is the caller's name when this is called.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -65,39 +89,18 @@ jobs:
           path: Dashboard/dist
 
   prose:
-    name: prose
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Vale
-        uses: errata-ai/vale-action@518a9136acc6e6668ce7c00d367051e0941e87ff # reviewdog
-        with:
-          reporter: github-pr-check
-          fail_on_error: true
-
+    uses: RimWorks/mod-ci/.github/workflows/prose.yml@dbb33c36ad8165dd9ffbe567c07055cbfb0b5c21 # v1.4.0
+    with:
       # A step nobody documented is a step nobody can find, so the catalogue is a build
       # requirement rather than a nicety.
-      - name: Step docs
-        run: python3 .github/scripts/check-step-docs.py
+      extra-command: python3 .github/scripts/check-step-docs.py
 
   links:
-    name: links
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-
+    uses: RimWorks/mod-ci/.github/workflows/links.yml@dbb33c36ad8165dd9ffbe567c07055cbfb0b5c21 # v1.4.0
+    with:
       # Relative links break silently when a folder is renamed, which is how the
       # docs -> Docs rename broke the template's link to the authoring guide.
-      - name: Check links
-        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
-        with:
-          args: --config lychee.toml --no-progress README.md 'Docs/**/*.md'
-          fail: true
+      args: --config lychee.toml --no-progress README.md 'Docs/**/*.md'
 
   game-image:
     name: rimworld 1.6 image
@@ -181,9 +184,9 @@ jobs:
       # Every combination should be reported, not just the first one that breaks.
       fail-fast: false
       matrix:
-        # A pull request runs the backend most people have; main covers all three, so a
-        # regression in the others is still caught before a release.
-        backends: ${{ github.event_name == 'workflow_dispatch'
+        # A pull request runs the backend most people have; main covers all three.
+        # keyed on inputs.backend, not the event: a called workflow sees the caller's event.
+        backends: ${{ inputs.backend != ''
           && fromJSON(format('["{0}"]', inputs.backend))
           || (github.event_name == 'pull_request'
           && fromJSON('["harmony"]')

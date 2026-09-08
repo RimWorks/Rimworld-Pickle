@@ -17,8 +17,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # the gate: main is pushed to directly with admin bypass, so branch protection cannot
+  # hold publishing back. These have to pass in this run.
+  ci:
+    # a called workflow cannot hold more than its caller, and ci's jobs need these.
+    permissions:
+      contents: read
+      packages: write
+      checks: write
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  sonar:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/sonar.yml
+    secrets: inherit
+
   release:
     name: semantic-release
+    needs: [ci, sonar]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -40,12 +58,12 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Get a NuGet API key by trusted publishing
-        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         id: nuget-login
         with:
           user: aequasi
 
-      - uses: RimWorks/mod-ci/.github/actions/steam-login@79a54854b2795cf5cc12025b3d86ede3b354af94
+      - uses: RimWorks/mod-ci/.github/actions/steam-login@79a54854b2795cf5cc12025b3d86ede3b354af94 # v1.3.0
         with:
           steam-config-vdf-b64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
 
