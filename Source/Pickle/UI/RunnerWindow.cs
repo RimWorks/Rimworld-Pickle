@@ -517,7 +517,7 @@ public class RunnerWindow : Window {
           assemblies.Add(loadedAsm);
         }
       } catch (Exception ex) {
-        Log.ErrorTo("Pickle", ex, $"failed to load steps dll {stepsDll}");
+        Log.ErrorTo(PickleLog.Channel, ex, $"failed to load steps dll {stepsDll}");
       }
     }
   }
@@ -658,7 +658,7 @@ public class RunnerWindow : Window {
 
       await ReturnToMainMenu(session);
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, "runner window run failed");
+      Log.ErrorTo(PickleLog.Channel, ex, "runner window run failed");
     } finally {
       PickleDriver.Instance.RemoveFrameHook(RestorePill);
       IsRunning = false;
@@ -693,7 +693,7 @@ public class RunnerWindow : Window {
       await PickleDriver.Instance.WaitUntil(() => Current.ProgramState == ProgramState.Entry, 60f);
       RestoreAfterMainMenu();
     } catch (TimeoutException) {
-      Log.WarnTo("Pickle", "the main menu never came up, so the runner window stayed closed");
+      Log.WarnTo(PickleLog.Channel, "the main menu never came up, so the runner window stayed closed");
     }
   }
 

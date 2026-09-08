@@ -43,13 +43,13 @@ public static class SuiteScanner {
       int fixtureCount = suite.FixtureFiles.Count;
       int stepsCount = suite.StepsDlls.Count;
 
-      Log.InfoTo("Pickle",
+      Log.InfoTo(PickleLog.Channel,
           "suite {ModName}: {FeatureCount} [{FeatureList}] {FixtureCount} fixture(s) {StepsCount} steps dll(s)",
           [suite.ModName, featureCount, featureList, fixtureCount, stepsCount]);
 
       // A stale recording that quietly beats the committed copy passes locally and fails in CI.
       foreach (string shadow in suite.ShadowedFixtures) {
-        Log.WarnTo("Pickle", "{ModName} fixture {Shadow}", [suite.ModName, shadow]);
+        Log.WarnTo(PickleLog.Channel, "{ModName} fixture {Shadow}", [suite.ModName, shadow]);
       }
     }
   }

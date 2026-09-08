@@ -99,12 +99,12 @@ public sealed class XdoInput : IInputBackend {
     foreach (string line in output.Split('\n')) {
       string trimmed = line.Trim();
       if (trimmed.Length > 0 && ulong.TryParse(trimmed, out _)) {
-        Log.InfoTo("Pickle", "xdotool targeting game window {Window}", [trimmed]);
+        Log.InfoTo(PickleLog.Channel, "xdotool targeting game window {Window}", [trimmed]);
         return trimmed;
       }
     }
 
-    Log.WarnTo("Pickle", "xdotool could not find the RimWorld window; falling back to screen coordinates");
+    Log.WarnTo(PickleLog.Channel, "xdotool could not find the RimWorld window; falling back to screen coordinates");
     return null;
   }
 
@@ -184,7 +184,7 @@ public sealed class XdoInput : IInputBackend {
     }
 
     if (stderr.Length > 0) {
-      Log.WarnTo("Pickle", "xdotool {Arguments} succeeded but wrote to stderr: {Stderr}", [arguments, stderr]);
+      Log.WarnTo(PickleLog.Channel, "xdotool {Arguments} succeeded but wrote to stderr: {Stderr}", [arguments, stderr]);
     }
   }
 }

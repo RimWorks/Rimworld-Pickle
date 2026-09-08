@@ -221,7 +221,7 @@ dotnet_diagnostic.SA1649.severity = none # filename matches type — generic sib
 # case by case. The analyzer and generator still use LINQ; they run at build time, not in a
 # patched process.
 dotnet_diagnostic.S3267.severity = none
-dotnet_diagnostic.S1135.severity = none # TODO comments are the house marker convention, they are meant to stay # loop should use Where — explicit loops are the rule on these paths
+dotnet_diagnostic.S1135.severity = none # TODO comments are the house marker convention, they are meant to stay
 dotnet_diagnostic.SA1402.severity = none # one type per file — cohesive enums/records/contracts may group
 
 # Tests, benchmarks, and probe/test mods relax the opinionated layout/ordering/doc/field rules.

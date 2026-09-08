@@ -129,7 +129,7 @@ public class SaveFixtureDialog : Window {
       Messages.Message("Pickle_SavedFixtureTo".Translate(target), MessageTypeDefOf.TaskCompletion, false);
       return true;
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, "save fixture failed");
+      Log.ErrorTo(PickleLog.Channel, ex, "save fixture failed");
       Messages.Message("Pickle_SaveFixtureFailed".Translate(), MessageTypeDefOf.RejectInput, false);
       return false;
     } finally {

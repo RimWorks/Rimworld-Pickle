@@ -12,7 +12,7 @@ public class FixtureResolverTests {
   public void Resolve_WithOwnModWin_ReturnsOwnFixturePath() {
     string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     try {
-      string pickleDir = Path.Combine(tempDir, "Pickle");
+      string pickleDir = Path.Combine(tempDir, SuiteLayout.DirectoryName);
       string fixturesDir = Path.Combine(pickleDir, "Fixtures");
       Directory.CreateDirectory(fixturesDir);
 
@@ -38,12 +38,12 @@ public class FixtureResolverTests {
     string tempDir1 = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     string tempDir2 = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     try {
-      string pickleDir1 = Path.Combine(tempDir1, "Pickle");
+      string pickleDir1 = Path.Combine(tempDir1, SuiteLayout.DirectoryName);
       string fixturesDir1 = Path.Combine(pickleDir1, "Fixtures");
       Directory.CreateDirectory(fixturesDir1);
       File.WriteAllText(Path.Combine(fixturesDir1, "dummy.rws"), string.Empty);
 
-      string pickleDir2 = Path.Combine(tempDir2, "Pickle");
+      string pickleDir2 = Path.Combine(tempDir2, SuiteLayout.DirectoryName);
       string fixturesDir2 = Path.Combine(pickleDir2, "Fixtures");
       Directory.CreateDirectory(fixturesDir2);
       string fixturePath = Path.Combine(fixturesDir2, "test.rws");
@@ -73,17 +73,17 @@ public class FixtureResolverTests {
     string tempDir2 = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     string tempDir3 = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     try {
-      string pickleDir1 = Path.Combine(tempDir1, "Pickle");
+      string pickleDir1 = Path.Combine(tempDir1, SuiteLayout.DirectoryName);
       string fixturesDir1 = Path.Combine(pickleDir1, "Fixtures");
       Directory.CreateDirectory(fixturesDir1);
       File.WriteAllText(Path.Combine(fixturesDir1, "dummy.rws"), string.Empty);
 
-      string pickleDir2 = Path.Combine(tempDir2, "Pickle");
+      string pickleDir2 = Path.Combine(tempDir2, SuiteLayout.DirectoryName);
       string fixturesDir2 = Path.Combine(pickleDir2, "Fixtures");
       Directory.CreateDirectory(fixturesDir2);
       File.WriteAllText(Path.Combine(fixturesDir2, "test.rws"), string.Empty);
 
-      string pickleDir3 = Path.Combine(tempDir3, "Pickle");
+      string pickleDir3 = Path.Combine(tempDir3, SuiteLayout.DirectoryName);
       string fixturesDir3 = Path.Combine(pickleDir3, "Fixtures");
       Directory.CreateDirectory(fixturesDir3);
       File.WriteAllText(Path.Combine(fixturesDir3, "test.rws"), string.Empty);
@@ -116,7 +116,7 @@ public class FixtureResolverTests {
   public void Resolve_WithNotFound_ReturnsNotFoundError() {
     string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     try {
-      string pickleDir = Path.Combine(tempDir, "Pickle");
+      string pickleDir = Path.Combine(tempDir, SuiteLayout.DirectoryName);
       string fixturesDir = Path.Combine(pickleDir, "Fixtures");
       Directory.CreateDirectory(fixturesDir);
 
@@ -141,7 +141,7 @@ public class FixtureResolverTests {
   public void Resolve_WithCaseInsensitiveMatch_ReturnsFixture() {
     string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     try {
-      string pickleDir = Path.Combine(tempDir, "Pickle");
+      string pickleDir = Path.Combine(tempDir, SuiteLayout.DirectoryName);
       string fixturesDir = Path.Combine(pickleDir, "Fixtures");
       Directory.CreateDirectory(fixturesDir);
 

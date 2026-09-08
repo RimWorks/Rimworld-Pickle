@@ -104,7 +104,7 @@ public sealed class PickleArgs {
     }
 
     if (!string.Equals(value, "fast", StringComparison.OrdinalIgnoreCase)) {
-      Log.WarnTo("Pickle", "-pickle-mode={Value} is not 'fast' or 'watch', running in fast", [value]);
+      Log.WarnTo(PickleLog.Channel, "-pickle-mode={Value} is not 'fast' or 'watch', running in fast", [value]);
     }
 
     return PickleRunMode.Mode.Fast;
@@ -113,13 +113,13 @@ public sealed class PickleArgs {
   private static PickleArgsConfig? LoadConfig(string path) {
     try {
       if (!File.Exists(path)) {
-        Log.WarnTo("Pickle", "config file not found: {Path}", [path]);
+        Log.WarnTo(PickleLog.Channel, "config file not found: {Path}", [path]);
         return null;
       }
 
       return PickleArgsConfig.Parse(File.ReadAllText(path));
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, $"failed to read config {path}");
+      Log.ErrorTo(PickleLog.Channel, ex, $"failed to read config {path}");
       return null;
     }
   }

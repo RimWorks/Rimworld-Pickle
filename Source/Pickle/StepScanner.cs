@@ -80,7 +80,7 @@ public static class StepScanner {
       return assembly.GetTypes();
     } catch (ReflectionTypeLoadException ex) {
       string reasons = string.Join("; ", ex.LoaderExceptions.Select(e => e?.Message ?? "unknown"));
-      Log.WarnTo("Pickle",
+      Log.WarnTo(PickleLog.Channel,
           "{Assembly} has unloadable types, skipping them: {Reasons}",
           [assembly.GetName().Name, reasons]);
       return ex.Types.Where(t => t != null).ToArray()!;

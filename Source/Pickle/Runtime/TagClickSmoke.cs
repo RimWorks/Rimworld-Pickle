@@ -25,14 +25,14 @@ internal static class TagClickSmoke {
 
       bool tagExists = TagStore.TryGet("pickle-smoke:btn", out _, out bool isDuplicate);
       if (!tagExists) {
-        Log.ErrorTo("Pickle", "tag click smoke failed - tag not recorded after window draw");
+        Log.ErrorTo(PickleLog.Channel, "tag click smoke failed - tag not recorded after window draw");
         TagStore.SessionActive = false;
         Find.WindowStack.TryRemove(testWindow);
         return;
       }
 
       if (isDuplicate) {
-        Log.ErrorTo("Pickle", "tag click smoke failed - tag marked as duplicate; Repaint guard not working");
+        Log.ErrorTo(PickleLog.Channel, "tag click smoke failed - tag marked as duplicate; Repaint guard not working");
         TagStore.SessionActive = false;
         Find.WindowStack.TryRemove(testWindow);
         return;
@@ -42,7 +42,7 @@ internal static class TagClickSmoke {
 
       try {
         if (!InputBackends.Available) {
-          Log.WarnTo("Pickle", "tag click smoke skipped - {Reason}", [InputBackends.UnavailableReason]);
+          Log.WarnTo(PickleLog.Channel, "tag click smoke skipped - {Reason}", [InputBackends.UnavailableReason]);
           TagStore.SessionActive = false;
           Find.WindowStack.TryRemove(testWindow);
           return;
@@ -51,14 +51,14 @@ internal static class TagClickSmoke {
         await ctx.Click("pickle-smoke:btn");
         await driver.WaitFrames(2);
       } catch (InvalidOperationException clickEx) {
-        Log.ErrorTo("Pickle", clickEx, "tag click smoke failed - Click threw exception");
+        Log.ErrorTo(PickleLog.Channel, clickEx, "tag click smoke failed - Click threw exception");
         TagStore.SessionActive = false;
         Find.WindowStack.TryRemove(testWindow);
         return;
       }
 
       if (!TagClickTestWindow.Clicked) {
-        Log.ErrorTo("Pickle", "tag click smoke failed - click did not fire widget handler");
+        Log.ErrorTo(PickleLog.Channel, "tag click smoke failed - click did not fire widget handler");
         TagStore.SessionActive = false;
         Find.WindowStack.TryRemove(testWindow);
         return;
@@ -66,13 +66,13 @@ internal static class TagClickSmoke {
 
       try {
         await ctx.Click("pickle-smoke:does-not-exist");
-        Log.ErrorTo("Pickle", "tag click smoke failed - should have thrown InvalidOperationException for missing tag");
+        Log.ErrorTo(PickleLog.Channel, "tag click smoke failed - should have thrown InvalidOperationException for missing tag");
         TagStore.SessionActive = false;
         Find.WindowStack.TryRemove(testWindow);
         return;
       } catch (InvalidOperationException missEx) {
         if (!missEx.Message.Contains("pickle-smoke:does-not-exist")) {
-          Log.ErrorTo("Pickle",
+          Log.ErrorTo(PickleLog.Channel,
               "tag click smoke failed - error message missing tag name: {Message}",
               [missEx.Message]);
           TagStore.SessionActive = false;
@@ -81,7 +81,7 @@ internal static class TagClickSmoke {
         }
 
         if (!missEx.Message.Contains("pickle-smoke:btn")) {
-          Log.ErrorTo("Pickle",
+          Log.ErrorTo(PickleLog.Channel,
               "tag click smoke failed - error message missing known tag "
               + "'pickle-smoke:btn': {Message}",
               [missEx.Message]);
@@ -94,9 +94,9 @@ internal static class TagClickSmoke {
       Find.WindowStack.TryRemove(testWindow);
       TagStore.SessionActive = false;
 
-      Log.InfoTo("Pickle", "tag click smoke passed");
+      Log.InfoTo(PickleLog.Channel, "tag click smoke passed");
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, "tag click smoke failed with exception");
+      Log.ErrorTo(PickleLog.Channel, ex, "tag click smoke failed with exception");
       TagStore.SessionActive = false;
     }
   }

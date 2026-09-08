@@ -22,7 +22,7 @@ public static class ReportDirectoryResolver {
       // A bad path used to throw out of AutorunBootstrap's static constructor, which
       // killed the type and ran nothing. Name it and carry on instead.
       string fallback = ResolveDefault();
-      Log.ErrorTo("Pickle", "report dir '{Dir}' is not writable, falling back to {Fallback}", [explicitDir!, fallback]);
+      Log.ErrorTo(PickleLog.Channel, "report dir '{Dir}' is not writable, falling back to {Fallback}", [explicitDir!, fallback]);
       return fallback;
     }
 

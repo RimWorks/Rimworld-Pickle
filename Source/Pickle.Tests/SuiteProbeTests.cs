@@ -11,7 +11,7 @@ public class SuiteProbeTests {
   public void Probe_WithAllSubdirs_ReturnsSuiteWithAllFiles() {
     string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     try {
-      string pickleDir = Path.Combine(tempDir, "Pickle");
+      string pickleDir = Path.Combine(tempDir, SuiteLayout.DirectoryName);
       string featuresDir = Path.Combine(pickleDir, "Features");
       string fixturesDir = Path.Combine(pickleDir, "Fixtures");
       string assembliesDir = Path.Combine(pickleDir, "Assemblies");
@@ -46,7 +46,7 @@ public class SuiteProbeTests {
   public void Probe_WithMissingSubdirs_ReturnsEmptyLists() {
     string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     try {
-      string pickleDir = Path.Combine(tempDir, "Pickle");
+      string pickleDir = Path.Combine(tempDir, SuiteLayout.DirectoryName);
       Directory.CreateDirectory(pickleDir);
 
       SuiteLayout layout = SuiteLayout.FromModRoot(tempDir);
@@ -80,7 +80,7 @@ public class SuiteProbeTests {
   public void Probe_WithRecursiveFeatures_FindsAllFiles() {
     string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     try {
-      string pickleDir = Path.Combine(tempDir, "Pickle");
+      string pickleDir = Path.Combine(tempDir, SuiteLayout.DirectoryName);
       string featuresDir = Path.Combine(pickleDir, "Features");
       string subDir = Path.Combine(featuresDir, "subdir");
 
@@ -105,7 +105,7 @@ public class SuiteProbeTests {
   public void Probe_ReturnsSortedResults() {
     string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     try {
-      string pickleDir = Path.Combine(tempDir, "Pickle");
+      string pickleDir = Path.Combine(tempDir, SuiteLayout.DirectoryName);
       string featuresDir = Path.Combine(pickleDir, "Features");
       string fixturesDir = Path.Combine(pickleDir, "Fixtures");
       string assembliesDir = Path.Combine(pickleDir, "Assemblies");
@@ -137,7 +137,7 @@ public class SuiteProbeTests {
   public void Probe_WithWritableRoot_FindsFixturesInBothDirs() {
     string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     try {
-      string fixturesDir = Path.Combine(tempDir, "TestMod", "Pickle", "Fixtures");
+      string fixturesDir = Path.Combine(tempDir, "TestMod", SuiteLayout.DirectoryName, "Fixtures");
       string writableDir = Path.Combine(tempDir, "writable", "TestMod");
       Directory.CreateDirectory(fixturesDir);
       Directory.CreateDirectory(writableDir);
@@ -162,7 +162,7 @@ public class SuiteProbeTests {
   public void Probe_WithSameNameInBothDirs_PrefersTheRecordedOne() {
     string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     try {
-      string fixturesDir = Path.Combine(tempDir, "TestMod", "Pickle", "Fixtures");
+      string fixturesDir = Path.Combine(tempDir, "TestMod", SuiteLayout.DirectoryName, "Fixtures");
       string writableDir = Path.Combine(tempDir, "writable", "TestMod");
       Directory.CreateDirectory(fixturesDir);
       Directory.CreateDirectory(writableDir);
@@ -186,7 +186,7 @@ public class SuiteProbeTests {
   public void Probe_WhenARecordedFixtureShadowsACommittedOne_SaysSo() {
     string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     try {
-      string fixturesDir = Path.Combine(tempDir, "TestMod", "Pickle", "Fixtures");
+      string fixturesDir = Path.Combine(tempDir, "TestMod", SuiteLayout.DirectoryName, "Fixtures");
       string writableDir = Path.Combine(tempDir, "writable", "TestMod");
       Directory.CreateDirectory(fixturesDir);
       Directory.CreateDirectory(writableDir);
@@ -213,7 +213,7 @@ public class SuiteProbeTests {
   public void Probe_WithNoCollision_ReportsNoShadowing() {
     string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     try {
-      string fixturesDir = Path.Combine(tempDir, "TestMod", "Pickle", "Fixtures");
+      string fixturesDir = Path.Combine(tempDir, "TestMod", SuiteLayout.DirectoryName, "Fixtures");
       Directory.CreateDirectory(fixturesDir);
       File.WriteAllText(Path.Combine(fixturesDir, "one-planet.rws"), string.Empty);
 

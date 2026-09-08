@@ -11,9 +11,9 @@ public class SuiteLayoutTests {
 
     SuiteLayout layout = SuiteLayout.FromModRoot(modRoot);
 
-    Assert.Equal(Path.Combine(modRoot, "Pickle", "Features"), layout.FeaturesDir);
-    Assert.Equal(Path.Combine(modRoot, "Pickle", "Fixtures"), layout.FixturesDir);
-    Assert.Equal(Path.Combine(modRoot, "Pickle", "Assemblies"), layout.AssembliesDir);
+    Assert.Equal(Path.Combine(modRoot, SuiteLayout.DirectoryName, "Features"), layout.FeaturesDir);
+    Assert.Equal(Path.Combine(modRoot, SuiteLayout.DirectoryName, "Fixtures"), layout.FixturesDir);
+    Assert.Equal(Path.Combine(modRoot, SuiteLayout.DirectoryName, "Assemblies"), layout.AssembliesDir);
   }
 
   [Fact]
@@ -22,7 +22,7 @@ public class SuiteLayoutTests {
 
     SuiteLayout layout = SuiteLayout.FromModRoot(modRoot);
 
-    string expectedFeatures = Path.Combine(modRoot, "Pickle", "Features");
+    string expectedFeatures = Path.Combine(modRoot, SuiteLayout.DirectoryName, "Features");
     Assert.Equal(expectedFeatures, layout.FeaturesDir);
   }
 
@@ -37,7 +37,7 @@ public class SuiteLayoutTests {
   public void FromModRoot_WithWritableRoot_NamesTheFolderAfterTheMod() {
     SuiteLayout layout = SuiteLayout.FromModRoot("/mods/TestMod", "/data/PickleFixtures");
 
-    Assert.Equal(Path.Combine("/mods/TestMod", "Pickle", "Fixtures"), layout.FixturesDir);
+    Assert.Equal(Path.Combine("/mods/TestMod", SuiteLayout.DirectoryName, "Fixtures"), layout.FixturesDir);
     Assert.Equal(Path.Combine("/data/PickleFixtures", "TestMod"), layout.WritableFixturesDir);
   }
 

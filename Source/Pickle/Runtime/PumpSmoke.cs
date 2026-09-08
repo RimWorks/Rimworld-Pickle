@@ -13,9 +13,9 @@ public static class PumpSmoke {
     PickleContext ctx = new PickleContext();
     try {
       await RunAsync(ctx);
-      Log.InfoTo("Pickle", "pump smoke passed");
+      Log.InfoTo(PickleLog.Channel, "pump smoke passed");
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, "pump smoke failed");
+      Log.ErrorTo(PickleLog.Channel, ex, "pump smoke failed");
     }
   }
 

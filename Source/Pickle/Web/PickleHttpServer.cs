@@ -97,10 +97,10 @@ public static class PickleHttpServer {
       Thread worker = new Thread(Serve) { IsBackground = true, Name = "pickle-http" };
       worker.Start();
 
-      Log.InfoTo("Pickle", "dashboard on http://0.0.0.0:{Port}/", [port]);
+      Log.InfoTo(PickleLog.Channel, "dashboard on http://0.0.0.0:{Port}/", [port]);
     } catch (Exception ex) {
       running = false;
-      Log.ErrorTo("Pickle", ex, $"dashboard failed to start on port {port}");
+      Log.ErrorTo(PickleLog.Channel, ex, $"dashboard failed to start on port {port}");
     }
   }
 
@@ -128,7 +128,7 @@ public static class PickleHttpServer {
     try {
       Application.OpenURL($"http://localhost:{port}/");
     } catch (Exception ex) {
-      Log.WarnTo("Pickle", ex, "could not open the dashboard in a browser");
+      Log.WarnTo(PickleLog.Channel, ex, "could not open the dashboard in a browser");
     }
   }
 
@@ -150,7 +150,7 @@ public static class PickleHttpServer {
     try {
       Route(context);
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, "dashboard request failed");
+      Log.ErrorTo(PickleLog.Channel, ex, "dashboard request failed");
       context.Response.StatusCode = 400;
       Write(context, JsonContentType, ErrorPrefix + Json.Quote(ex.Message) + "}");
     } finally {

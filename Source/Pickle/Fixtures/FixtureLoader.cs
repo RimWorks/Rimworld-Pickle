@@ -113,7 +113,7 @@ public static class FixtureLoader {
         File.Delete(path);
       }
     } catch {
-      Log.WarnTo("Pickle", "failed to delete temporary save file: {Path}", [path]);
+      Log.WarnTo(PickleLog.Channel, "failed to delete temporary save file: {Path}", [path]);
     }
   }
 }

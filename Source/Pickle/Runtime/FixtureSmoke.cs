@@ -20,9 +20,9 @@ public static class FixtureSmoke {
     PickleDriver driver = PickleDriver.Instance;
     try {
       await RunAsync(driver);
-      Log.InfoTo("Pickle", "fixture smoke passed");
+      Log.InfoTo(PickleLog.Channel, "fixture smoke passed");
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, "fixture smoke failed");
+      Log.ErrorTo(PickleLog.Channel, ex, "fixture smoke failed");
     }
   }
 
@@ -55,7 +55,7 @@ public static class FixtureSmoke {
       await FixtureLoader.LoadFixture(resolution.Fixture.FullPath, driver);
 
       LogWatch.Arm();
-      Log.ErrorTo("Pickle", "deliberate watchdog test error");
+      Log.ErrorTo(PickleLog.Channel, "deliberate watchdog test error");
 
       if (LogWatch.ErrorCount != 1) {
         throw new InvalidOperationException($"Expected 1 error in LogWatch, but got {LogWatch.ErrorCount}");
@@ -73,7 +73,7 @@ public static class FixtureSmoke {
         throw new InvalidOperationException("LogWatch.ErrorsSince reported an error logged before the mark");
       }
 
-      Log.ErrorTo("Pickle", "deliberate marked test error");
+      Log.ErrorTo(PickleLog.Channel, "deliberate marked test error");
 
       IReadOnlyList<string> sinceMark = LogWatch.ErrorsSince(mark);
       if (sinceMark.Count != 1 || !sinceMark[0].Contains("deliberate marked test error")) {

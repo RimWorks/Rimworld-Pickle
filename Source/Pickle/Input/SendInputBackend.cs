@@ -48,7 +48,7 @@ public sealed class SendInputBackend : IInputBackend {
 
     // A click that resolves its tag and then activates nothing is the failure this path
     // has, so every send records what it aimed at and where the pointer ended up.
-    Log.InfoTo("Pickle",
+    Log.InfoTo(PickleLog.Channel,
         "sendinput click gui={Gui} client={Client} desktop={Desktop} metrics={Width}x{Height} cursor={Cursor}",
         [guiPoint, screen, ToDesktop(screen), GetSystemMetrics(SmCxScreen), GetSystemMetrics(SmCyScreen), GetMouseLocation()]);
 

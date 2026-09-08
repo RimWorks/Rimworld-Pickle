@@ -22,9 +22,9 @@ public static class FixtureManagerSmoke {
   public static async Task Run() {
     try {
       await RunAsync(PickleDriver.Instance);
-      Log.InfoTo("Pickle", "fixture manager smoke passed");
+      Log.InfoTo(PickleLog.Channel, "fixture manager smoke passed");
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, "fixture manager smoke failed");
+      Log.ErrorTo(PickleLog.Channel, ex, "fixture manager smoke failed");
     }
   }
 
@@ -36,7 +36,7 @@ public static class FixtureManagerSmoke {
       throw new InvalidOperationException($"no screenshot at {path}");
     }
 
-    Log.InfoTo("Pickle", "screenshot at {Path}", [path]);
+    Log.InfoTo(PickleLog.Channel, "screenshot at {Path}", [path]);
   }
 
   private static async Task RunAsync(PickleDriver driver) {
@@ -58,7 +58,7 @@ public static class FixtureManagerSmoke {
           $"header read nothing out of {colony.FullPath}: version '{header.GameVersion}', scenario '{header.ScenarioName}'");
     }
 
-    Log.InfoTo("Pickle",
+    Log.InfoTo(PickleLog.Channel,
         "fixture manager sees test-colony, {Bytes} bytes, {Version}, {Scenario}, {Mods} mods",
         [colony.SizeBytes, header.GameVersion!, header.ScenarioName!, header.ModCount]);
 

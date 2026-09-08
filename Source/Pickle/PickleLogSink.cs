@@ -2,6 +2,11 @@ using RimWorks.RimLogging;
 
 namespace RimWorks.Pickle;
 
+/// <summary>The channel every Pickle log line goes to, so a player can filter the game log by mod.</summary>
+internal static class PickleLog {
+  internal const string Channel = "Pickle";
+}
+
 /// <summary>
 /// Feeds LogWatch from RimLogging's pipeline instead of a patch on Verse.Log.Error, so an
 /// error reported through Verse.Log, UnityEngine.Debug or RimLogging all land here.

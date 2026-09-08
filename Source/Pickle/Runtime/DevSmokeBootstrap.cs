@@ -98,7 +98,7 @@ public static class DevSmokeBootstrap {
 
       _ = SaveFixtureSmoke.Run();
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, SmokeFailed);
+      Log.ErrorTo(PickleLog.Channel, ex, SmokeFailed);
     }
   }
 
@@ -112,7 +112,7 @@ public static class DevSmokeBootstrap {
 
       _ = PumpSmoke.Run();
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, SmokeFailed);
+      Log.ErrorTo(PickleLog.Channel, ex, SmokeFailed);
     }
   }
 
@@ -126,7 +126,7 @@ public static class DevSmokeBootstrap {
 
       _ = FixtureSmoke.Run();
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, SmokeFailed);
+      Log.ErrorTo(PickleLog.Channel, ex, SmokeFailed);
     }
   }
 
@@ -140,7 +140,7 @@ public static class DevSmokeBootstrap {
 
       _ = RunSessionSmoke.Run();
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, SmokeFailed);
+      Log.ErrorTo(PickleLog.Channel, ex, SmokeFailed);
     }
   }
 
@@ -154,7 +154,7 @@ public static class DevSmokeBootstrap {
 
       RunnerWindowSmoke.Run();
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, SmokeFailed);
+      Log.ErrorTo(PickleLog.Channel, ex, SmokeFailed);
     }
   }
 
@@ -168,7 +168,7 @@ public static class DevSmokeBootstrap {
 
       EventSynthSmoke.Run();
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, SmokeFailed);
+      Log.ErrorTo(PickleLog.Channel, ex, SmokeFailed);
     }
   }
 
@@ -182,7 +182,7 @@ public static class DevSmokeBootstrap {
 
       WidgetCaptureSmoke.Run();
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, SmokeFailed);
+      Log.ErrorTo(PickleLog.Channel, ex, SmokeFailed);
     }
   }
 
@@ -196,7 +196,7 @@ public static class DevSmokeBootstrap {
 
       _ = TagStoreSmoke.Run();
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, SmokeFailed);
+      Log.ErrorTo(PickleLog.Channel, ex, SmokeFailed);
     }
   }
 
@@ -210,7 +210,7 @@ public static class DevSmokeBootstrap {
 
       _ = TagClickSmoke.Run();
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, SmokeFailed);
+      Log.ErrorTo(PickleLog.Channel, ex, SmokeFailed);
     }
   }
 
@@ -224,7 +224,7 @@ public static class DevSmokeBootstrap {
 
       _ = EvidenceSmoke.Run();
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, SmokeFailed);
+      Log.ErrorTo(PickleLog.Channel, ex, SmokeFailed);
     }
   }
 
@@ -238,7 +238,7 @@ public static class DevSmokeBootstrap {
 
       _ = FixtureManagerSmoke.Run();
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, SmokeFailed);
+      Log.ErrorTo(PickleLog.Channel, ex, SmokeFailed);
     }
   }
 
@@ -252,7 +252,7 @@ public static class DevSmokeBootstrap {
 
       await SuiteRunner.Run();
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, SmokeFailed);
+      Log.ErrorTo(PickleLog.Channel, ex, SmokeFailed);
     }
   }
 }

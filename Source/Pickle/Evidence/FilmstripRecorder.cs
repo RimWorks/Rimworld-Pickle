@@ -106,7 +106,7 @@ public sealed class FilmstripRecorder {
     if (capped || clock.Elapsed.TotalSeconds >= MaxSeconds) {
       if (!capped) {
         capped = true;
-        Log.WarnTo("Pickle",
+        Log.WarnTo(PickleLog.Channel,
             "'{Scenario}' passed {MaxSeconds}s, so its film stops there. " +
             "Raise it with -pickle-max-film-seconds.",
             [scenarioName, MaxSeconds]);

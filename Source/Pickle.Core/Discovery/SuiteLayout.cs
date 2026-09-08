@@ -4,6 +4,9 @@ namespace RimWorks.Pickle.Core.Discovery;
 
 /// <summary>The folders one mod's Pickle install reads from and writes into.</summary>
 public class SuiteLayout {
+  /// <summary>The folder a mod puts its features and fixtures in, directly under the mod root.</summary>
+  public const string DirectoryName = "Pickle";
+
   private SuiteLayout(
       string pickleDir, string featuresDir, string fixturesDir, string writableFixturesDir, string assembliesDir) {
     PickleDir = pickleDir;
@@ -39,7 +42,7 @@ public class SuiteLayout {
   /// </param>
   /// <returns>The resolved layout for <paramref name="modRoot"/>.</returns>
   public static SuiteLayout FromModRoot(string modRoot, string? writableFixturesRoot = null) {
-    string pickleDir = Path.Combine(modRoot, "Pickle");
+    string pickleDir = Path.Combine(modRoot, DirectoryName);
     string featuresDir = Path.Combine(pickleDir, "Features");
     string fixturesDir = Path.Combine(pickleDir, "Fixtures");
     string assembliesDir = Path.Combine(pickleDir, "Assemblies");

@@ -38,33 +38,33 @@ internal static class TagStoreSmoke {
       bool unknownExists = TagStore.TryGet("pickle-smoke:unknown", out Rect _, out bool _);
 
       if (!oneExists) {
-        Log.ErrorTo("Pickle", "tag store smoke failed - pickle-smoke:one not found");
+        Log.ErrorTo(PickleLog.Channel, "tag store smoke failed - pickle-smoke:one not found");
         return;
       }
 
       if (oneDuplicate) {
-        Log.ErrorTo("Pickle", "tag store smoke failed - pickle-smoke:one marked as duplicate but should not be");
+        Log.ErrorTo(PickleLog.Channel, "tag store smoke failed - pickle-smoke:one marked as duplicate but should not be");
         return;
       }
 
       if (!dupExists) {
-        Log.ErrorTo("Pickle", "tag store smoke failed - pickle-smoke:dup not found");
+        Log.ErrorTo(PickleLog.Channel, "tag store smoke failed - pickle-smoke:dup not found");
         return;
       }
 
       if (!dupDuplicate) {
-        Log.ErrorTo("Pickle", "tag store smoke failed - pickle-smoke:dup not marked as duplicate");
+        Log.ErrorTo(PickleLog.Channel, "tag store smoke failed - pickle-smoke:dup not marked as duplicate");
         return;
       }
 
       if (unknownExists) {
-        Log.ErrorTo("Pickle", "tag store smoke failed - unknown tag should not exist");
+        Log.ErrorTo(PickleLog.Channel, "tag store smoke failed - unknown tag should not exist");
         return;
       }
 
       if (!TagStore.KnownTags.Any(t => t == OneTag) || !TagStore.KnownTags.Any(t => t == DupTag)) {
         string knownTagsList = string.Join(", ", TagStore.KnownTags);
-        Log.ErrorTo("Pickle",
+        Log.ErrorTo(PickleLog.Channel,
             "tag store smoke failed - KnownTags missing expected tags: {KnownTags}",
             [knownTagsList]);
         return;
@@ -74,13 +74,13 @@ internal static class TagStoreSmoke {
       TagStore.BeginFrame();
       PickleUI.Tag("pickle-smoke:noop-test", new Rect(0, 0, 10, 10));
       if (TagStore.TryGet("pickle-smoke:noop-test", out Rect _, out bool _)) {
-        Log.ErrorTo("Pickle", "tag store smoke failed - tag recorded when SessionActive is false");
+        Log.ErrorTo(PickleLog.Channel, "tag store smoke failed - tag recorded when SessionActive is false");
         return;
       }
 
-      Log.InfoTo("Pickle", "tag store smoke passed");
+      Log.InfoTo(PickleLog.Channel, "tag store smoke passed");
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, "tag store smoke failed with exception");
+      Log.ErrorTo(PickleLog.Channel, ex, "tag store smoke failed with exception");
     }
   }
 }

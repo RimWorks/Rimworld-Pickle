@@ -16,9 +16,9 @@ public static class SaveFixtureSmoke {
   public static async Task Run() {
     try {
       await RunAsync(PickleDriver.Instance);
-      Log.InfoTo("Pickle", "save fixture smoke passed");
+      Log.InfoTo(PickleLog.Channel, "save fixture smoke passed");
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, "save fixture smoke failed");
+      Log.ErrorTo(PickleLog.Channel, ex, "save fixture smoke failed");
     }
   }
 
@@ -62,7 +62,7 @@ public static class SaveFixtureSmoke {
     // It has to be loadable, or it is not a fixture.
     await FixtureLoader.LoadFixture(written, driver);
 
-    Log.InfoTo("Pickle",
+    Log.InfoTo(PickleLog.Channel,
         "save fixture wrote {Bytes} bytes to {Path} and reloaded it",
         [info.Length, written]);
   }

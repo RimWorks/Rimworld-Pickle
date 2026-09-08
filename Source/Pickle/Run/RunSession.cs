@@ -205,7 +205,7 @@ public class RunSession {
       // skipped rather than failed.
       string? missingMod = RunOutcomes.MissingRequirement(scenario.Tags, IsModPresent);
       if (missingMod != null) {
-        Log.InfoTo("Pickle", "skipping '{Scenario}', '{MissingMod}' is not loaded", [scenario.Name, missingMod]);
+        Log.InfoTo(PickleLog.Channel, "skipping '{Scenario}', '{MissingMod}' is not loaded", [scenario.Name, missingMod]);
       }
 
       if (missingMod != null || RunOutcomes.ShouldSkip(scenario.Tags, includeWip)) {
@@ -243,7 +243,7 @@ public class RunSession {
     int failedCount = results.Count(r => r.Outcome == ScenarioOutcome.Failed);
     int skippedCount = results.Count(r => r.Outcome == ScenarioOutcome.Skipped);
 
-    Log.InfoTo("Pickle",
+    Log.InfoTo(PickleLog.Channel,
         "run finished: {Passed} passed, {Failed} failed, {Skipped} skipped",
         [passedCount, failedCount, skippedCount]);
 
@@ -261,7 +261,7 @@ public class RunSession {
 
     string attempts = result.Attempts > 1 ? $" (attempt {result.Attempts})" : string.Empty;
 
-    Log.InfoTo("Pickle",
+    Log.InfoTo(PickleLog.Channel,
         "{Outcome} in {DurationMs}ms{Attempts}: {Feature}: {Scenario}",
         [
             outcome,
@@ -346,7 +346,7 @@ public class RunSession {
          attempt <= attempts && result.Outcome == ScenarioOutcome.Failed && !CancelRequested;
          attempt++) {
       failed.Add((attempt - 1, result.FailureMessage));
-      Log.InfoTo("Pickle",
+      Log.InfoTo(PickleLog.Channel,
           "retrying '{Scenario}', attempt {Attempt} of {Attempts}",
           [scenario.Name, attempt, attempts]);
 
@@ -782,7 +782,7 @@ public class RunSession {
       List<KeyValuePair<Type, object>> instances = [.. scenarioInstanceCache];
       stateDumps = StateDumpCollector.Collect(instances);
     } catch (Exception ex) {
-      Log.WarnTo("Pickle", ex, "error capturing evidence");
+      Log.WarnTo(PickleLog.Channel, ex, "error capturing evidence");
     }
 
     return (screenshotPath, stateDumps);

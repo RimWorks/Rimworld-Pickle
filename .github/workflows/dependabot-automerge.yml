@@ -10,4 +10,3 @@ permissions:
 jobs:
   automerge:
     uses: RimWorks/mod-ci/.github/workflows/dependabot-automerge.yml@5698991b43ade4de809d49d9695ac88e0895b298 # v1.2.1
-    secrets: inherit

@@ -40,7 +40,7 @@ public static class ScreenshotCapture {
     }
 
     string fallback = Path.Combine(Path.GetTempPath(), "pickle-reports", "screenshots");
-    Log.WarnTo("Pickle",
+    Log.WarnTo(PickleLog.Channel,
         "cannot write evidence to {Preferred}; using {Fallback} instead",
         [preferred, fallback]);
     TryCreate(fallback);

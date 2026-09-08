@@ -18,7 +18,7 @@ public class PickleMod : Mod {
     // during startup is only recorded once the sink is registered.
     Logging.RegisterSink(new PickleLogSink());
 
-    Log.InfoTo("Pickle", "loaded");
+    Log.InfoTo(PickleLog.Channel, "loaded");
 
     // Last point before RimWorld applies XML patches, which is the only chance to see
     // which mod patches which def.

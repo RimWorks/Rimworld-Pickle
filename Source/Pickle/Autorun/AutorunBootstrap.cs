@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -20,6 +21,8 @@ namespace RimWorks.Pickle.Autorun;
 /// </summary>
 [StaticConstructorOnStartup]
 public static class AutorunBootstrap {
+  private const double InProgressWriteSeconds = 5;
+
   private const int QuitGraceMs = 15000;
 
   // Nothing here may escape: anything thrown out of a static constructor becomes a
@@ -43,7 +46,7 @@ public static class AutorunBootstrap {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunAutorun(args, reportDir), "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, "autorun failed to start");
+      Log.ErrorTo(PickleLog.Channel, ex, "autorun failed to start");
     }
   }
 
@@ -70,15 +73,15 @@ public static class AutorunBootstrap {
       if (onError != null) {
         onError($"pickle: failed writing reports: {ex.Message}");
       } else {
-        Log.ErrorTo("Pickle", "failed writing reports: {Message}", [ex.Message]);
+        Log.ErrorTo(PickleLog.Channel, "failed writing reports: {Message}", [ex.Message]);
       }
     }
   }
 
   private static async Task RunAutorun(PickleArgs args, string reportDir) {
-    Log.InfoTo("Pickle", "autorun report dir = {ReportDir}", [reportDir]);
-    Log.InfoTo("Pickle", "autorun seed = {Seed}", [args.Seed]);
-    Log.InfoTo("Pickle", "autorun retries = {Retries}", [args.Retries]);
+    Log.InfoTo(PickleLog.Channel, "autorun report dir = {ReportDir}", [reportDir]);
+    Log.InfoTo(PickleLog.Channel, "autorun seed = {Seed}", [args.Seed]);
+    Log.InfoTo(PickleLog.Channel, "autorun retries = {Retries}", [args.Retries]);
 
     List<ScenarioResult> accumulated = new();
     int exitCode;
@@ -93,18 +96,26 @@ public static class AutorunBootstrap {
       PickleDriver driver = PickleDriver.Instance;
       await driver.WaitUntil(() => Current.ProgramState == ProgramState.Entry, 180f);
 
+      // Every write rewrites all of accumulated, so writing per scenario is O(n^2) over a
+      // suite. The in-progress report only has to be fresh enough for someone watching, so
+      // it goes out on an interval. The first one is unconditional, so the files exist early.
+      Stopwatch sinceWrite = Stopwatch.StartNew();
+
       await SuiteRunner.Run(args.RunFilter, args.Seed, retries: args.Retries, onScenarioCompleted: scenario => {
         accumulated.Add(scenario);
         Watchdog.RecordProgress(accumulated);
 
-        // TODO(perf): rewrites every file per scenario, O(n^2). Batch if a suite
-        // ever runs to hundreds of scenarios.
+        if (accumulated.Count > 1 && sinceWrite.Elapsed.TotalSeconds < InProgressWriteSeconds) {
+          return;
+        }
+
+        sinceWrite.Restart();
         WriteReports(reportDir, accumulated, "in-progress", setName: args.SetName);
       });
 
       exitCode = accumulated.Any(r => r.Outcome == ScenarioOutcome.Failed) ? 1 : 0;
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, "autorun infrastructure error");
+      Log.ErrorTo(PickleLog.Channel, ex, "autorun infrastructure error");
       exitCode = 2;
     } finally {
       AutorunState.IsAutorunning = false;
@@ -125,7 +136,7 @@ public static class AutorunBootstrap {
         },
         setName: args.SetName);
 
-    Log.InfoTo("Pickle", "autorun exit code = {ExitCode}", [exitCode]);
+    Log.InfoTo(PickleLog.Channel, "autorun exit code = {ExitCode}", [exitCode]);
     Quit(exitCode);
   }
 
@@ -136,22 +147,22 @@ public static class AutorunBootstrap {
     }
 
     if (!FilmEncoder.Available) {
-      Log.WarnTo("Pickle",
+      Log.WarnTo(PickleLog.Channel,
           "{Count} scenario(s) were filmed but ffmpeg is not on the PATH; frames were kept",
           [films.Count]);
       return;
     }
 
-    Log.InfoTo("Pickle", "encoding {Count} film(s) before exit", [films.Count]);
+    Log.InfoTo(PickleLog.Channel, "encoding {Count} film(s) before exit", [films.Count]);
     for (int i = 0; i < films.Count; i++) {
       (string dir, double fps) = films[i];
-      Log.InfoTo("Pickle",
+      Log.InfoTo(PickleLog.Channel,
           "encoding film {Index}/{Count} at {Fps} fps",
           [i + 1, films.Count, fps.ToString("0.#", CultureInfo.InvariantCulture)]);
       FilmEncoder.TryEncode(dir, fps);
     }
 
-    Log.InfoTo("Pickle", "encoded {Count} film(s)", [films.Count]);
+    Log.InfoTo(PickleLog.Channel, "encoded {Count} film(s)", [films.Count]);
   }
 
   // Environment.Exit does not end the process under Unity's Mono, so a passing run

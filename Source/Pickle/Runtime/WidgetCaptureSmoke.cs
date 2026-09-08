@@ -29,13 +29,13 @@ public static class WidgetCaptureSmoke {
 
       if (!found) {
         string knownTags = string.Join(", ", TagStore.KnownTags);
-        Log.ErrorTo("Pickle", "widget capture smoke failed: btn:OK not found. known tags: {KnownTags}", [knownTags]);
+        Log.ErrorTo(PickleLog.Channel, "widget capture smoke failed: btn:OK not found. known tags: {KnownTags}", [knownTags]);
         dialog.Close(false);
         return;
       }
 
       if (duplicate) {
-        Log.ErrorTo("Pickle", "widget capture smoke failed: btn:OK is ambiguous (duplicate)");
+        Log.ErrorTo(PickleLog.Channel, "widget capture smoke failed: btn:OK is ambiguous (duplicate)");
         dialog.Close(false);
         return;
       }
@@ -46,21 +46,21 @@ public static class WidgetCaptureSmoke {
       try {
         await ctx.Click("btn:OK");
       } catch (Exception clickEx) {
-        Log.ErrorTo("Pickle", clickEx, "widget capture smoke failed: ctx.Click(\"btn:OK\") threw");
+        Log.ErrorTo(PickleLog.Channel, clickEx, "widget capture smoke failed: ctx.Click(\"btn:OK\") threw");
         dialog.Close(false);
         return;
       }
 
       bool closed = !Find.WindowStack.IsOpen<Dialog_MessageBox>();
       if (!closed) {
-        Log.ErrorTo("Pickle", "widget capture smoke failed: click did not close the dialog");
+        Log.ErrorTo(PickleLog.Channel, "widget capture smoke failed: click did not close the dialog");
         dialog.Close(false);
         return;
       }
 
-      Log.InfoTo("Pickle", "widget capture smoke passed");
+      Log.InfoTo(PickleLog.Channel, "widget capture smoke passed");
     } catch (Exception ex) {
-      Log.ErrorTo("Pickle", ex, "widget capture smoke failed with exception");
+      Log.ErrorTo(PickleLog.Channel, ex, "widget capture smoke failed with exception");
     }
   }
 }
