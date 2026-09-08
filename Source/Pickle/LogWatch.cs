@@ -15,6 +15,18 @@ public static class LogWatch {
   private static readonly string[] IgnoredErrors = ["MonitorFromWindow failed"];
   private static bool armed;
   private static long totalRecorded;
+  private static int outsideScenario;
+  private static bool everArmed;
+
+  /// <summary>How many errors landed while no scenario was running, so none could be blamed for
+  /// them. A non-zero count means something threw outside every scenario's window.</summary>
+  public static int OutsideScenarioCount {
+    get {
+      lock (Gate) {
+        return outsideScenario;
+      }
+    }
+  }
 
   /// <summary>Whether a scenario is currently watching for errors.</summary>
   public static bool Armed {
@@ -78,6 +90,7 @@ public static class LogWatch {
     lock (Gate) {
       ErrorBuffer.Clear();
       armed = true;
+      everArmed = true;
     }
   }
 
@@ -93,12 +106,21 @@ public static class LogWatch {
   /// <param name="message">The rendered log message.</param>
   public static void RecordError(string message) {
     lock (Gate) {
-      if (!armed || IsIgnored(message)) {
+      if (IsIgnored(message)) {
         return;
       }
 
+      // Recording never stops. An async callback can land a frame after its scenario ends,
+      // and dropping it there made a real error invisible. Arm clears the buffer, so the
+      // next scenario still starts clean and is never blamed for one that arrived late.
       ErrorBuffer.Enqueue(message);
       totalRecorded++;
+
+      // Only after the first scenario has armed. Boot errors are not "between scenarios",
+      // and counting them would leave this non-zero on every run and mean nothing.
+      if (!armed && everArmed) {
+        outsideScenario++;
+      }
     }
   }
 

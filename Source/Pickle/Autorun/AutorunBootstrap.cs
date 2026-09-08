@@ -136,6 +136,14 @@ public static class AutorunBootstrap {
         },
         setName: args.SetName);
 
+    // An error can land after its scenario ends, most often from an async callback. It is
+    // recorded but blamed on nobody, so the count is the only place it shows up.
+    if (LogWatch.OutsideScenarioCount > 0) {
+      Log.WarnTo(PickleLog.Channel,
+          "{Count} error(s) were logged outside any scenario and failed nothing",
+          [LogWatch.OutsideScenarioCount]);
+    }
+
     Log.InfoTo(PickleLog.Channel, "autorun exit code = {ExitCode}", [exitCode]);
     Quit(exitCode);
   }

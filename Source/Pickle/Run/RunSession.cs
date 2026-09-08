@@ -421,7 +421,17 @@ public class RunSession {
         }
       }
 
+      int errorsBeforeHooks = LogWatch.ErrorCount;
       await RunAfterHooks(ctx, scenario.Tags);
+
+      // Reported, not failed. The gate check lives in the step loop, which has already
+      // exited, and @allow-errors is scenario-wide, so failing here would push people to
+      // tag the whole scenario and lose the check on its steps too.
+      if (LogWatch.ErrorCount > errorsBeforeHooks) {
+        Log.WarnTo(PickleLog.Channel,
+            "{Count} error(s) logged by after hooks in '{Scenario}'; the scenario is not failed for them",
+            [LogWatch.ErrorCount - errorsBeforeHooks, scenario.Name]);
+      }
 
       scenarioTimer.Stop();
 
