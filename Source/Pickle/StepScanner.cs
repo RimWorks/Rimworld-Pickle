@@ -23,7 +23,7 @@ public static class StepScanner {
     foreach (Assembly assembly in assemblies) {
       Type[] types = GetLoadableTypes(assembly);
       foreach (Type type in types) {
-        if (type.GetCustomAttribute<PickleStepsAttribute>() != null) {
+        if (Has<PickleStepsAttribute>(type)) {
           ScanStepsClass(type, table);
         }
       }
@@ -42,7 +42,7 @@ public static class StepScanner {
     foreach (Assembly assembly in assemblies) {
       Type[] types = GetLoadableTypes(assembly);
       foreach (Type type in types) {
-        if (type.GetCustomAttribute<PickleStepsAttribute>() != null) {
+        if (Has<PickleStepsAttribute>(type)) {
           stepsTypes.Add(type);
         }
       }
@@ -59,7 +59,7 @@ public static class StepScanner {
     foreach (Assembly assembly in assemblies) {
       Type[] types = GetLoadableTypes(assembly);
       foreach (Type type in types) {
-        if (type.GetCustomAttribute<PickleEntryAttribute>() != null) {
+        if (Has<PickleEntryAttribute>(type)) {
           MethodInfo? initMethod = type.GetMethod("Init", BindingFlags.Static | BindingFlags.Public);
           if (initMethod != null && initMethod.ReturnType == typeof(void)) {
             initMethod.Invoke(null, null);
@@ -70,6 +70,18 @@ public static class StepScanner {
 
     foreach (StepDefinition def in FluentRegistry.DrainPending()) {
       table.Add(def);
+    }
+  }
+
+  // Reading an attribute off a type salvaged from a ReflectionTypeLoadException throws
+  // again when the attribute's own assembly is the missing one. Quiet, because a broken
+  // mod would otherwise log a line for every type it ships.
+  private static bool Has<T>(Type type)
+      where T : Attribute {
+    try {
+      return type.GetCustomAttribute<T>() != null;
+    } catch (Exception) {
+      return false;
     }
   }
 
@@ -84,6 +96,13 @@ public static class StepScanner {
           "{Assembly} has unloadable types, skipping them: {Reasons}",
           [assembly.GetName().Name, reasons]);
       return ex.Types.Where(t => t != null).ToArray()!;
+    } catch (Exception ex) {
+      // A dynamic or half-loaded assembly throws something else entirely, and losing one
+      // assembly's steps beats losing every mod's.
+      Log.WarnTo(PickleLog.Channel,
+          "{Assembly} could not be scanned for steps: {Reason}",
+          [assembly.GetName().Name, ex.Message]);
+      return [];
     }
   }
 

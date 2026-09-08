@@ -119,10 +119,14 @@ public static class PatchBackends {
       types = assembly.GetTypes();
     } catch (ReflectionTypeLoadException ex) {
       types = [.. ex.Types.Where(t => t != null)!];
+    } catch (Exception) {
+      // A dynamic or half-loaded assembly can throw something other than
+      // ReflectionTypeLoadException, and this runs from PickleMod's constructor.
+      return;
     }
 
     foreach (Type type in types) {
-      if (type.IsAbstract || !typeof(IPatchBackend).IsAssignableFrom(type)) {
+      if (!IsBackend(type)) {
         continue;
       }
 
@@ -131,6 +135,17 @@ public static class PatchBackends {
       } catch (Exception ex) {
         Log.WarnTo(PickleLog.Channel, ex, $"could not create backend {type.Name}");
       }
+    }
+  }
+
+  // IsAssignableFrom walks the interface map, so a type salvaged out of a
+  // ReflectionTypeLoadException throws again here when its interface is the missing one.
+  // Quiet, because one broken mod would otherwise log a line per type it ships.
+  private static bool IsBackend(Type type) {
+    try {
+      return !type.IsAbstract && typeof(IPatchBackend).IsAssignableFrom(type);
+    } catch (Exception) {
+      return false;
     }
   }
 
