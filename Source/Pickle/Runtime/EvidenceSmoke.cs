@@ -16,7 +16,13 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
+/// <summary>
+/// Runs a scenario built to fail on purpose and checks that the failure carries a log
+/// tail, an attachment, a state dump and a screenshot, so evidence capture is proved end to end.
+/// </summary>
 public static class EvidenceSmoke {
+  /// <summary>Runs the smoke and logs pass or fail. Never throws; a failure is a log line, not an exception.</summary>
+  /// <returns>A task that completes when the smoke finishes.</returns>
   public static async Task Run() {
     try {
       PickleDriver driver = PickleDriver.Instance;

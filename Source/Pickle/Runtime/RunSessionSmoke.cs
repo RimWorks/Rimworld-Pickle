@@ -16,7 +16,10 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
+/// <summary>Runs a hand-written feature through a session and checks its outcomes and messages.</summary>
 public static class RunSessionSmoke {
+  /// <summary>Runs the smoke and logs whether it passed, catching any exception.</summary>
+  /// <returns>A task that completes when the smoke finishes.</returns>
   public static async Task Run() {
     try {
       PickleDriver driver = PickleDriver.Instance;

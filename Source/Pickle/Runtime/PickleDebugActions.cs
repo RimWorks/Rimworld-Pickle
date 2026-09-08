@@ -8,6 +8,7 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
+/// <summary>Dev-mode debug menu entries that run Pickle's own smokes, without a scenario or the CLI.</summary>
 public static class PickleDebugActions {
   [DebugAction("Pickle", "pump smoke", allowedGameStates = AllowedGameStates.PlayingOnMap)]
   private static void PumpSmokeDebugAction() {

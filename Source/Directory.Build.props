@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
     <DebugType>embedded</DebugType>
     <DebugSymbols>true</DebugSymbols>
+    <!-- Without this the compiler runs in DocumentationMode.None and StyleCop silently skips
+         every SA16xx rule, so the documentation rules below never fire. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

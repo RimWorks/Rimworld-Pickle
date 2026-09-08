@@ -36,6 +36,7 @@ public class FixtureManagerDialog : Window {
   private string? renamingPath;
   private string renameText = string.Empty;
 
+  /// <summary>Initializes a new instance. Reads every suite's fixtures immediately, so the list is populated before the window ever draws.</summary>
   public FixtureManagerDialog() {
     optionalTitle = "Pickle_FixtureManagerTitle".Translate();
     draggable = true;

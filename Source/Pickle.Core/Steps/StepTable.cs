@@ -6,6 +6,7 @@ using CucumberExpressions;
 
 namespace RimWorks.Pickle.Core.Steps;
 
+/// <summary>Every step definition registered for a run, and the compiled patterns used to match step text against them.</summary>
 public class StepTable {
   private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
 
@@ -13,6 +14,7 @@ public class StepTable {
   private readonly List<StepDefinition> ordered = new();
   private readonly PickleParameterTypeRegistry registry;
 
+  /// <summary>Initializes a new instance.</summary>
   public StepTable() {
     registry = new PickleParameterTypeRegistry();
   }
@@ -20,12 +22,18 @@ public class StepTable {
   /// <summary>Every definition in the order it was added, for listing the catalogue.</summary>
   public IReadOnlyList<StepDefinition> Definitions => ordered;
 
+  /// <summary>Registers a step definition, compiling its pattern into a regex up front so matching stays cheap.</summary>
+  /// <param name="definition">The step definition to add.</param>
   public void Add(StepDefinition definition) {
     Regex pattern = CompilePattern(definition.Pattern);
     definitions.Add((definition, pattern));
     ordered.Add(definition);
   }
 
+  /// <summary>Matches step text against every registered definition and converts the captured groups.</summary>
+  /// <param name="stepText">The step text from a feature file, without its Gherkin keyword.</param>
+  /// <returns>A <see cref="MatchedStep"/> when exactly one definition matches, an <see cref="AmbiguousStep"/> when more
+  /// than one does, or an <see cref="UndefinedStep"/> when none do.</returns>
   public StepResolution Resolve(string stepText) {
     List<(StepDefinition Definition, Match Match)> matches = new();
 

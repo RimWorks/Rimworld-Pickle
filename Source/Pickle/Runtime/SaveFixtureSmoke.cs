@@ -9,7 +9,10 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
+/// <summary>Loads a fixture, saves a new one from it through the UI dialog, then reloads that copy.</summary>
 public static class SaveFixtureSmoke {
+  /// <summary>Runs the smoke and logs whether it passed, swallowing any exception.</summary>
+  /// <returns>A task that completes when the smoke finishes.</returns>
   public static async Task Run() {
     try {
       await RunAsync(PickleDriver.Instance);

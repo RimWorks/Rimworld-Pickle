@@ -9,8 +9,12 @@ using Verse;
 
 namespace RimWorks.Pickle.Vanilla;
 
+/// <summary>Clicking, keys, tabs, windows and selection, the steps every scenario builds on.</summary>
 [PickleSteps]
 public class UiSteps {
+  /// <summary>Returns to the main menu, waiting out any running long event first.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   // Waits out any long event before tearing the world down: a world-renderer layer that
   // regenerates across frames reads freed tile arrays afterwards, which is a signal 11.
   [Given("the main menu is open")]
@@ -33,26 +37,46 @@ public class UiSteps {
     await ctx.WaitFrames(2);
   }
 
+  /// <summary>Clicks the UI element registered under a tag.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="tag">The tag the target element was registered under.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I click {string}")]
   public async Task ClickTag(PickleContext ctx, string tag) {
     await ctx.Click(tag);
   }
 
+  /// <summary>Clicks a button by its label.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="label">The button's label.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I click button {string}")]
   public async Task ClickButton(PickleContext ctx, string label) {
     await ctx.Click($"btn:{label}");
   }
 
+  /// <summary>Presses a key.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="key">The key to press.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I press key {string}")]
   public async Task PressKey(PickleContext ctx, string key) {
     await ctx.PressKey(key);
   }
 
+  /// <summary>Hovers the UI element registered under a tag.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="tag">The tag the target element was registered under.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I hover {string}")]
   public async Task HoverTag(PickleContext ctx, string tag) {
     await ctx.Hover(tag);
   }
 
+  /// <summary>Switches the main tabs root to the named tab.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="tabName">The tab's def name or label.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I open the {string} tab")]
   public async Task OpenTab(PickleContext ctx, string tabName) {
     MainButtonDef? tab = FindTab(tabName);
@@ -65,6 +89,10 @@ public class UiSteps {
     await ctx.WaitFrames(2);
   }
 
+  /// <summary>Asserts a window with the given type name is open.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="windowName">The window's type name.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   // A page transition takes more than the one frame this used to wait, and how many more
   // depends on the machine, so it waits on the window rather than on a frame count.
   [Then("window {string} is open")]
@@ -74,6 +102,10 @@ public class UiSteps {
         () => $"window '{windowName}' should be open; open windows: {DescribeOpenWindows()}");
   }
 
+  /// <summary>Asserts a window with the given type name is not open.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="windowName">The window's type name.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("window {string} is closed")]
   public async Task AssertWindowClosed(PickleContext ctx, string windowName) {
     await ctx.AssertEventually(
@@ -81,6 +113,9 @@ public class UiSteps {
         () => $"window '{windowName}' should be closed; open windows: {DescribeOpenWindows()}");
   }
 
+  /// <summary>Selects a thing on the map by label, bypassing a real click.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="label">The thing's label, or a pawn's short name.</param>
   [When("I select {string}")]
   public void Select(PickleContext ctx, string label) {
     Map map = RequireMap(ctx);
@@ -91,12 +126,17 @@ public class UiSteps {
     Find.Selector.Select(thing, playSound: false);
   }
 
+  /// <summary>Runs the gizmo with the given label on the current selection.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="label">The gizmo's label.</param>
   [When("I click gizmo {string}")]
   public void ClickGizmo(PickleContext ctx, string label) {
     Command command = RequireGizmo(label);
     command.ProcessInput(null!);
   }
 
+  /// <summary>Closes every open window except the runner's own.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   [When("I close all dialogs")]
   public void CloseAllDialogs(PickleContext ctx) {
     List<Window> toClose = [.. Find.WindowStack.Windows.Where(w => w is not RunnerWindow)];
@@ -106,6 +146,9 @@ public class UiSteps {
     }
   }
 
+  /// <summary>Asserts the inspect pane's label contains a substring.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="expectedSubstring">The substring the label should contain.</param>
   [Then("the inspect pane shows {string}")]
   public void AssertInspectPaneShows(PickleContext ctx, string expectedSubstring) {
     Thing? selected = Find.Selector.SingleSelectedThing;
@@ -115,6 +158,8 @@ public class UiSteps {
         $"inspect pane should show '{expectedSubstring}'; actually showing: {actualLabel}");
   }
 
+  /// <summary>Asserts no error has been logged since <see cref="LogWatch"/> was armed.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   [Then("no errors were logged")]
   public void AssertNoErrorsLogged(PickleContext ctx) {
     ctx.Assert(
@@ -122,6 +167,10 @@ public class UiSteps {
         $"expected no errors logged; got {LogWatch.ErrorCount}: {string.Join(" | ", LogWatch.ErrorsSinceArmed)}");
   }
 
+  /// <summary>Captures the current frame to a file and attaches it to the report.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="name">The name to give the attachment.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I take a screenshot {string}")]
   public async Task TakeScreenshot(PickleContext ctx, string name) {
     // PickleContext exposes no feature/scenario name, so "manual" plus the given

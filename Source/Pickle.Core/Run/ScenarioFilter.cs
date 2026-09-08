@@ -17,6 +17,11 @@ public static class ScenarioFilter {
   /// Terms are <c>@tag</c>, a mod name, a feature path, <c>path::name</c>,
   /// <c>path:line</c>, or <c>::name</c> to match a scenario in any feature.
   /// </summary>
+  /// <param name="modName">The mod the scenario's feature belongs to.</param>
+  /// <param name="sourcePath">The feature file's path, or <c>null</c> when it has none.</param>
+  /// <param name="scenario">The scenario being tested against the term.</param>
+  /// <param name="term">One filter term, as described above.</param>
+  /// <returns><c>true</c> when the term picks this scenario.</returns>
   public static bool Matches(string modName, string? sourcePath, ScenarioPlan scenario, string term) {
     if (term.Length > 0 && term[0] == '@') {
       return scenario.Tags.Contains(term);
@@ -40,6 +45,9 @@ public static class ScenarioFilter {
         || MatchesPath(sourcePath, term);
   }
 
+  /// <summary>Splits a comma separated filter into its trimmed, non-empty terms.</summary>
+  /// <param name="filter">The raw filter string, or <c>null</c>.</param>
+  /// <returns>The terms, or an empty list when the filter is <c>null</c> or empty.</returns>
   public static IReadOnlyList<string> SplitTerms(string? filter) {
     // Not IsNullOrEmpty: net472 has no NotNullWhen on it, so the compiler still
     // wants a null-forgiving operator after the guard.
@@ -50,6 +58,13 @@ public static class ScenarioFilter {
     return [.. filter.Split(',').Select(t => t.Trim()).Where(t => t.Length > 0)];
   }
 
+  /// <summary>
+  /// Whether a feature path matches a term, comparing case insensitively and treating
+  /// <c>\</c> and <c>/</c> as the same separator. A term also matches on the bare file name.
+  /// </summary>
+  /// <param name="sourcePath">The feature file's path, or <c>null</c>.</param>
+  /// <param name="term">The path or file name to match against.</param>
+  /// <returns><c>true</c> when the term identifies this path. Always <c>false</c> when <paramref name="sourcePath"/> is <c>null</c>.</returns>
   public static bool MatchesPath(string? sourcePath, string term) {
     if (sourcePath == null) {
       return false;
@@ -67,6 +82,9 @@ public static class ScenarioFilter {
   /// Narrows parsed features to the ones a filter picks. A filter that matches nothing
   /// throws rather than returning an empty run, which CI otherwise reads as a pass.
   /// </summary>
+  /// <param name="parsedFeatures">Every discovered feature and its parsed plan.</param>
+  /// <param name="filter">A comma separated filter, or <c>null</c> to keep everything.</param>
+  /// <returns>The features that still have at least one matching scenario.</returns>
   public static List<(DiscoveredSuite Suite, FeaturePlan Plan)> FilterFeatures(
       IReadOnlyList<(DiscoveredSuite Suite, FeaturePlan Plan)> parsedFeatures, string? filter) {
     IReadOnlyList<string> terms = SplitTerms(filter);

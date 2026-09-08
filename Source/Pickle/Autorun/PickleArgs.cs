@@ -12,16 +12,22 @@ namespace RimWorks.Pickle.Autorun;
 /// in -pickle-config, which only fills what the CLI did not set.
 /// </summary>
 public sealed class PickleArgs {
+  /// <summary>Whether <c>-pickle-run</c> was passed at all, with or without a filter.</summary>
   public bool RunRequested { get; private set; }
 
+  /// <summary>The scenario filter from <c>-pickle-run</c>'s value, or <c>null</c> to run everything.</summary>
   public string? RunFilter { get; private set; }
 
+  /// <summary>Where reports and screenshots land. <c>null</c> falls back to <see cref="ReportDirectoryResolver"/>.</summary>
   public string? ReportDir { get; private set; }
 
+  /// <summary>Whether <c>@wip</c> scenarios run alongside everything else.</summary>
   public bool IncludeWip { get; private set; }
 
+  /// <summary>The random seed the run uses, so a failure can be reproduced.</summary>
   public int Seed { get; private set; } = RunSession.DefaultSeed;
 
+  /// <summary>Seconds a single scenario gets before it is treated as timed out.</summary>
   public int ScenarioTimeoutSeconds { get; private set; } = 120;
 
   /// <summary>Extra attempts a failed scenario gets. Zero runs each scenario once.</summary>
@@ -33,11 +39,14 @@ public sealed class PickleArgs {
   /// <summary>How wait steps spend time. An unattended run is Fast unless -pickle-mode says otherwise.</summary>
   public PickleRunMode.Mode Mode { get; private set; } = PickleRunMode.Mode.Fast;
 
+  /// <summary>Minutes the whole run gets before <see cref="Watchdog"/> kills it.</summary>
   public int RunTimeoutMinutes { get; private set; } = 60;
 
   /// <summary>Seconds of footage a filmed scenario keeps before it stops capturing.</summary>
   public int MaxFilmSeconds { get; private set; } = 60;
 
+  /// <summary>Reads the command line, then fills anything unset from <c>-pickle-config</c>.</summary>
+  /// <returns>The resolved args for this run.</returns>
   public static PickleArgs Parse() {
     bool runBare = GenCommandLine.CommandLineArgPassed("-pickle-run");
     bool runValued = GenCommandLine.TryGetCommandLineArg("-pickle-run", out string runValue);

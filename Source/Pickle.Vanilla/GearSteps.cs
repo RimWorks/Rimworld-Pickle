@@ -8,26 +8,47 @@ namespace RimWorks.Pickle.Vanilla;
 /// <summary>Weapons and worn apparel, which the carrying steps cannot see.</summary>
 [PickleSteps]
 public class GearSteps {
+  /// <summary>Equips a pawn with a weapon or other equipment, made from its default stuff if it needs one.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to equip.</param>
+  /// <param name="defName">The equipment def to make and equip.</param>
   [When("I equip {string} with {string}")]
   public void Equip(PickleContext ctx, string nickname, string defName) {
     EquipWith(ctx, nickname, defName, null);
   }
 
+  /// <summary>Equips a pawn with a weapon or other equipment made from a specific stuff.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to equip.</param>
+  /// <param name="defName">The equipment def to make and equip.</param>
+  /// <param name="stuffDefName">The stuff to make it from.</param>
   [When("I equip {string} with {string} made of {string}")]
   public void EquipMadeOf(PickleContext ctx, string nickname, string defName, string stuffDefName) {
     EquipWith(ctx, nickname, defName, stuffDefName);
   }
 
+  /// <summary>Dresses a pawn in apparel, made from its default stuff if it needs one.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to dress.</param>
+  /// <param name="defName">The apparel def to make and wear.</param>
   [When("I dress {string} in {string}")]
   public void Dress(PickleContext ctx, string nickname, string defName) {
     DressIn(ctx, nickname, defName, null);
   }
 
+  /// <summary>Dresses a pawn in apparel made from a specific stuff.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to dress.</param>
+  /// <param name="defName">The apparel def to make and wear.</param>
+  /// <param name="stuffDefName">The stuff to make it from.</param>
   [When("I dress {string} in {string} made of {string}")]
   public void DressMadeOf(PickleContext ctx, string nickname, string defName, string stuffDefName) {
     DressIn(ctx, nickname, defName, stuffDefName);
   }
 
+  /// <summary>Drops all of a pawn's equipment and worn apparel onto the map. Requires the pawn to be spawned.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to strip.</param>
   [When("I strip {string}")]
   public void Strip(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -40,6 +61,9 @@ public class GearSteps {
     pawn.apparel?.DropAll(pawn.Position, forbid: false);
   }
 
+  /// <summary>Destroys all of a pawn's equipment and worn apparel, unlike stripping it does not need the pawn on a map.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn whose gear is destroyed.</param>
   [When("I destroy the gear of {string}")]
   public void DestroyGear(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -47,6 +71,10 @@ public class GearSteps {
     pawn.apparel?.DestroyAll();
   }
 
+  /// <summary>Asserts a pawn's primary equipment is a specific def.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to check.</param>
+  /// <param name="defName">The equipment expected to be wielded.</param>
   [Then("{string} is wielding {string}")]
   public void AssertWielding(PickleContext ctx, string nickname, string defName) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -57,6 +85,9 @@ public class GearSteps {
         $"pawn '{nickname}' should be wielding '{defName}'; {DescribeEquipment(pawn)}");
   }
 
+  /// <summary>Asserts a pawn has no primary equipment.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to check.</param>
   [Then("{string} is wielding nothing")]
   public void AssertWieldingNothing(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -66,6 +97,10 @@ public class GearSteps {
         $"pawn '{nickname}' should be wielding nothing; {DescribeEquipment(pawn)}");
   }
 
+  /// <summary>Asserts a pawn is wearing a specific apparel def.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to check.</param>
+  /// <param name="defName">The apparel expected to be worn.</param>
   [Then("{string} is wearing {string}")]
   public void AssertWearing(PickleContext ctx, string nickname, string defName) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -76,6 +111,10 @@ public class GearSteps {
         $"pawn '{nickname}' should be wearing '{defName}'; {DescribeWorn(pawn)}");
   }
 
+  /// <summary>Asserts a pawn's worn apparel covers a body part group.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to check.</param>
+  /// <param name="groupDefName">The body part group expected to be covered.</param>
   [Then("{string} apparel covers {string}")]
   public void AssertCovers(PickleContext ctx, string nickname, string groupDefName) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);

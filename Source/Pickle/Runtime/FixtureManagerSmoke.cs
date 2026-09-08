@@ -17,6 +17,8 @@ namespace RimWorks.Pickle.Runtime;
 /// loading it. The screenshot it leaves is the only way to look at the window from here.
 /// </summary>
 public static class FixtureManagerSmoke {
+  /// <summary>Runs the smoke and logs pass or fail. Never throws.</summary>
+  /// <returns>A task that completes when the smoke finishes.</returns>
   public static async Task Run() {
     try {
       await RunAsync(PickleDriver.Instance);

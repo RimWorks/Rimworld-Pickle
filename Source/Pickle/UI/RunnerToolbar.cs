@@ -10,21 +10,36 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.UI;
 
+/// <summary>Draws the runner window's top strip: workspace tabs, the run status summary, scope and mode
+/// controls, action buttons, and the reports panel.</summary>
 public static class RunnerToolbar {
+  /// <summary>How wide the action button cluster (follow, run, pause, abort) reserves at the header's right edge.</summary>
   public const float ActionsWidth = 246f;
   private const float Padding = 8f;
   private const float ButtonHeight = 30f;
 
+  /// <summary>The header row's height, taller below a width where the summary wraps to a second line.</summary>
+  /// <param name="width">The available header width.</param>
+  /// <returns>The header height in pixels.</returns>
   public static float HeaderHeight(float width) => width < 900f ? 84f : 56f;
 
+  /// <summary>The scope and mode control row's height, taller below a width where the bulk-select controls wrap.</summary>
+  /// <param name="width">The available row width.</param>
+  /// <returns>The row height in pixels.</returns>
   public static float Height(float width) => width < 760f ? 82f : 48f;
 
+  /// <summary>Draws the workspace tabs and the run status summary, with a separator line beneath.</summary>
+  /// <param name="rect">The area to draw the header in.</param>
+  /// <param name="window">The runner window supplying tab and run state.</param>
   public static void DrawHeader(Rect rect, RunnerWindow window) {
     float x = WorkspaceTabs(rect, window);
     Summary(rect, window, x);
     Widgets.DrawLineHorizontal(rect.x, rect.yMax, rect.width, Widgets.SeparatorLineColor);
   }
 
+  /// <summary>Draws the run scope picker, the watch/fast mode toggle, the options menu button, and the bulk select controls.</summary>
+  /// <param name="rect">The area to draw the row in.</param>
+  /// <param name="window">The runner window supplying and receiving the control state.</param>
   public static void Draw(Rect rect, RunnerWindow window) {
     bool idle = !window.IsRunning && !FixtureCommands.IsBusy;
     float y = rect.y + 9f;
@@ -68,6 +83,9 @@ public static class RunnerToolbar {
     GUI.enabled = true;
   }
 
+  /// <summary>Draws the follow toggle and the run, pause, and abort buttons.</summary>
+  /// <param name="rect">The area to draw the buttons in; they align to its right edge.</param>
+  /// <param name="window">The runner window the buttons act on.</param>
   public static void DrawActions(Rect rect, RunnerWindow window) {
     float x = rect.xMax - ActionsWidth;
     FollowToggle(new Rect(x, rect.y, 120f, ButtonHeight), window);
@@ -77,12 +95,18 @@ public static class RunnerToolbar {
     GUI.enabled = true;
   }
 
+  /// <summary>Draws the run progress bar, filled by completed over total scenarios and colored by run status.</summary>
+  /// <param name="rect">The area to draw the bar in.</param>
+  /// <param name="window">The runner window supplying progress and status.</param>
   public static void DrawProgress(Rect rect, RunnerWindow window) {
     Widgets.DrawBoxSolid(rect, Widgets.SeparatorLineColor);
     float fraction = window.RunScenarioCount == 0 ? 0f : (float)window.CompletedScenarioCount / window.RunScenarioCount;
     Widgets.DrawBoxSolid(new Rect(rect.x, rect.y, rect.width * Mathf.Clamp01(fraction), rect.height), StatusColor(window));
   }
 
+  /// <summary>Draws the last run's timestamp and buttons to open the report file or its directory.</summary>
+  /// <param name="rect">The area to draw the panel in.</param>
+  /// <param name="window">The runner window supplying the last run's timestamp.</param>
   public static void DrawReports(Rect rect, RunnerWindow window) {
     Label(new Rect(rect.x, rect.y, rect.width, 30f), "Last run report", Color.white, GameFont.Medium);
     Label(new Rect(rect.x, rect.y + 38f, rect.width, 24f), window.LastRunAt?.ToString("g") ?? "No completed run yet.", RunnerStatusColors.Muted, GameFont.Small);

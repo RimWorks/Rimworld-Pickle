@@ -5,7 +5,10 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
+/// <summary>Exercises the async wait pump directly, without a feature file, and logs the result.</summary>
 public static class PumpSmoke {
+  /// <summary>Runs the smoke and logs whether it passed, swallowing any exception.</summary>
+  /// <returns>A task that completes when the smoke finishes.</returns>
   public static async Task Run() {
     PickleContext ctx = new PickleContext();
     try {
@@ -16,6 +19,9 @@ public static class PumpSmoke {
     }
   }
 
+  /// <summary>Waits on ticks, a condition and frames in turn, asserting the tick wait advanced the clock.</summary>
+  /// <param name="ctx">The context to run the waits against.</param>
+  /// <returns>A task that completes when the smoke finishes.</returns>
   public static async Task RunAsync(PickleContext ctx) {
     int startTicksGame = Find.TickManager.TicksGame;
     await ctx.WaitTicks(10);

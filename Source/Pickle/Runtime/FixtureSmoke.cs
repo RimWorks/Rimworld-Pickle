@@ -12,7 +12,10 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle;
 
+/// <summary>Saves and reloads a scratch fixture, then checks <see cref="LogWatch"/> counts errors correctly.</summary>
 public static class FixtureSmoke {
+  /// <summary>Runs the smoke and logs whether it passed, catching any exception.</summary>
+  /// <returns>A task that completes when the smoke finishes.</returns>
   public static async Task Run() {
     PickleDriver driver = PickleDriver.Instance;
     try {

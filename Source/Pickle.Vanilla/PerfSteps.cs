@@ -10,12 +10,20 @@ namespace RimWorks.Pickle.Vanilla;
 /// </summary>
 [PickleSteps]
 public class PerfSteps {
+  /// <summary>Asserts the mean cost of the last N sampled ticks is under a budget. Only measures anything in fast mode.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="ticks">How many of the most recent ticks to average.</param>
+  /// <param name="budgetMs">The mean, in milliseconds, the ticks must stay under.</param>
   [Then("the last {int} ticks average under {float} ms")]
   public void MeanUnder(PickleContext ctx, int ticks, float budgetMs) {
     TickCostWindow window = Require(ctx, ticks);
     ctx.Assert(window.MeanMs < budgetMs, window.MeanMs < budgetMs ? null : Describe(window, ticks, budgetMs, "averaged", window.MeanMs));
   }
 
+  /// <summary>Asserts no single tick in the last N sampled ticks exceeded a budget. Only measures anything in fast mode.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="ticks">How many of the most recent ticks to check.</param>
+  /// <param name="budgetMs">The cost, in milliseconds, no tick may exceed.</param>
   [Then("no tick in the last {int} took more than {float} ms")]
   public void MaxUnder(PickleContext ctx, int ticks, float budgetMs) {
     TickCostWindow window = Require(ctx, ticks);

@@ -17,23 +17,28 @@ public sealed class XdoInput : IInputBackend {
 
   private string? gameWindowId;
 
+  /// <summary>Initializes a new instance, probing for xdotool and an X server right away.</summary>
   public XdoInput() {
     UnavailableReason = Probe();
   }
 
+  /// <inheritdoc/>
   public string? UnavailableReason { get; }
 
+  /// <inheritdoc/>
   // no --sync: it waits for a motion event, so a repeat click at the same spot hangs.
   public void MoveTo(Vector2 guiPoint) {
     Vector2 target = InputBackends.ToScreen(guiPoint);
     Run($"mousemove {WindowArg()} {(int)target.x} {(int)target.y}");
   }
 
+  /// <inheritdoc/>
   public void Click(Vector2 guiPoint, int button = 1) {
     Vector2 target = InputBackends.ToScreen(guiPoint);
     Run($"mousemove {WindowArg()} {(int)target.x} {(int)target.y} click {button}");
   }
 
+  /// <inheritdoc/>
   // Keys go to the focus window, not the pointer, and Xvfb has no WM to set it. Never pass
   // --window here: that switches xdotool to XSendEvent, which Unity ignores.
   public void Key(string keyName) {
@@ -42,6 +47,7 @@ public sealed class XdoInput : IInputBackend {
     Run($"{focus}key {MapKeysym(keyName)}");
   }
 
+  /// <inheritdoc/>
   // Callers report this alongside the intended target when a click fails to land: it
   // separates a coordinate mapping bug from a click that went to the right place.
   public string GetMouseLocation() {

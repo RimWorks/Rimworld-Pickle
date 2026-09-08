@@ -5,5 +5,6 @@ namespace RimWorks.Pickle.Runtime;
 /// toggle lands mid-run rather than at the next one.
 /// </summary>
 public static class RunPillState {
+  /// <summary>Whether the progress pill draws while a run is active.</summary>
   public static bool Enabled { get; set; } = true;
 }

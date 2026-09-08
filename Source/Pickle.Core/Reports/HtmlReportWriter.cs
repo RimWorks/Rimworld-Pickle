@@ -15,6 +15,14 @@ namespace RimWorks.Pickle.Core.Reports;
 public static class HtmlReportWriter {
   private const string Placeholder = "__PICKLE_REPORT_JSON__";
 
+  /// <summary>Fills a copy of the dashboard bundle with a run's results.</summary>
+  /// <param name="results">Every scenario the run produced, in report order.</param>
+  /// <param name="exitReason">Why the run stopped, or that it has not stopped yet.</param>
+  /// <param name="template">The dashboard HTML, carrying the placeholder script tag to fill.</param>
+  /// <param name="readAttachmentBytes">Resolves an attachment's content to its raw bytes, so images inline as data URIs.</param>
+  /// <param name="stringsJson">Localized UI strings for the dashboard, as a JSON object, or <c>null</c> to leave it empty.</param>
+  /// <param name="setName">The mod set the run targeted, or <c>null</c> for an unnamed run.</param>
+  /// <returns>The template with the placeholder replaced by the run's payload.</returns>
   public static string Write(
       IReadOnlyList<ScenarioResult> results,
       string exitReason,
@@ -25,6 +33,13 @@ public static class HtmlReportWriter {
     return template.Replace(Placeholder, BuildPayload(results, exitReason, readAttachmentBytes, stringsJson, setName));
   }
 
+  /// <summary>Builds the JSON payload the dashboard reads on load, in the same shape it polls during a live run.</summary>
+  /// <param name="results">Every scenario the run produced, in report order.</param>
+  /// <param name="exitReason">Why the run stopped, or that it has not stopped yet.</param>
+  /// <param name="readAttachmentBytes">Resolves an attachment's content to its raw bytes, so images inline as data URIs.</param>
+  /// <param name="stringsJson">Localized UI strings for the dashboard, as a JSON object, or <c>null</c> to leave it empty.</param>
+  /// <param name="setName">The mod set the run targeted, or <c>null</c> for an unnamed run.</param>
+  /// <returns>The payload JSON, with any <c>&lt;/</c> escaped so it cannot close the surrounding script tag.</returns>
   public static string BuildPayload(
       IReadOnlyList<ScenarioResult> results,
       string exitReason,

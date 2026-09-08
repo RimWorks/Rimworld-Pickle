@@ -6,7 +6,12 @@ using RimWorks.Pickle.Core.Fixtures;
 
 namespace RimWorks.Pickle.Core.Discovery;
 
+/// <summary>Walks a mod's Pickle folder and builds the <see cref="DiscoveredSuite"/> found there.</summary>
 public static class SuiteProbe {
+  /// <summary>Discovers a mod's suite, or <c>null</c> when it has no Pickle folder.</summary>
+  /// <param name="modName">The mod the suite belongs to.</param>
+  /// <param name="layout">The folders to look under.</param>
+  /// <returns>The discovered suite, or <c>null</c> when <paramref name="layout"/> has no Pickle directory.</returns>
   public static DiscoveredSuite? Probe(string modName, SuiteLayout layout) {
     if (!Directory.Exists(layout.PickleDir)) {
       return null;

@@ -26,6 +26,8 @@ public class RunPill : Window {
   private float titleHeight;
   private float stepHeight;
 
+  /// <summary>Initializes a new instance.</summary>
+  /// <param name="owner">The full runner window this pill collapses from and expands back into.</param>
   public RunPill(RunnerWindow owner) {
     this.owner = owner;
 

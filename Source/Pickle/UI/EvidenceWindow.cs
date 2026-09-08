@@ -7,6 +7,8 @@ using Verse;
 
 namespace RimWorks.Pickle.UI;
 
+/// <summary>Full-screen viewer for a scenario's evidence: a single screenshot, a scrubbable set of
+/// screenshots, or a film's video with playback controls.</summary>
 public class EvidenceWindow : Window {
   private readonly IReadOnlyList<string> paths;
   private readonly bool film;
@@ -17,6 +19,10 @@ public class EvidenceWindow : Window {
   private int loadedFrame = -1;
   private string error = string.Empty;
 
+  /// <summary>Initializes a new instance.</summary>
+  /// <param name="title">The window's title.</param>
+  /// <param name="paths">The evidence file paths to show, one at a time; a data URI is also accepted for an image.</param>
+  /// <param name="film">Whether <paramref name="paths"/> holds a single video to play rather than a set of images to scrub.</param>
   public EvidenceWindow(string title, IReadOnlyList<string> paths, bool film = false) {
     optionalTitle = title;
     this.paths = paths;
@@ -26,8 +32,10 @@ public class EvidenceWindow : Window {
     draggable = true;
   }
 
+  /// <inheritdoc/>
   public override Vector2 InitialSize => new Vector2(Verse.UI.screenWidth * 0.9f, Verse.UI.screenHeight * 0.9f);
 
+  /// <inheritdoc/>
   public override void DoWindowContents(Rect inRect) {
     if (loadedFrame != frame) {
       Load();
@@ -44,6 +52,7 @@ public class EvidenceWindow : Window {
     Scrubber(inRect, picture.yMax + 6f);
   }
 
+  /// <inheritdoc/>
   public override void PostClose() {
     base.PostClose();
     if (image != null) {

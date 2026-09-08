@@ -20,6 +20,10 @@ public class NotificationSteps {
   private static readonly FieldInfo? LiveMessagesField =
       typeof(Messages).GetField("liveMessages", BindingFlags.Static | BindingFlags.NonPublic);
 
+  /// <summary>Waits for an alert whose label contains a substring to become active.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="labelSubstring">Text the active alert's label should contain.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("alert {string} is active")]
   public async Task AssertAlertActive(PickleContext ctx, string labelSubstring) {
     await ctx.AssertEventually(
@@ -27,6 +31,9 @@ public class NotificationSteps {
         () => $"alert '{labelSubstring}' should be active; active alerts: {DescribeAlerts()}");
   }
 
+  /// <summary>Asserts no active alert's label contains a substring.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="labelSubstring">Text no active alert's label should contain.</param>
   [Then("alert {string} is not active")]
   public void AssertAlertInactive(PickleContext ctx, string labelSubstring) {
     ctx.Assert(
@@ -34,6 +41,10 @@ public class NotificationSteps {
         $"alert '{labelSubstring}' should not be active; active alerts: {DescribeAlerts()}");
   }
 
+  /// <summary>Waits for a live toast message containing a substring to appear.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="textSubstring">Text the message should contain.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("a message {string} was shown")]
   public async Task AssertMessageShown(PickleContext ctx, string textSubstring) {
     await ctx.AssertEventually(
@@ -41,6 +52,9 @@ public class NotificationSteps {
         () => $"no message containing '{textSubstring}'; messages: {DescribeMessages()}");
   }
 
+  /// <summary>Removes the first pending letter whose label contains a substring.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="labelSubstring">Text the letter's label should contain.</param>
   [When("I dismiss letter {string}")]
   public void DismissLetter(PickleContext ctx, string labelSubstring) {
     Letter? letter = Find.LetterStack.LettersListForReading
@@ -50,6 +64,8 @@ public class NotificationSteps {
     Find.LetterStack.RemoveLetter(letter!);
   }
 
+  /// <summary>Asserts the letter stack is empty.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
   [Then("no letters are pending")]
   public void AssertNoLetters(PickleContext ctx) {
     List<Letter> letters = Find.LetterStack.LettersListForReading;

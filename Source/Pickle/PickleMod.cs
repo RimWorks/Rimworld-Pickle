@@ -1,9 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
-using System.Text.RegularExpressions;
-using CucumberExpressions;
-using Gherkin;
-using Gherkin.Ast;
 using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Patching;
 using RimWorks.Pickle.Web;
@@ -13,7 +8,11 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle;
 
+/// <summary>RimWorld's entry point into Pickle. Its constructor wires up logging, applies patches,
+/// discovers suites, and starts the dashboard server.</summary>
 public class PickleMod : Mod {
+  /// <summary>Initializes a new instance.</summary>
+  /// <param name="content">The mod content pack RimWorld constructs this from.</param>
   public PickleMod(ModContentPack content) : base(content) {
     // Before anything else logs: LogWatch is fed from this sink now, so an error raised
     // during startup is only recorded once the sink is registered.
@@ -24,35 +23,6 @@ public class PickleMod : Mod {
     // Last point before RimWorld applies XML patches, which is the only chance to see
     // which mod patches which def.
     PatchBackends.ApplyEarliest();
-
-    string featureText = @"Feature: Test
-  Scenario: First
-    Given step one
-  
-  Scenario: Second
-    Given step two";
-
-    StringReader reader = new StringReader(featureText);
-    GherkinDocument gherkinDoc = new Parser().Parse(reader);
-
-    int scenarioCount = 0;
-    foreach (IHasLocation child in gherkinDoc.Feature.Children) {
-      if (child is Scenario) {
-        scenarioCount++;
-      }
-    }
-
-    SimpleParameterTypeRegistry registry = new SimpleParameterTypeRegistry();
-    CucumberExpression expression = new CucumberExpression("I have cukes", registry);
-
-    Regex regex = expression.Regex;
-    Match match = regex.Match("I have cukes");
-
-    if (match.Success) {
-      Log.InfoTo("Pickle", "parsed {ScenarioCount} scenarios", [scenarioCount]);
-    } else {
-      Log.ErrorTo("Pickle", "expression match failed");
-    }
 
     List<DiscoveredSuite> suites = SuiteScanner.DiscoverSuites();
     SuiteScanner.LogSuites(suites);

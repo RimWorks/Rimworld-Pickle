@@ -24,6 +24,9 @@ public class SaveFixtureDialog : Window {
   private string fixtureName = string.Empty;
   private int selectedSuite;
 
+  /// <summary>Initializes a new instance.</summary>
+  /// <param name="suites">The mods a fixture can be saved into, one radio button each.</param>
+  /// <param name="onSaved">Called after a successful save, once the dialog has closed itself.</param>
   public SaveFixtureDialog(List<DiscoveredSuite> suites, Action? onSaved = null) {
     this.suites = suites;
     this.onSaved = onSaved;
@@ -93,6 +96,14 @@ public class SaveFixtureDialog : Window {
     }
   }
 
+  /// <summary>
+  /// Saves the running game to a scratch file first, then copies it into the suite's
+  /// fixtures directory, so a save that fails or is cancelled midway leaves no fixture behind.
+  /// </summary>
+  /// <param name="suite">The mod whose fixtures directory the save goes into.</param>
+  /// <param name="name">The fixture's name.</param>
+  /// <param name="overwrite">Whether an existing fixture with this name may be replaced.</param>
+  /// <returns><c>true</c> when the fixture was written.</returns>
   internal static bool Save(DiscoveredSuite suite, string name, bool overwrite = false) {
     string scratchName = "pickle_fixture_" + Guid.NewGuid().ToString("N");
     string scratch = GenFilePaths.FilePathForSavedGame(scratchName);

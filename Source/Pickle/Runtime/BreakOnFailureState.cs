@@ -5,5 +5,6 @@ namespace RimWorks.Pickle.Runtime;
 /// step pauses the run.
 /// </summary>
 public static class BreakOnFailureState {
+  /// <summary>Whether a failed step pauses the run instead of letting it continue.</summary>
   public static bool Enabled { get; set; }
 }

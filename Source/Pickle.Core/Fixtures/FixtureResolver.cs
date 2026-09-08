@@ -6,7 +6,16 @@ using RimWorks.Pickle.Core.Discovery;
 
 namespace RimWorks.Pickle.Core.Fixtures;
 
+/// <summary>
+/// Turns a fixture name into one file. A suite's own fixtures shadow everyone else's, so
+/// ambiguity only exists between the other suites.
+/// </summary>
 public static class FixtureResolver {
+  /// <summary>Finds the one fixture a name should resolve to, preferring the requesting suite's own copy.</summary>
+  /// <param name="fixtureName">The fixture name to resolve, without the <c>.rws</c> extension.</param>
+  /// <param name="requestingModName">The mod asking for the fixture, whose own suite is checked first.</param>
+  /// <param name="suites">Every suite that might hold a matching fixture.</param>
+  /// <returns>The resolved fixture, or an error naming what went wrong.</returns>
   public static FixtureResolution Resolve(string fixtureName, string requestingModName, IReadOnlyList<DiscoveredSuite> suites) {
     DiscoveredSuite? requestingSuite = suites.FirstOrDefault(s => string.Equals(s.ModName, requestingModName, StringComparison.OrdinalIgnoreCase));
 

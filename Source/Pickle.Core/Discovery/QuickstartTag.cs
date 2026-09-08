@@ -8,6 +8,7 @@ namespace RimWorks.Pickle.Core.Discovery;
 
 /// <summary>Reads the @quickstart: tag and reports a scenario that also loads a fixture.</summary>
 public static class QuickstartTag {
+  /// <summary>The tag prefix a scenario uses to ask for a quickstart world.</summary>
   public const string Prefix = "@quickstart:";
 
   private static readonly TimeSpan MatchTimeout = TimeSpan.FromSeconds(1);
@@ -18,6 +19,8 @@ public static class QuickstartTag {
       MatchTimeout);
 
   /// <summary>Reads the quickstart a tag set asks for, or null when none of them name one.</summary>
+  /// <param name="tags">The tag set to read.</param>
+  /// <returns>The quickstart name, or <c>null</c> when no tag names one.</returns>
   public static string? NameIn(TagSet tags) {
     string? tag = tags.FirstOrDefault(t => t.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase));
     if (tag == null) {
@@ -29,6 +32,8 @@ public static class QuickstartTag {
   }
 
   /// <summary>One line per scenario whose quickstart tag cannot be honoured, empty when fine.</summary>
+  /// <param name="plan">The parsed feature to check.</param>
+  /// <returns>One line per unhonourable quickstart tag, empty when every one is fine.</returns>
   public static IReadOnlyList<string> Problems(FeaturePlan plan) {
     List<string> problems = [];
 

@@ -14,9 +14,18 @@ using Verse;
 
 namespace RimWorks.Pickle.Web;
 
+/// <summary>The dashboard's fixture routes: saving, loading, renaming and deleting fixtures, plus the catalogue used to list them.</summary>
 public static class FixtureCommands {
+  /// <summary>True while a fixture operation is running. The dashboard and step console both refuse to start while this is set.</summary>
   public static bool IsBusy { get; private set; }
 
+  /// <summary>Runs a fixture action, if any, then returns the current fixture catalogue for every discovered mod.</summary>
+  /// <param name="action">The action to run: <c>"save"</c>, <c>"load"</c>, <c>"rename"</c> or <c>"delete"</c>, or <c>null</c> to only read the catalogue.</param>
+  /// <param name="suitePath">The fixtures directory of the mod the action targets.</param>
+  /// <param name="name">The fixture name the action targets.</param>
+  /// <param name="newName">The new name for a <c>"rename"</c> action.</param>
+  /// <param name="overwrite">Whether a <c>"save"</c> action may replace an existing fixture.</param>
+  /// <returns>The fixture catalogue as JSON.</returns>
   public static Task<string> Request(string? action, string? suitePath, string? name, string? newName, bool overwrite) {
     TaskCompletionSource<string> completion = new TaskCompletionSource<string>();
     if (!PickleDriver.Exists) {
@@ -38,6 +47,12 @@ public static class FixtureCommands {
     return completion.Task;
   }
 
+  /// <summary>Runs one fixture action against a discovered mod's fixtures directory. Refuses while a run or another fixture operation is in progress.</summary>
+  /// <param name="action">The action to run: <c>"save"</c>, <c>"load"</c>, <c>"rename"</c> or <c>"delete"</c>.</param>
+  /// <param name="suitePath">The fixtures directory of the mod the action targets.</param>
+  /// <param name="name">The fixture name the action targets.</param>
+  /// <param name="newName">The new name for a <c>"rename"</c> action.</param>
+  /// <param name="overwrite">Whether a <c>"save"</c> action may replace an existing fixture.</param>
   internal static async Task Execute(string action, string? suitePath, string? name, string? newName, bool overwrite) {
     if (IsBusy || AutorunState.IsAutorunning || RunnerWindow.Instance.IsRunning) {
       throw new InvalidOperationException("Wait for the current run or fixture operation to finish.");

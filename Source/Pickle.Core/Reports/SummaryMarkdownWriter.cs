@@ -6,7 +6,11 @@ using RimWorks.Pickle.Core.Run;
 
 namespace RimWorks.Pickle.Core.Reports;
 
+/// <summary>Renders a run's scenario results as a markdown table, for a CI job summary or PR comment.</summary>
 public static class SummaryMarkdownWriter {
+  /// <summary>Builds the markdown summary for a completed run.</summary>
+  /// <param name="results">Every scenario the run produced, in report order.</param>
+  /// <returns>A markdown document: a totals line, then one table row per scenario.</returns>
   public static string Write(IReadOnlyList<ScenarioResult> results) {
     int passed = results.Count(r => r.Outcome == ScenarioOutcome.Passed);
     int failed = results.Count(r => r.Outcome == ScenarioOutcome.Failed);

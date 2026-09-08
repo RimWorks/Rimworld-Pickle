@@ -16,32 +16,47 @@ namespace RimWorks.Pickle.Vanilla;
 public static class DevModeSteps {
   private static List<(string Name, string Category, MethodInfo Method)>? cachedActions;
 
+  /// <summary>Turns dev mode on.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
   [Given("dev mode is enabled")]
   public static void EnableDevMode(PickleContext ctx) {
     Prefs.DevMode = true;
   }
 
+  /// <summary>Turns dev mode and god mode on.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
   [Given("god mode is enabled")]
   public static void EnableGodMode(PickleContext ctx) {
     Prefs.DevMode = true;
     DebugSettings.godMode = true;
   }
 
+  /// <summary>Turns god mode off, leaving dev mode as it was.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
   [Given("god mode is disabled")]
   public static void DisableGodMode(PickleContext ctx) {
     DebugSettings.godMode = false;
   }
 
+  /// <summary>Calls a debug action by name, searching every category.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="name">The action's display name.</param>
   [When("I trigger debug action {string}")]
   public static void TriggerAction(PickleContext ctx, string name) {
     Invoke(ctx, name, null);
   }
 
+  /// <summary>Calls a debug action by name, scoped to one category so a name clash across categories does not pick the wrong one.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="name">The action's display name.</param>
+  /// <param name="category">The category the action is listed under.</param>
   [When("I trigger debug action {string} in category {string}")]
   public static void TriggerActionInCategory(PickleContext ctx, string name, string category) {
     Invoke(ctx, name, category);
   }
 
+  /// <summary>Rebuilds the debug menu's node graph and checks it produced a populated Actions node.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
   // Drives RimWorld's own graph build. One [DebugAction] whose return type cannot bind to
   // Action aborts InitActions, and then no mod's actions register, not just the culprit's.
   [Then("the debug actions menu builds")]

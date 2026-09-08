@@ -7,7 +7,9 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
+/// <summary>Opens a dialog, tags its OK button, then clicks it through the normal tag lookup path.</summary>
 public static class WidgetCaptureSmoke {
+  /// <summary>Queues the smoke to run once the game finishes its loading long event.</summary>
   public static void Run() {
     PickleDriver.EnsureExists();
     LongEventHandler.QueueLongEvent(() => _ = RunSmoke(), "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);

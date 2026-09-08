@@ -51,6 +51,9 @@ public static class RunnerTreeView {
     Scenario,
   }
 
+  /// <summary>Draws the mod, feature, and scenario tree, and scrolls to the running scenario while following a run.</summary>
+  /// <param name="outRect">The area to draw into.</param>
+  /// <param name="window">The runner window, read for the parsed features, filters, and selection, and written back to on a click.</param>
   public static void Draw(Rect outRect, RunnerWindow window) {
     if (Event.current.type == EventType.Layout) {
       RebuildRows(window);

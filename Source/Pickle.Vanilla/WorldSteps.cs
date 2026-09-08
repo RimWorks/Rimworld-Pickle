@@ -5,8 +5,12 @@ using Verse;
 
 namespace RimWorks.Pickle.Vanilla;
 
+/// <summary>Setting up a map before a scenario acts on it: colonists, things, buildings, research and game speed.</summary>
 [PickleSteps]
 public class WorldSteps {
+  /// <summary>Generates a colonist under the nickname, or does nothing when one already exists. Seeded from the scenario so a rerun spawns the same pawn.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="nickname">The pawn's nickname.</param>
   [Given("a colonist {string} exists")]
   public void ColonistExists(PickleContext ctx, string nickname) {
     bool alreadyExists = PawnsFinder.AllMaps_FreeColonists
@@ -30,6 +34,10 @@ public class WorldSteps {
     }
   }
 
+  /// <summary>Places a stack of the def in the first stockpile zone, or the map centre when there is none.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="stackCount">How many to place in the stack.</param>
+  /// <param name="defName">The thing def to make.</param>
   [Given("{int} {string} is spawned at the stockpile")]
   public void ThingSpawnedAtStockpile(PickleContext ctx, int stackCount, string defName) {
     ThingDef thingDef = RequireThingDef(defName);
@@ -42,6 +50,11 @@ public class WorldSteps {
     GenPlace.TryPlaceThing(thing, cell, map, ThingPlaceMode.Near);
   }
 
+  /// <summary>Spawns a finished building owned by the player faction, skipping the blueprint and frame stages.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="defName">The building def to place.</param>
+  /// <param name="x">The cell's x coordinate.</param>
+  /// <param name="z">The cell's z coordinate.</param>
   [Given("a {string} is built at \\({int}, {int}\\)")]
   public void BuiltAt(PickleContext ctx, string defName, int x, int z) {
     ThingDef thingDef = RequireThingDef(defName);
@@ -52,6 +65,11 @@ public class WorldSteps {
     GenSpawn.Spawn(thing, new IntVec3(x, 0, z), map, WipeMode.Vanish);
   }
 
+  /// <summary>Spawns any pawn kind, which the colonist step cannot: an animal, a raider or an anomaly entity. Uses the kind's default faction, or none if that faction was never generated for this game.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="kindDefName">The pawn kind def to generate.</param>
+  /// <param name="x">The cell's x coordinate.</param>
+  /// <param name="z">The cell's z coordinate.</param>
   // The colonist step only makes colonists. An anomaly entity, an animal or a raider is a
   // PawnKindDef, and nothing could spawn one until now.
   [When("I spawn a {string} pawn at \\({int}, {int}\\)")]
@@ -71,12 +89,18 @@ public class WorldSteps {
     GenSpawn.Spawn(pawn, cell, map);
   }
 
+  /// <summary>Marks a research project finished, with no completion dialog or letter.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="defName">The research project def.</param>
   [Given("research {string} is finished")]
   public void ResearchFinished(PickleContext ctx, string defName) {
     ResearchProjectDef project = RequireResearchProjectDef(defName);
     Find.ResearchManager.FinishProject(project, doCompletionDialog: false, researcher: null, doCompletionLetter: false);
   }
 
+  /// <summary>Sets the tick manager's speed. Accepts paused, normal, fast, superfast or ultrafast.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="speed">The speed name, case insensitive.</param>
   [Given("game speed is {word}")]
   public void GameSpeedIs(PickleContext ctx, string speed) {
     TimeSpeed timeSpeed = speed.ToLowerInvariant() switch {

@@ -9,11 +9,21 @@ namespace RimWorks.Pickle.Vanilla;
 /// <summary>Bills on a workbench, and the work priorities that decide who fills them.</summary>
 [PickleSteps]
 public class BillSteps {
+  /// <summary>Adds a bill for a recipe to the first bench on the map that takes bills and can make it.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="recipeDefName">The recipe to add.</param>
+  /// <param name="benchDefName">The workbench def to add it to.</param>
   [When("I add bill {string} to the {string}")]
   public void AddBill(PickleContext ctx, string recipeDefName, string benchDefName) {
     AddBillTo(ctx, recipeDefName, RequireBench(ctx, benchDefName));
   }
 
+  /// <summary>Adds a bill for a recipe to the bench standing at a specific cell.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="recipeDefName">The recipe to add.</param>
+  /// <param name="benchDefName">The workbench def expected at the cell.</param>
+  /// <param name="x">The cell's x coordinate.</param>
+  /// <param name="z">The cell's z coordinate.</param>
   [When("I add bill {string} to the {string} at \\({int}, {int}\\)")]
   public void AddBillAt(PickleContext ctx, string recipeDefName, string benchDefName, int x, int z) {
     ThingDef def = DefLookup.Require<ThingDef>(benchDefName);
@@ -24,6 +34,10 @@ public class BillSteps {
     AddBillTo(ctx, recipeDefName, (IBillGiver)thing);
   }
 
+  /// <summary>Asserts a bench's bill stack holds a specific number of bills.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="benchDefName">The workbench def to check.</param>
+  /// <param name="expected">The bill count expected.</param>
   [Then("the {string} has {int} bills")]
   public void AssertBillCount(PickleContext ctx, string benchDefName, int expected) {
     IBillGiver bench = RequireBench(ctx, benchDefName);
@@ -34,6 +48,12 @@ public class BillSteps {
         $"the {benchDefName} should have {expected} bills; has {actual}. {DescribeBills(bench)}");
   }
 
+  /// <summary>Sets a pawn's priority for a work type, turning manual priorities on first since the game
+  /// collapses anything but 0 or 3 while they are off.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to change.</param>
+  /// <param name="workDefName">The work type to set.</param>
+  /// <param name="priority">The priority to set, 0 to disable it.</param>
   [When("I set {string} priority {string} to {int}")]
   public void SetPriority(PickleContext ctx, string nickname, string workDefName, int priority) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -51,6 +71,11 @@ public class BillSteps {
     pawn.workSettings.SetPriority(work, priority);
   }
 
+  /// <summary>Asserts a pawn's priority for a work type.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to check.</param>
+  /// <param name="workDefName">The work type to check.</param>
+  /// <param name="expected">The priority expected.</param>
   [Then("{string} priority {string} is {int}")]
   public void AssertPriority(PickleContext ctx, string nickname, string workDefName, int expected) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -65,6 +90,10 @@ public class BillSteps {
         $"pawn '{nickname}' priority for '{workDefName}' should be {expected}; is {actual}{disabled}");
   }
 
+  /// <summary>Waits for a recipe's product count on the map to rise above what it was when the wait started.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="recipeDefName">The recipe whose product to watch for.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   // A bill has no finished event, so this watches the recipe's product instead. The count is
   // read first, because the map may already hold some.
   [When("I wait for bill {string} to finish", TimeoutSeconds = 125f)]

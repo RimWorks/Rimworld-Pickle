@@ -23,7 +23,10 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Run;
 
+/// <summary>Runs a feature's scenarios one step at a time against the live game, tracking progress,
+/// retries, breaks and cancellation for whatever is watching.</summary>
 public class RunSession {
+  /// <summary>The scenario seed used when neither <c>-pickle-seed</c> nor an <c>@seed:</c> tag sets one.</summary>
   // Arbitrary fixed constant so a run with no -pickle-seed is still deterministic
   // run to run, matching what -pickle-seed=42 would produce.
   public const int DefaultSeed = 42;
@@ -48,6 +51,13 @@ public class RunSession {
   private string currentOwningMod = string.Empty;
   private TagSet currentScenarioTags = new TagSet(Array.Empty<string>());
 
+  /// <summary>Initializes a new instance.</summary>
+  /// <param name="stepTable">The step definitions to resolve each scenario's steps against.</param>
+  /// <param name="driver">The driver that pumps waits and runs steps on the main thread.</param>
+  /// <param name="suites">The discovered suites, used to resolve a fixture against the mod that owns it.</param>
+  /// <param name="stepsTypes">The step classes to scan for <c>[BeforeScenario]</c> and <c>[AfterScenario]</c> hooks.</param>
+  /// <param name="runSeed">The scenario seed used when a scenario has no <c>@seed:</c> tag of its own.</param>
+  /// <param name="runRetries">How many extra attempts a failed scenario gets when it has no <c>@retry:</c> tag of its own.</param>
   public RunSession(
       StepTable stepTable,
       PickleDriver driver,
@@ -69,46 +79,64 @@ public class RunSession {
     RegisterBuiltInEngineSteps();
   }
 
+  /// <summary>The name of the feature currently running.</summary>
   public string CurrentFeatureName { get; private set; } = string.Empty;
 
+  /// <summary>The name of the scenario currently running.</summary>
   public string CurrentScenarioName { get; private set; } = string.Empty;
 
+  /// <summary>The scenario currently running, or <c>null</c> between scenarios.</summary>
   public ScenarioPlan? CurrentScenario { get; private set; }
 
+  /// <summary>The feature file path the current scenario came from, or <c>null</c> when it has none.</summary>
   public string? CurrentSourcePath { get; private set; }
 
+  /// <summary>The keyword and text of the step currently running, for a watcher to display.</summary>
   public string CurrentStepDisplay { get; private set; } = string.Empty;
 
+  /// <summary>How many scenarios have passed so far in this run.</summary>
   public int PassedCount { get; private set; }
 
+  /// <summary>How many scenarios have failed so far in this run.</summary>
   public int FailedCount { get; private set; }
 
+  /// <summary>Whether the run is stopped waiting on <see cref="OnBreak"/> after a failed step.</summary>
   public bool IsPausedForBreak { get; private set; }
 
+  /// <summary>Whether a human paused the run through <see cref="RequestPause"/>.</summary>
   public bool IsManuallyPaused { get; private set; }
 
+  /// <summary>Whether a pause has been asked for but the run has not reached a safe point to honor it yet.</summary>
   public bool PauseRequested { get; private set; }
 
+  /// <summary>Whether the run is stopped for either a break-on-failure or a manual pause.</summary>
   public bool IsPaused => IsPausedForBreak || IsManuallyPaused;
 
+  /// <summary>Whether <see cref="RequestCancel"/> has been called for this run.</summary>
   public bool CancelRequested { get; private set; }
 
+  /// <summary>Called when a step fails with break-on-failure armed. The run stays paused until the
+  /// returned <see cref="Task"/> completes.</summary>
   // Fires when a step fails with break-on-failure armed; the run blocks on the Task.
   // The handler must wait via PickleDriver.WaitUntil or the main thread stops pumping.
   public Func<(string FeatureName, string ScenarioName, string? SourcePath, int ScenarioIndex, StepResult FailingStep), Task>? OnBreak { get; set; }
 
+  /// <summary>Called on the main thread whenever the current step or pause state changes.</summary>
   // Fires on the main thread whenever the current step changes, so a watcher can
   // republish run state without polling live fields from another thread.
   public Action? OnProgress { get; set; }
 
+  /// <summary>The step results collected so far in the scenario currently running.</summary>
   // Steps finished so far in the scenario currently running, so a watcher can show
   // per-step status before the scenario completes and produces a ScenarioResult.
   public IReadOnlyList<StepResult> CurrentStepResults => currentStepResults;
 
+  /// <summary>Asks the run to stop after the current step, skipping the rest of the scenario and feature.</summary>
   public void RequestCancel() {
     CancelRequested = true;
   }
 
+  /// <summary>Asks the run to pause once it reaches a safe point, unless it is already stopped or unattended.</summary>
   public void RequestPause() {
     if (!CancelRequested && !IsPaused && !AutorunState.IsAutorunning) {
       PauseRequested = true;
@@ -116,6 +144,7 @@ public class RunSession {
     }
   }
 
+  /// <summary>Clears a pending pause request, letting a paused run continue.</summary>
   public void Resume() {
     PauseRequested = false;
   }
@@ -124,16 +153,29 @@ public class RunSession {
   /// Runs one step outside a scenario, for the console. The caller owns the context, so
   /// state set by one step is still there for the next one.
   /// </summary>
+  /// <param name="ctx">The context to run the step against, shared across calls by the caller.</param>
+  /// <param name="text">The step text to resolve and run, treated as a <c>When</c> step.</param>
+  /// <returns>The step's result.</returns>
   public Task<StepResult> RunOneStep(PickleContext ctx, string text) {
     currentScenarioTags = new TagSet(Array.Empty<string>());
     return RunStep(ctx, new StepPlan("When", text, Array.Empty<IReadOnlyList<string>>(), null, 0));
   }
 
   /// <summary>The step class instances built so far, so a caller can collect state dumps.</summary>
+  /// <returns>Each instantiated step class type, paired with its instance.</returns>
   public IReadOnlyList<KeyValuePair<Type, object>> ScenarioInstances() {
     return [.. scenarioInstanceCache];
   }
 
+  /// <summary>Runs every scenario in a feature in order, skipping deselected, <c>@wip</c> or
+  /// requirement-missing ones, and retrying a failed one per its <c>@retry:</c> tag.</summary>
+  /// <param name="plan">The feature to run.</param>
+  /// <param name="owningModName">The mod the feature belongs to, used to resolve its fixtures.</param>
+  /// <param name="includeWip">Whether <c>@wip</c> scenarios run instead of being skipped.</param>
+  /// <param name="onScenarioCompleted">Called with each scenario's result as soon as it finishes.</param>
+  /// <param name="scenarioFilter">When given, a scenario this returns <c>false</c> for is skipped
+  /// entirely and produces no result.</param>
+  /// <returns>Every scenario's result, including skipped ones, in the order they ran.</returns>
   public async Task<List<ScenarioResult>> RunFeature(
       FeaturePlan plan,
       string owningModName,

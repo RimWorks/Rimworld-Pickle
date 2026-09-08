@@ -87,7 +87,9 @@ dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
 
 # Modifiers
-dotnet_style_require_accessibility_modifiers = always:error
+# for_non_interface_members, not always: interface members are public by definition and
+# every interface here omits the keyword.
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:error
 csharp_preferred_modifier_order = public, private, protected, internal, file, static, extern, new, virtual, abstract, sealed, override, readonly, unsafe, required, volatile, async:warning
 dotnet_style_readonly_field = true:warning
 
@@ -139,6 +141,15 @@ dotnet_naming_rule.constants_pascal.symbols = constant_symbol
 dotnet_naming_rule.constants_pascal.style = pascal_style
 dotnet_naming_symbols.constant_symbol.applicable_kinds = field
 dotnet_naming_symbols.constant_symbol.required_modifiers = const
+
+# private static readonly is PascalCase across all four RimWorks mods, so the camelCase
+# rule below has to skip it. Must come first: the first matching rule wins.
+dotnet_naming_rule.private_static_readonly_pascal.severity = warning
+dotnet_naming_rule.private_static_readonly_pascal.symbols = private_static_readonly_symbol
+dotnet_naming_rule.private_static_readonly_pascal.style = pascal_style
+dotnet_naming_symbols.private_static_readonly_symbol.applicable_kinds = field
+dotnet_naming_symbols.private_static_readonly_symbol.applicable_accessibilities = private, internal
+dotnet_naming_symbols.private_static_readonly_symbol.required_modifiers = static, readonly
 
 dotnet_naming_rule.private_fields_camel.severity = warning
 dotnet_naming_rule.private_fields_camel.symbols = private_field_symbol
@@ -269,7 +280,7 @@ dotnet_diagnostic.CA2208.severity = none # argument exception needs paramName �
 dotnet_diagnostic.CA2219.severity = none # do not throw from finally — a throw inside finally is itself an IL shape under test
 dotnet_diagnostic.CA1861.severity = none # hoist constant array args — one-off assertion and setup arrays read better inline
 
-[**/*.Tests/**/*.cs]
+[**/*.Tests/**.cs]
 dotnet_diagnostic.SA0001.severity = none
 dotnet_diagnostic.SA1600.severity = none
 dotnet_diagnostic.SA1601.severity = none
@@ -411,6 +422,7 @@ dotnet_diagnostic.S3885.severity = none # loads a mod's step dll from a game-sup
 
 [Source/Pickle/UI/RunnerWindow.cs]
 dotnet_diagnostic.S3885.severity = none # same, from the runner window's rescan
+dotnet_diagnostic.IDE0032.severity = none # VisibleScenarios is a non-null cache its own invalidation sets back to null, which an auto property cannot express
 
 [Source/Pickle/Patching/MissingBackendNotice.cs]
 dotnet_diagnostic.S1075.severity = none # the Workshop links are the message, not configuration

@@ -12,9 +12,13 @@ using Verse;
 
 namespace RimWorks.Pickle.UI;
 
+/// <summary>The right-hand panel of the runner window: one scenario's steps, tags, and, once it has run, its outcome and evidence.</summary>
 public static class RunnerDetailView {
   private static readonly Regex FixtureStepPattern = new Regex("the save \"([^\"]+)\" is loaded", RegexOptions.None, TimeSpan.FromSeconds(2));
 
+  /// <summary>Draws the panel for whichever scenario is selected in the tree, or a prompt when nothing is selected.</summary>
+  /// <param name="outRect">The area to draw into.</param>
+  /// <param name="window">The runner window, read for the current selection, filters, and live session.</param>
   public static void Draw(Rect outRect, RunnerWindow window) {
     if (!window.TryGetSelectedScenario(out DiscoveredSuite suite, out FeaturePlan plan, out ScenarioPlan scenario, out int index)) {
       Text.Anchor = TextAnchor.MiddleCenter;

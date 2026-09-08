@@ -23,6 +23,10 @@ public class BreakCard : Window {
   private readonly string scenarioName;
   private readonly StepResult failingStep;
 
+  /// <summary>Initializes a new instance.</summary>
+  /// <param name="featureName">The feature the failing scenario belongs to.</param>
+  /// <param name="scenarioName">The scenario that failed.</param>
+  /// <param name="failingStep">The step that failed, and the message to show for it.</param>
   public BreakCard(string featureName, string scenarioName, StepResult failingStep) {
     this.featureName = featureName;
     this.scenarioName = scenarioName;
@@ -37,6 +41,7 @@ public class BreakCard : Window {
     absorbInputAroundWindow = false;
   }
 
+  /// <summary>What the user chose on the card, or <c>null</c> while it is still waiting on them.</summary>
   public BreakCardDecision? Decision { get; internal set; }
 
   /// <inheritdoc/>

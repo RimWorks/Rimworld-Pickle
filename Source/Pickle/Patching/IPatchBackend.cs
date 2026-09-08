@@ -6,11 +6,11 @@ namespace RimWorks.Pickle.Patching;
 /// </summary>
 public interface IPatchBackend {
   /// <summary>Name used in the log line that reports which backend won.</summary>
-  public string Name { get; }
+  string Name { get; }
 
   /// <summary>Applies every Pickle hook. Called once, on the winning backend only.</summary>
-  public void Apply();
+  void Apply();
 
   /// <summary>Hooks that must land before RimWorld applies XML patches at load.</summary>
-  public void ApplyEarly();
+  void ApplyEarly();
 }

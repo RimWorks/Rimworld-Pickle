@@ -48,6 +48,7 @@ public static class DashboardStrings {
   ];
 
   /// <summary>Writes the active language as a JSON object of key to text.</summary>
+  /// <returns>The translated strings as a JSON object.</returns>
   public static string BuildJson() {
     StringBuilder json = new StringBuilder();
     json.Append('{');

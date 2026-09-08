@@ -31,8 +31,10 @@ public class PickleDriver : MonoBehaviour {
   private Texture2D? frameScratch;
   private int mainThreadId;
 
+  /// <summary>Whether a driver instance has already been created for this run.</summary>
   public static bool Exists => instance != null;
 
+  /// <summary>The single driver for this run, creating it on first access.</summary>
   public static PickleDriver Instance {
     get {
       EnsureExists();
@@ -40,10 +42,12 @@ public class PickleDriver : MonoBehaviour {
     }
   }
 
+  /// <summary>Delegates invoked once per rendered frame, such as the filmstrip sampler.</summary>
   // Runs once per rendered frame. Multicast on purpose: the filmstrip samples here and
   // a camera follow steers here, and both can be live at the same time.
   public Action? FrameHook { get; set; }
 
+  /// <summary>Creates the driver's <see cref="GameObject"/> if one does not already exist.</summary>
   public static void EnsureExists() {
     if (instance != null) {
       return;
@@ -54,18 +58,31 @@ public class PickleDriver : MonoBehaviour {
     instance = gameObject.AddComponent<PickleDriver>();
   }
 
+  /// <summary>Queues an action to run on the main thread during the next <c>Update</c>.</summary>
+  /// <param name="action">The action to run.</param>
   public static void Post(Action action) {
     Instance.mainThreadQueue.Enqueue(action);
   }
 
+  /// <summary>Subscribes a delegate to <see cref="FrameHook"/>.</summary>
+  /// <param name="hook">The delegate to add.</param>
   public void AddFrameHook(Action hook) {
     FrameHook += hook;
   }
 
+  /// <summary>Unsubscribes a delegate from <see cref="FrameHook"/>.</summary>
+  /// <param name="hook">The delegate to remove.</param>
   public void RemoveFrameHook(Action hook) {
     FrameHook -= hook;
   }
 
+  /// <summary>
+  /// Waits for the game clock to advance <paramref name="n"/> ticks, unpausing it first if
+  /// watch mode left it paused. Faults immediately when no game is running.
+  /// </summary>
+  /// <param name="n">How many ticks to wait for.</param>
+  /// <param name="scope">An owner that can cancel this wait early through <see cref="FaultScope"/>.</param>
+  /// <returns>A wait that completes once the ticks pass.</returns>
   public PickleWait WaitTicks(int n, object? scope = null) {
     if (Current.Game == null) {
       return new PickleWait(new InvalidOperationException(
@@ -89,6 +106,10 @@ public class PickleDriver : MonoBehaviour {
     return new PickleWait(wait);
   }
 
+  /// <summary>Waits for <paramref name="n"/> more rendered frames to pass.</summary>
+  /// <param name="n">How many frames to wait for.</param>
+  /// <param name="scope">An owner that can cancel this wait early through <see cref="FaultScope"/>.</param>
+  /// <returns>A wait that completes once the frames pass.</returns>
   public PickleWait WaitFrames(int n, object? scope = null) {
     PendingWait wait = new PendingWait(PendingWaitKind.Frames) {
       TargetFrame = frameCounter + n,
@@ -100,6 +121,11 @@ public class PickleDriver : MonoBehaviour {
     return new PickleWait(wait);
   }
 
+  /// <summary>Waits until a condition is true, or faults with a <see cref="TimeoutException"/>.</summary>
+  /// <param name="cond">The condition to poll each frame. An exception it throws faults the wait.</param>
+  /// <param name="timeoutSeconds">How long to keep polling before timing out.</param>
+  /// <param name="scope">An owner that can cancel this wait early through <see cref="FaultScope"/>.</param>
+  /// <returns>A wait that completes once <paramref name="cond"/> returns <c>true</c>.</returns>
   public PickleWait WaitUntil(Func<bool> cond, float timeoutSeconds, object? scope = null) {
     PendingWait wait = new PendingWait(PendingWaitKind.Until) {
       Condition = cond,
@@ -113,6 +139,9 @@ public class PickleDriver : MonoBehaviour {
     return new PickleWait(wait);
   }
 
+  /// <summary>Captures a full resolution PNG at the end of the current frame.</summary>
+  /// <param name="filePath">The path to write the screenshot to.</param>
+  /// <returns>A wait that completes once the file is written.</returns>
   public PickleWait CaptureScreenshot(string filePath) {
     PendingWait wait = new PendingWait(PendingWaitKind.Frames) {
       TargetFrame = frameCounter,
@@ -126,12 +155,16 @@ public class PickleDriver : MonoBehaviour {
     return new PickleWait(wait);
   }
 
+  /// <summary>Captures a scaled down jpeg for the filmstrip without registering a wait.</summary>
+  /// <param name="filePath">The path to write the frame to.</param>
+  /// <param name="maxWidth">The frame's maximum width; height scales to match the aspect ratio.</param>
   // no PendingWait: the filmstrip fires frames as steps finish and nothing awaits them,
   // so registering waits here would leave entries for FaultAllPending to trip over
   public void CaptureFrameDetached(string filePath, int maxWidth) {
     StartCoroutine(CaptureFrameCoroutine(filePath, maxWidth));
   }
 
+  /// <summary>Releases the render texture and scratch texture the filmstrip capture reuses.</summary>
   public void ReleaseFrameBuffers() {
     if (frameTarget != null) {
       RenderTexture.ReleaseTemporary(frameTarget);
@@ -144,6 +177,9 @@ public class PickleDriver : MonoBehaviour {
     }
   }
 
+  /// <summary>Fails every pending wait registered with a given scope, freeing it early.</summary>
+  /// <param name="scope">The scope object waits were registered with, compared by reference.</param>
+  /// <param name="exception">The exception to fault each matching wait with.</param>
   public void FaultScope(object scope, Exception exception) {
     List<PendingWait> faulted = [];
     lock (waitsGate) {
@@ -163,6 +199,8 @@ public class PickleDriver : MonoBehaviour {
     }
   }
 
+  /// <summary>Fails every pending wait, regardless of scope. Used when a run is shutting down.</summary>
+  /// <param name="exception">The exception to fault every wait with.</param>
   public void FaultAllPending(Exception exception) {
     List<PendingWait> faulted = [];
     lock (waitsGate) {

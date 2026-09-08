@@ -6,12 +6,17 @@ using RimWorks.Pickle.Core.Run;
 
 namespace RimWorks.Pickle.Core.Reports;
 
+/// <summary>Renders a run as Cucumber's NDJSON messages format, for tools that already speak that protocol.</summary>
 public static class MessagesNdjsonWriter {
   private const string MetaLine =
       "{\"meta\":{\"protocolVersion\":\"22.0.0\",\"implementation\":{\"name\":\"Pickle\",\"version\":\"1.0.0\"}}}";
 
   private const string Timestamp = "{\"seconds\":0,\"nanos\":0}";
 
+  /// <summary>Builds the NDJSON message stream for a completed run, one JSON object per line.</summary>
+  /// <param name="results">Every scenario the run produced, in report order.</param>
+  /// <param name="readAttachmentBytes">Resolves an attachment's content to its raw bytes, used to inline a screenshot as base64. Attachments render as plain text when this is <c>null</c> or returns <c>null</c>.</param>
+  /// <returns>The message stream, newline-joined.</returns>
   public static string Write(IReadOnlyList<ScenarioResult> results, Func<string, byte[]?>? readAttachmentBytes = null) {
     List<string> lines = new List<string> { MetaLine };
     int nextId = 1;

@@ -21,6 +21,7 @@ public static class MainMenuRunnerButton {
   private static readonly FieldInfo? WebBackgroundYMax =
       typeof(MainMenuDrawer).GetField("webBackgroundYMax", BindingFlags.NonPublic | BindingFlags.Static);
 
+  /// <summary>Draws the button, or does nothing off the main menu or when the language button's position cannot be read.</summary>
   /// <param name="rect">The rect DoMainMenuControls was given, in screen space.</param>
   public static void Draw(Rect rect) {
     // Same gate the language button uses: in-game the runner is on the debug menu instead.

@@ -13,7 +13,10 @@ namespace RimWorks.Pickle.Patching;
 /// </summary>
 [StaticConstructorOnStartup]
 public static class PatchBackends {
+  /// <summary>The priority Concord backends register with, high enough to always beat Harmony.</summary>
   public const int ConcordPriority = 100;
+
+  /// <summary>The priority Harmony backends register with.</summary>
   public const int HarmonyPriority = 0;
 
   private static readonly List<(IPatchBackend Backend, int Priority)> Registered = new();
@@ -26,10 +29,15 @@ public static class PatchBackends {
     LongEventHandler.ExecuteWhenFinished(ApplyBest);
   }
 
+  /// <summary>Adds a backend to the pool <see cref="ApplyBest"/> picks from. Backends call this from their own static constructors.</summary>
+  /// <param name="backend">The backend to register.</param>
+  /// <param name="priority">Its priority; the highest registered value wins.</param>
   public static void Register(IPatchBackend backend, int priority) {
     Registered.Add((backend, priority));
   }
 
+  /// <summary>Finds and applies the highest priority backend by scanning loaded assemblies, before any backend has
+  /// registered itself. Falls to the next backend if one throws.</summary>
   // Runs from PickleMod's constructor, which is the last point before RimWorld applies XML
   // patches. No static constructor has fired yet, so the backends are found by scanning.
   public static void ApplyEarliest() {
@@ -65,6 +73,7 @@ public static class PatchBackends {
     Log.ErrorTo("Pickle", "every patching backend failed to apply early hooks; attribution is off.");
   }
 
+  /// <summary>Applies the highest priority registered backend, falling to the next one if it throws. Runs once, after every static constructor has fired.</summary>
   public static void ApplyBest() {
     if (applied) {
       return;

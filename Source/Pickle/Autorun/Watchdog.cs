@@ -33,6 +33,11 @@ public static class Watchdog {
   // flight. Floored above the scenario timeout so a slow fixture load cannot trip it.
   private static int IdleTimeoutSeconds => Math.Max(scenarioTimeoutSeconds, 60);
 
+  /// <summary>Arms the watchdog and starts its polling timer. Call once, before the run begins.</summary>
+  /// <param name="scenarioTimeoutSeconds">Seconds a single scenario gets before the run is killed.</param>
+  /// <param name="runTimeoutMinutes">Minutes the whole run gets before it is killed.</param>
+  /// <param name="reportDir">Where to write whatever results exist if the watchdog trips.</param>
+  /// <param name="logPath">File to append the trip message to, since Verse.Log is off limits here.</param>
   public static void Start(int scenarioTimeoutSeconds, int runTimeoutMinutes, string reportDir, string logPath) {
     Watchdog.scenarioTimeoutSeconds = scenarioTimeoutSeconds;
     Watchdog.runTimeoutMinutes = runTimeoutMinutes;
@@ -49,11 +54,15 @@ public static class Watchdog {
     timer = new Timer(_ => CheckTimeouts(), null, 1000, 1000);
   }
 
+  /// <summary>Stops the polling timer. The watchdog cannot trip once this returns.</summary>
   public static void Stop() {
     timer?.Dispose();
     timer = null;
   }
 
+  /// <summary>Marks a scenario as started, so timeouts and trip messages can name it.</summary>
+  /// <param name="featureName">The feature the scenario belongs to.</param>
+  /// <param name="scenarioName">The scenario's own name.</param>
   public static void BeginScenario(string featureName, string scenarioName) {
     lock (StateLock) {
       currentFeature = featureName;
@@ -64,6 +73,7 @@ public static class Watchdog {
     }
   }
 
+  /// <summary>Clears the current scenario, so the idle timeout takes over until the next one starts.</summary>
   public static void EndScenario() {
     lock (StateLock) {
       currentFeature = null;
@@ -73,6 +83,8 @@ public static class Watchdog {
     }
   }
 
+  /// <summary>Records the last thing the run did, resetting the idle and per-scenario clocks.</summary>
+  /// <param name="what">A short description of the activity, used in a trip message.</param>
   public static void Heartbeat(string what) {
     lock (StateLock) {
       lastStep = what;
@@ -80,6 +92,8 @@ public static class Watchdog {
     }
   }
 
+  /// <summary>Snapshots results so far, so a trip can still write a report for what finished.</summary>
+  /// <param name="results">The scenario results completed up to now.</param>
   public static void RecordProgress(List<ScenarioResult> results) {
     lock (StateLock) {
       lastProgress = [.. results];

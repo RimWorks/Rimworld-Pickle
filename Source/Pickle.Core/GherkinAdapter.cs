@@ -6,7 +6,14 @@ using RimWorks.Pickle.Core.Model;
 
 namespace RimWorks.Pickle.Core;
 
+/// <summary>Turns a parsed Gherkin document into the run model Pickle understands, expanding
+/// scenario outlines into one concrete scenario per example row along the way.</summary>
 public static class GherkinAdapter {
+  /// <summary>Converts a parsed feature file into a <see cref="FeaturePlan"/>.</summary>
+  /// <param name="doc">The Gherkin document parsed from the feature file.</param>
+  /// <param name="sourcePath">The path the feature file was read from, kept for filtering
+  /// and reporting. <c>null</c> when there is none.</param>
+  /// <returns>The feature plan, with no scenarios when the document declares no feature.</returns>
   public static FeaturePlan Adapt(GherkinDocument doc, string? sourcePath) {
     if (doc.Feature == null) {
       return new FeaturePlan(string.Empty, new TagSet(Array.Empty<string>()), Array.Empty<ScenarioPlan>(), sourcePath);

@@ -4,6 +4,8 @@ using Verse;
 
 namespace RimWorks.Pickle;
 
+/// <summary>Watches for logged errors while a scenario runs, so the runner can fail one that
+/// caused no assert to fail but still logged an error.</summary>
 public static class LogWatch {
   private static readonly object Gate = new object();
   private static readonly CircularBuffer<string> ErrorBuffer = new CircularBuffer<string>(50);
@@ -14,6 +16,7 @@ public static class LogWatch {
   private static bool armed;
   private static long totalRecorded;
 
+  /// <summary>Whether a scenario is currently watching for errors.</summary>
   public static bool Armed {
     get {
       lock (Gate) {
@@ -22,6 +25,7 @@ public static class LogWatch {
     }
   }
 
+  /// <summary>Every error recorded since the last <see cref="Arm"/>, oldest first.</summary>
   public static IReadOnlyList<string> ErrorsSinceArmed {
     get {
       lock (Gate) {
@@ -30,6 +34,7 @@ public static class LogWatch {
     }
   }
 
+  /// <summary>How many errors are currently held since the last <see cref="Arm"/>.</summary>
   public static int ErrorCount {
     get {
       lock (Gate) {
@@ -50,6 +55,10 @@ public static class LogWatch {
     }
   }
 
+  /// <summary>Errors recorded after a given <see cref="Mark"/>. A burst bigger than the 50-entry
+  /// buffer reports only its tail.</summary>
+  /// <param name="mark">A value previously read from <see cref="Mark"/>.</param>
+  /// <returns>The errors logged since <paramref name="mark"/>, oldest first.</returns>
   public static IReadOnlyList<string> ErrorsSince(long mark) {
     lock (Gate) {
       long since = totalRecorded - mark;
@@ -64,6 +73,7 @@ public static class LogWatch {
     }
   }
 
+  /// <summary>Clears the buffer and starts recording errors, for a scenario about to run.</summary>
   public static void Arm() {
     lock (Gate) {
       ErrorBuffer.Clear();
@@ -71,12 +81,16 @@ public static class LogWatch {
     }
   }
 
+  /// <summary>Stops recording errors, for a scenario that has finished.</summary>
   public static void Disarm() {
     lock (Gate) {
       armed = false;
     }
   }
 
+  /// <summary>Records a logged error, unless nothing is armed or the message is known engine
+  /// noise. Called from the log sink for every error the game logs.</summary>
+  /// <param name="message">The rendered log message.</param>
   public static void RecordError(string message) {
     lock (Gate) {
       if (!armed || IsIgnored(message)) {

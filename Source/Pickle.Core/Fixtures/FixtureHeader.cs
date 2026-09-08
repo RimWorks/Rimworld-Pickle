@@ -25,19 +25,28 @@ public class FixtureHeader {
 
   private static readonly Regex ListItemPattern = new Regex("<li>", RegexOptions.None, RegexTimeout);
 
+  /// <summary>Initializes a new instance.</summary>
+  /// <param name="gameVersion">The version the save was written with, or <c>null</c> if unreadable.</param>
+  /// <param name="scenarioName">The scenario's name, or <c>null</c> if unreadable.</param>
+  /// <param name="modCount">How many mods the save lists as loaded.</param>
   public FixtureHeader(string? gameVersion, string? scenarioName, int modCount) {
     GameVersion = gameVersion;
     ScenarioName = scenarioName;
     ModCount = modCount;
   }
 
+  /// <summary>The version the save was written with, or <c>null</c> when it could not be read.</summary>
   public string? GameVersion { get; }
 
+  /// <summary>The scenario's name, or <c>null</c> when it could not be read.</summary>
   public string? ScenarioName { get; }
 
+  /// <summary>How many mods the save lists as loaded.</summary>
   public int ModCount { get; }
 
   /// <summary>An unreadable or non-save file reads as an empty header rather than throwing.</summary>
+  /// <param name="path">The save file to read the header from.</param>
+  /// <returns>The header, empty when the file could not be read.</returns>
   public static FixtureHeader Read(string path) {
     string head;
     try {

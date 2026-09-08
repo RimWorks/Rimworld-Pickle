@@ -23,6 +23,14 @@ public static class RunnerSnapshot {
   private const string TrueLiteral = "true";
   private const string FalseLiteral = "false";
 
+  /// <summary>Builds the JSON document the dashboard's <c>/state</c> route serves: run status plus the whole scenario tree.</summary>
+  /// <param name="parsedFeatures">Every discovered feature, paired with the suite it belongs to.</param>
+  /// <param name="results">The finished result for each scenario run so far, keyed by feature path and scenario index.</param>
+  /// <param name="session">The session driving the current run, or <c>null</c> when idle.</param>
+  /// <param name="isRunning">Whether a run is currently in progress.</param>
+  /// <param name="isSelected">Reports whether a scenario is selected, or <c>null</c> when the snapshot has no controls to reflect.</param>
+  /// <param name="runner">The runner window's current filters and selection, or <c>null</c> outside the runner window.</param>
+  /// <returns>The snapshot as a JSON string.</returns>
   public static string Build(
       List<(DiscoveredSuite Suite, FeaturePlan Plan)> parsedFeatures,
       IReadOnlyDictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> results,

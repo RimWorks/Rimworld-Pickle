@@ -8,7 +8,13 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle;
 
+/// <summary>Finds step definitions across loaded assemblies, whether declared as attributed
+/// methods or registered fluently through a <see cref="PickleEntryAttribute"/> class.</summary>
 public static class StepScanner {
+  /// <summary>Builds a step table from every <see cref="PickleStepsAttribute"/> class in the given
+  /// assemblies, running entry points first so fluent registrations land too.</summary>
+  /// <param name="assemblies">The assemblies to scan.</param>
+  /// <returns>A step table ready to resolve step text against.</returns>
   public static StepTable PopulateStepTable(IEnumerable<Assembly> assemblies) {
     StepTable table = new StepTable();
 
@@ -26,6 +32,10 @@ public static class StepScanner {
     return table;
   }
 
+  /// <summary>Finds every class carrying <see cref="PickleStepsAttribute"/>, for callers that need
+  /// the types themselves rather than the compiled step table.</summary>
+  /// <param name="assemblies">The assemblies to scan.</param>
+  /// <returns>The matching step classes.</returns>
   public static List<Type> GetPickleStepsTypes(IEnumerable<Assembly> assemblies) {
     List<Type> stepsTypes = new();
 
@@ -41,6 +51,10 @@ public static class StepScanner {
     return stepsTypes;
   }
 
+  /// <summary>Calls the static <c>Init()</c> on every <see cref="PickleEntryAttribute"/> class, then
+  /// drains whatever fluent steps that registered into the table.</summary>
+  /// <param name="assemblies">The assemblies to scan for entry points.</param>
+  /// <param name="table">The step table the drained registrations are added to.</param>
   public static void InvokeEntryPoints(IEnumerable<Assembly> assemblies, StepTable table) {
     foreach (Assembly assembly in assemblies) {
       Type[] types = GetLoadableTypes(assembly);

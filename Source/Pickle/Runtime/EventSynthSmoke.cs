@@ -9,7 +9,12 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
+/// <summary>
+/// Proves synthetic key and click input against a real dialog: a key event closes it through
+/// the UIRootOnGUI reinvoke path, then a click closes it through the real OS input backend.
+/// </summary>
 public static class EventSynthSmoke {
+  /// <summary>Queues the smoke on the loading long event, so it runs once the game is ready for windows.</summary>
   public static void Run() {
     PickleDriver.EnsureExists();
     LongEventHandler.QueueLongEvent(() => _ = RunSmoke(), "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);

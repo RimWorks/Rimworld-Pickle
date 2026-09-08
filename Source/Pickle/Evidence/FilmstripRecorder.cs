@@ -13,8 +13,10 @@ namespace RimWorks.Pickle.Evidence;
 /// instead of showing one still from the moment it failed.
 /// </summary>
 public sealed class FilmstripRecorder {
+  /// <summary>The scenario tag that turns filming on.</summary>
   public const string Tag = "@film";
 
+  /// <summary>The capture rate this recorder aims for, in frames per second.</summary>
   // Ten, not thirty: a software renderer cannot read back and encode faster than that.
   // The game rarely hits even this, so the encoder gets the rate measured per scenario.
   public const int TargetFramesPerSecond = 10;
@@ -34,6 +36,10 @@ public sealed class FilmstripRecorder {
   private int frameIndex;
   private bool capped;
 
+  /// <summary>Initializes a new instance.</summary>
+  /// <param name="ctx">The scenario context to attach the finished filmstrip to.</param>
+  /// <param name="featureName">The feature the scenario belongs to.</param>
+  /// <param name="scenarioName">The scenario being filmed.</param>
   public FilmstripRecorder(PickleContext ctx, string featureName, string scenarioName) {
     this.ctx = ctx;
     this.featureName = featureName;
@@ -49,6 +55,7 @@ public sealed class FilmstripRecorder {
   /// <summary>Frame folders captured this run, with the rate each was captured at.</summary>
   public static IReadOnlyList<(string Directory, double Fps)> RecordedFilms => Recorded;
 
+  /// <summary>Clears any leftover frames for this scenario and starts capturing new ones.</summary>
   public void Start() {
     // Zero turns filming off. Software rendering makes frame readback expensive, and a
     // headless run usually wants the report without the video.
@@ -68,6 +75,7 @@ public sealed class FilmstripRecorder {
     PickleDriver.Instance.AddFrameHook(OnFrame);
   }
 
+  /// <summary>Stops capturing and records the scenario's rate for the encoder to use later.</summary>
   public void Finish() {
     if (MaxSeconds <= 0) {
       return;

@@ -16,12 +16,16 @@ public static class FilmEncoder {
   private static string? cachedFfmpeg;
   private static bool probed;
 
+  /// <summary>Whether ffmpeg was found on the <c>PATH</c>, so encoding is possible.</summary>
   public static bool Available => ResolveFfmpeg().Length > 0;
 
   /// <summary>
   /// Returns the webm path, or null when ffmpeg is missing or the encode failed. The
   /// strip stays in the report either way, so a missing encoder costs nothing.
   /// </summary>
+  /// <param name="frameDirectory">The folder holding the numbered jpeg frames to encode.</param>
+  /// <param name="framesPerSecond">The rate the frames were captured at.</param>
+  /// <returns>The path to the encoded webm, or <c>null</c> when ffmpeg is missing or the encode failed.</returns>
   public static string? TryEncode(string frameDirectory, double framesPerSecond) {
     string ffmpeg = ResolveFfmpeg();
     if (ffmpeg.Length == 0) {

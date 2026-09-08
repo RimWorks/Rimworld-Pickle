@@ -4,6 +4,7 @@ using Verse;
 
 namespace RimWorks.Pickle.UI;
 
+/// <summary>The runner window's search, mod and tag filter row, including the removable tag chips.</summary>
 public static class RunnerFilterBar {
   private const float RowHeight = 40f;
   private const float Padding = 8f;
@@ -16,6 +17,10 @@ public static class RunnerFilterBar {
   // clipped at the chip's midline and left a half cross behind.
   private const string ChipSuffix = "  \u00d7";
 
+  /// <summary>How tall the bar needs to be, which grows as the tag chips wrap onto more rows.</summary>
+  /// <param name="width">The window width the bar has to fit.</param>
+  /// <param name="window">The runner window whose active filters are drawn.</param>
+  /// <returns>The height in pixels.</returns>
   public static float Height(float width, RunnerWindow window) {
     float fieldsWidth = FieldsWidth(width);
     float x = 70f;
@@ -37,6 +42,9 @@ public static class RunnerFilterBar {
     return height + (width < 1000f ? RowHeight : 0f);
   }
 
+  /// <summary>Draws the bar and writes any change straight back onto the window's filters.</summary>
+  /// <param name="rect">The area to draw into.</param>
+  /// <param name="window">The runner window whose filters are drawn and edited.</param>
   public static void Draw(Rect rect, RunnerWindow window) {
     float fieldsWidth = FieldsWidth(rect.width);
     float searchWidth = Mathf.Max(100f, fieldsWidth - 300f);

@@ -9,6 +9,14 @@ namespace RimWorks.Pickle.Vanilla;
 /// <summary>Blueprints and stockpile zones, so a scenario exercises real construction jobs.</summary>
 [PickleSteps]
 public class ConstructionSteps {
+  /// <summary>Places a blueprint for a def over a rectangle of cells, without going through a designator.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The buildable def to place.</param>
+  /// <param name="x1">One corner's x coordinate.</param>
+  /// <param name="z1">One corner's z coordinate.</param>
+  /// <param name="x2">The opposite corner's x coordinate.</param>
+  /// <param name="z2">The opposite corner's z coordinate.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   // The build steps place a finished building, which never exercises a blueprint, a frame or
   // the hauling job. This places what the architect menu would.
   [When("I designate a {string} from \\({int}, {int}\\) to \\({int}, {int}\\)")]
@@ -31,6 +39,12 @@ public class ConstructionSteps {
         () => $"no blueprint for '{defName}' landed at {DescribeBare(map, cells, def)}");
   }
 
+  /// <summary>Places a blueprint through the real build designator, so a mod's placement rules run and any rejection surfaces as the failure message.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The buildable def to place.</param>
+  /// <param name="x">The cell's x coordinate.</param>
+  /// <param name="z">The cell's z coordinate.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   // Goes through the real Designator_Build rather than placing the blueprint directly, so a
   // mod's own placement rules and their rejection reasons get exercised.
   [When("I use the build designator for {string} at \\({int}, {int}\\)")]
@@ -60,6 +74,11 @@ public class ConstructionSteps {
             $"the cell holds {MapLookup.DescribeCell(map, cell)}");
   }
 
+  /// <summary>Asserts a blueprint for a def sits at a cell.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The buildable def expected there.</param>
+  /// <param name="x">The cell's x coordinate.</param>
+  /// <param name="z">The cell's z coordinate.</param>
   [Then("a blueprint for {string} is at \\({int}, {int}\\)")]
   public void AssertBlueprint(PickleContext ctx, string defName, int x, int z) {
     Map map = MapLookup.RequireMap(ctx);
@@ -73,6 +92,12 @@ public class ConstructionSteps {
         $"the cell holds {MapLookup.DescribeCell(map, cell)}");
   }
 
+  /// <summary>Creates a stockpile zone over a rectangle of cells, skipping any cell that is already zoned or cannot hold a zone.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="x1">One corner's x coordinate.</param>
+  /// <param name="z1">One corner's z coordinate.</param>
+  /// <param name="x2">The opposite corner's x coordinate.</param>
+  /// <param name="z2">The opposite corner's z coordinate.</param>
   [When("I create a stockpile from \\({int}, {int}\\) to \\({int}, {int}\\)")]
   public void CreateStockpile(PickleContext ctx, int x1, int z1, int x2, int z2) {
     Map map = MapLookup.RequireMap(ctx);
@@ -98,6 +123,10 @@ public class ConstructionSteps {
     }
   }
 
+  /// <summary>Asserts a stockpile zone covers a cell.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="x">The cell's x coordinate.</param>
+  /// <param name="z">The cell's z coordinate.</param>
   [Then("a stockpile covers \\({int}, {int}\\)")]
   public void AssertStockpileCovers(PickleContext ctx, int x, int z) {
     Map map = MapLookup.RequireMap(ctx);
@@ -110,6 +139,12 @@ public class ConstructionSteps {
         $"a stockpile should cover ({x}, {z}); the cell is in {zone?.label ?? "no zone"}");
   }
 
+  /// <summary>Waits for a frame at a cell to finish and become the real building.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The def the finished building should be.</param>
+  /// <param name="x">The cell's x coordinate.</param>
+  /// <param name="z">The cell's z coordinate.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   // Construction has no finished event either, so this watches for the real building to
   // replace the frame.
   [When("I wait for the {string} at \\({int}, {int}\\) to be built", TimeoutSeconds = 185f)]

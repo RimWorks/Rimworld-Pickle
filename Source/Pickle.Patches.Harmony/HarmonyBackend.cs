@@ -17,37 +17,52 @@ public class HarmonyBackend : IPatchBackend {
     PatchBackends.Register(new HarmonyBackend(), PatchBackends.HarmonyPriority);
   }
 
+  /// <inheritdoc/>
   public string Name => "Harmony";
 
+  /// <summary>Prefix on <see cref="UIRoot.UIRootOnGUI"/> that runs Pickle's per-frame work before the game draws.</summary>
   public static void UIRootOnGUIPrefix() {
     PickleHooks.BeforeUIRootOnGUI();
   }
 
+  /// <summary>Postfix on <see cref="UIRoot.UIRootOnGUI"/> that runs Pickle's per-frame work after the game draws.</summary>
   public static void UIRootOnGUIPostfix() {
     PickleHooks.AfterUIRootOnGUI();
   }
 
+  /// <summary>Postfix on <see cref="MainMenuDrawer.DoMainMenuControls"/> that draws Pickle's runner button.</summary>
+  /// <param name="rect">The rect the main menu just laid its controls out in.</param>
   public static void MainMenuControlsPostfix(Rect rect) {
     PickleHooks.AfterMainMenuControls(rect);
   }
 
+  /// <summary>Postfix on <c>Widgets.ButtonText</c> that lets Pickle capture the button for a click step.</summary>
+  /// <param name="rect">The rect the button was drawn in.</param>
+  /// <param name="label">The button's label text.</param>
   public static void ButtonTextPostfix(Rect rect, string label) {
     PickleHooks.AfterButtonText(rect, label);
   }
 
+  /// <summary>Prefix on <see cref="WindowStack.Add"/> that can drop a window autorun wants suppressed.</summary>
+  /// <param name="window">The window about to be added.</param>
+  /// <returns><c>false</c> to skip adding the window, <c>true</c> to let it through.</returns>
   // Harmony skips the original when a prefix returns false.
   public static bool AddPrefix(Window window) {
     return PickleHooks.ShouldAddWindow(window);
   }
 
+  /// <summary>Prefix on <see cref="LoadedModManager.ApplyPatches"/> that records which mod owns each patch.</summary>
+  /// <param name="xmlDoc">The XML document about to be patched.</param>
   public static void ApplyPatchesPrefix(XmlDocument xmlDoc) {
     PickleHooks.BeforeApplyPatches(xmlDoc);
   }
 
+  /// <summary>Prefix on <see cref="LoadedModManager.ClearCachedPatches"/> that clears Pickle's patch attribution cache alongside it.</summary>
   public static void ClearCachedPatchesPrefix() {
     PickleHooks.BeforeClearCachedPatches();
   }
 
+  /// <inheritdoc/>
   public void ApplyEarly() {
     HarmonyLib.Harmony harmony = new HarmonyLib.Harmony("rimworks.pickle.early");
 
@@ -60,6 +75,7 @@ public class HarmonyBackend : IPatchBackend {
         prefix: Handler(nameof(ClearCachedPatchesPrefix)));
   }
 
+  /// <inheritdoc/>
   public void Apply() {
     HarmonyLib.Harmony harmony = new HarmonyLib.Harmony("rimworks.pickle");
 

@@ -13,6 +13,8 @@ namespace RimWorks.Pickle.Web;
 /// running a step touches RimWorld statics the listener thread must not.
 /// </summary>
 public static class ConsoleCommands {
+  /// <summary>Lists every registered step, for the console's autocomplete.</summary>
+  /// <returns>Every step's pattern, kind and source, as JSON.</returns>
   public static Task<string> Catalog() {
     return RunnerCommands.PostAsync(() => {
       StepConsole.EnsureLoaded();
@@ -26,6 +28,9 @@ public static class ConsoleCommands {
     });
   }
 
+  /// <summary>Resolves and runs one step typed into the console.</summary>
+  /// <param name="text">The step text to run, without a Gherkin keyword.</param>
+  /// <returns>The step's outcome, including its generated skeleton when it was undefined, as JSON.</returns>
   public static Task<string> Run(string? text) {
     return RunnerCommands.PostAsync(async () => {
       StepConsole.RefuseWhenBusy();
@@ -34,6 +39,8 @@ public static class ConsoleCommands {
     });
   }
 
+  /// <summary>Drops the console's shared context, keeping the loaded step table.</summary>
+  /// <returns>An acknowledgement, as JSON.</returns>
   public static Task<string> Reset() {
     return RunnerCommands.PostAsync(() => {
       StepConsole.RefuseWhenBusy();

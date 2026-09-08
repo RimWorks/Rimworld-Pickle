@@ -20,16 +20,23 @@ public static class PatchAttribution {
   /// <summary>True once the early hooks are in place; without them every def reads unpatched.</summary>
   public static bool Armed { get; private set; }
 
+  /// <summary>How many defs have at least one recorded patcher.</summary>
   public static int PatchedDefCount => ModsByDefName.Count;
 
+  /// <summary>Marks the early hooks as in place, so <see cref="BeforeApplyPatches"/> results can be trusted.</summary>
   public static void Arm() {
     Armed = true;
   }
 
+  /// <summary>Looks up which mods patched a def.</summary>
+  /// <param name="defName">The def to look up.</param>
+  /// <returns>The names of every mod that successfully patched the def, or an empty collection if none did.</returns>
   public static IReadOnlyCollection<string> PatchersOf(string defName) {
     return ModsByDefName.TryGetValue(defName, out HashSet<string>? mods) ? mods : [];
   }
 
+  /// <summary>Walks every loaded mod's patch operations, resolving each one's xpath against the unified document to find which defs it targets.</summary>
+  /// <param name="xml">The unified XML document patches are about to apply against.</param>
   // Runs before any patch applies, so the document still holds the nodes every xpath was
   // written against. One pass over the tree beats a hook on thousands of Apply calls.
   public static void BeforeApplyPatches(XmlDocument xml) {
@@ -40,6 +47,7 @@ public static class PatchAttribution {
     }
   }
 
+  /// <summary>Records which mod patched which def, keeping only the operations that actually matched, and clears the recorded operations.</summary>
   // RimWorld sets neverSucceeded to false only when an operation matched something, so this
   // drops the ones that targeted a def on paper and changed nothing.
   public static void BeforeClearCachedPatches() {

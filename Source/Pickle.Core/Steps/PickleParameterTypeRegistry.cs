@@ -4,9 +4,12 @@ using CucumberExpressions;
 
 namespace RimWorks.Pickle.Core.Steps;
 
+/// <summary>The cucumber expression parameter types Pickle steps can use: <c>{int}</c>, <c>{float}</c>, <c>{word}</c>,
+/// <c>{string}</c> and the anonymous <c>{}</c>.</summary>
 public class PickleParameterTypeRegistry : IParameterTypeRegistry {
   private readonly Dictionary<string, IParameterType> parameterTypes = new();
 
+  /// <summary>Initializes a new instance.</summary>
   public PickleParameterTypeRegistry() {
     RegisterStandardTypes();
   }

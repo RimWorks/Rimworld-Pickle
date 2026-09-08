@@ -8,7 +8,11 @@ using RimWorks.Pickle.Core.Run;
 
 namespace RimWorks.Pickle.Core.Reports;
 
+/// <summary>Renders a run's scenario results as a JUnit XML report, for CI systems that already parse that format.</summary>
 public static class JUnitReportWriter {
+  /// <summary>Builds the JUnit XML report for a completed run, one <c>testsuite</c> per feature.</summary>
+  /// <param name="results">Every scenario the run produced, in report order.</param>
+  /// <returns>The report as a UTF-8 XML document string.</returns>
   public static string Write(IReadOnlyList<ScenarioResult> results) {
     XElement root = new XElement("testsuites");
 

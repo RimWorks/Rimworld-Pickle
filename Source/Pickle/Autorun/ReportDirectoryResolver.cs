@@ -10,6 +10,9 @@ namespace RimWorks.Pickle.Autorun;
 /// folder is the last resort because the game directory is often read only.
 /// </summary>
 public static class ReportDirectoryResolver {
+  /// <summary>Picks and prepares the directory reports get written to.</summary>
+  /// <param name="explicitDir">The <c>-pickle-report-dir</c> value, or <c>null</c> to use the default order.</param>
+  /// <returns>A directory that exists and is writable.</returns>
   public static string Resolve(string? explicitDir) {
     if (!string.IsNullOrEmpty(explicitDir)) {
       if (TryPrepare(explicitDir!)) {

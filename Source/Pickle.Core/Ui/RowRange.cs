@@ -9,6 +9,11 @@ namespace RimWorks.Pickle.Core.Ui;
 /// </summary>
 public static class RowRange {
   /// <summary>Half-open range of rows overlapping the viewport, padded one row each side.</summary>
+  /// <param name="rowTops">Top offset of every row, in order.</param>
+  /// <param name="contentHeight">Total height of the scrolled content, used as the last row's bottom.</param>
+  /// <param name="scrollY">Current scroll offset from the top of the content.</param>
+  /// <param name="viewportHeight">Visible height of the scroll view.</param>
+  /// <returns>The first and last (exclusive) row indexes to draw.</returns>
   public static (int First, int Last) Visible(IReadOnlyList<float> rowTops, float contentHeight, float scrollY, float viewportHeight) {
     int count = rowTops.Count;
     if (count == 0 || viewportHeight <= 0f) {

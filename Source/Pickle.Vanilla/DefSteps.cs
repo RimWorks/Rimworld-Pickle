@@ -14,12 +14,18 @@ namespace RimWorks.Pickle.Vanilla;
 /// </summary>
 [PickleSteps]
 public class DefSteps {
+  /// <summary>Asserts a def with this name exists, of any def type.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The def name to look for.</param>
   [Then("def {string} exists")]
   public void AssertDefExists(PickleContext ctx, string defName) {
     bool found = DefLookup.FindAll(defName).Count > 0;
     ctx.Assert(found, found ? null : DefLookup.DescribeMissingAnywhere(defName));
   }
 
+  /// <summary>Asserts no def with this name exists, of any def type.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The def name that must be absent.</param>
   [Then("no def {string} exists")]
   public void AssertDefAbsent(PickleContext ctx, string defName) {
     List<Def> found = DefLookup.FindAll(defName);
@@ -28,12 +34,20 @@ public class DefSteps {
         $"expected no def named '{defName}'; found {string.Join(", ", found.Select(d => d.GetType().Name))}");
   }
 
+  /// <summary>Asserts a def with this name exists as the given def type.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The def name to look for.</param>
+  /// <param name="defTypeName">The def type's name, such as <c>ThingDef</c>.</param>
   [Then("def {string} of type {string} exists")]
   public void AssertDefOfTypeExists(PickleContext ctx, string defName, string defTypeName) {
     Def? def = DefLookup.FindOfType(defName, defTypeName);
     ctx.Assert(def != null, def != null ? null : DefLookup.DescribeMissingInType(defTypeName, defName));
   }
 
+  /// <summary>Asserts a def's owning mod, matched by mod name or package id.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The def name to check.</param>
+  /// <param name="modName">The expected mod name or package id.</param>
   [Then("def {string} is defined by mod {string}")]
   public void AssertDefOwner(PickleContext ctx, string defName, string modName) {
     Def def = DefLookup.RequireAny(defName);
@@ -49,6 +63,11 @@ public class DefSteps {
         $"actual {owner?.Name ?? "(no mod)"} ({owner?.PackageId ?? "no packageId"})");
   }
 
+  /// <summary>Asserts a public field or property on a def, walked by a dotted path, stringifies to an expected value.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The def to read from.</param>
+  /// <param name="fieldPath">A dotted path of public field or property names, walked from the def.</param>
+  /// <param name="expected">The expected string form of the value, compared case-insensitively.</param>
   [Then("def {string} field {string} is {string}")]
   public void AssertDefField(PickleContext ctx, string defName, string fieldPath, string expected) {
     Def def = DefLookup.RequireAny(defName);
@@ -60,6 +79,11 @@ public class DefSteps {
         $"def '{defName}' field '{fieldPath}' should be '{expected}'; actual '{actual}'");
   }
 
+  /// <summary>Asserts the total count of one ingredient in a buildable def's cost list.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The buildable def to check.</param>
+  /// <param name="expected">The expected total count of the ingredient.</param>
+  /// <param name="costDefName">The ingredient def to sum in the cost list.</param>
   [Then("def {string} costs {int} {string}")]
   public void AssertDefCost(PickleContext ctx, string defName, int expected, string costDefName) {
     BuildableDef def = RequireBuildable(ctx, defName, "a costList");
@@ -72,6 +96,11 @@ public class DefSteps {
         $"costList: {DescribeCostList(def)}");
   }
 
+  /// <summary>Asserts a buildable def's computed stat value, made without stuff, within <see cref="StatTolerance"/>.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The buildable def to check.</param>
+  /// <param name="statDefName">The stat to read.</param>
+  /// <param name="expected">The expected value.</param>
   // The computed value, not the statBases entry, because a stat the def never lists
   // still has a defaultBaseValue that the game happily uses.
   [Then("def {string} stat {string} is {float}")]
@@ -87,6 +116,11 @@ public class DefSteps {
         $"made without stuff. statBases: {DescribeStatBases(def)}");
   }
 
+  /// <summary>Asserts the statBases entry itself, failing early when the def has no entry to compare rather than falling back to the stat default.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The buildable def to check.</param>
+  /// <param name="statDefName">The stat to read.</param>
+  /// <param name="expected">The expected value.</param>
   [Then("def {string} raw stat {string} is {float}")]
   public void AssertDefRawStat(PickleContext ctx, string defName, string statDefName, float expected) {
     BuildableDef def = RequireBuildable(ctx, defName, "statBases");
@@ -104,6 +138,10 @@ public class DefSteps {
         $"{StatTolerance.For(expected):G3}; actual {entry.value}");
   }
 
+  /// <summary>Asserts a mod appears among a def's recorded patchers.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The def to check.</param>
+  /// <param name="modName">The mod expected to have patched it.</param>
   [Then("def {string} was patched by mod {string}")]
   public void AssertDefPatchedBy(PickleContext ctx, string defName, string modName) {
     RequirePatchable(ctx, defName);
@@ -114,6 +152,9 @@ public class DefSteps {
         $"def '{defName}' should have been patched by '{modName}'; patched by {Describe(patchers)}");
   }
 
+  /// <summary>Asserts at least one mod patched a def.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The def to check.</param>
   [Then("def {string} was patched")]
   public void AssertDefPatched(PickleContext ctx, string defName) {
     RequirePatchable(ctx, defName);
@@ -122,6 +163,9 @@ public class DefSteps {
     ctx.Assert(patchers.Count > 0, $"def '{defName}' was not patched by any mod");
   }
 
+  /// <summary>Asserts no mod patched a def.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The def to check.</param>
   [Then("no def {string} was patched")]
   public void AssertDefNotPatched(PickleContext ctx, string defName) {
     RequireAttribution(ctx);

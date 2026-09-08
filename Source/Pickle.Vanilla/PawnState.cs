@@ -11,6 +11,9 @@ namespace RimWorks.Pickle.Vanilla;
 /// leaves you guessing whether the pawn is drafted, downed, or dead.
 /// </summary>
 public static class PawnState {
+  /// <summary>Describes one pawn's job, stance, position and any dead, downed or mental state, for an assertion failure.</summary>
+  /// <param name="pawn">The pawn to describe.</param>
+  /// <returns>A single-line, space-separated state summary.</returns>
   public static string Describe(Pawn pawn) {
     StringBuilder state = new StringBuilder();
     state.Append("job=").Append(pawn.CurJobDef?.defName ?? "(none)");
@@ -43,6 +46,9 @@ public static class PawnState {
     return state.ToString();
   }
 
+  /// <summary>Describes every free colonist on a map, one line each, under a tick and pause header.</summary>
+  /// <param name="map">The map whose colonists to describe.</param>
+  /// <returns>The multi-line dump, with no trailing newline.</returns>
   // One line per colonist, for the scenario-wide dump that fires on any failure.
   public static string DescribeColonists(Map map) {
     StringBuilder state = new StringBuilder();

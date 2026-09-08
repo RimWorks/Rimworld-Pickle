@@ -11,6 +11,9 @@ namespace RimWorks.Pickle.Runtime;
 
 /// <summary>Parses every feature a suite ships and drops the ones that cannot run.</summary>
 public static class FeatureParser {
+  /// <summary>Parses every feature file across the given suites, logging and skipping the ones that fail.</summary>
+  /// <param name="suites">The suites to parse features from.</param>
+  /// <returns>Each suite paired with the plan for one of its feature files.</returns>
   public static List<(DiscoveredSuite Suite, FeaturePlan Plan)> ParseAll(List<DiscoveredSuite> suites) {
     List<(DiscoveredSuite Suite, FeaturePlan Plan)> parsed = [];
 

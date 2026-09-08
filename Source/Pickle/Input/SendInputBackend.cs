@@ -24,17 +24,21 @@ public sealed class SendInputBackend : IInputBackend {
   private const int SmCxScreen = 0;
   private const int SmCyScreen = 1;
 
+  /// <summary>Initializes a new instance, probing for an interactive desktop right away.</summary>
   public SendInputBackend() {
     UnavailableReason = Probe();
   }
 
+  /// <inheritdoc/>
   public string? UnavailableReason { get; }
 
+  /// <inheritdoc/>
   public void MoveTo(Vector2 guiPoint) {
     EnsureUsable();
     SendMouseMove(InputBackends.ToScreen(guiPoint));
   }
 
+  /// <inheritdoc/>
   public void Click(Vector2 guiPoint, int button = 1) {
     EnsureUsable();
     (uint down, uint up) = ButtonFlags(button);
@@ -52,6 +56,7 @@ public sealed class SendInputBackend : IInputBackend {
     Send(MouseEvent(up));
   }
 
+  /// <inheritdoc/>
   // Raw input readers key off the scan code, so wScan is filled even though wVk is set.
   // A VK-only event is the classic "the game ignored my key" bug.
   public void Key(string keyName) {
@@ -63,6 +68,7 @@ public sealed class SendInputBackend : IInputBackend {
     Send(KeyEvent(virtualKey, flags | KeyEventKeyUp));
   }
 
+  /// <inheritdoc/>
   public string GetMouseLocation() {
     return GetCursorPos(out Point point) ? $"x:{point.X} y:{point.Y}" : "(GetCursorPos failed)";
   }

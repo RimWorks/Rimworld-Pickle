@@ -6,9 +6,15 @@ using System.Text.RegularExpressions;
 
 namespace RimWorks.Pickle.Core.Steps;
 
+/// <summary>Turns undefined step text into a pasteable step method, so a missing step costs a paste instead of writing
+/// the cucumber expression by hand.</summary>
 public static class StepSkeletonGenerator {
   private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
 
+  /// <summary>Generates a step method stub for text that matched no registered definition.</summary>
+  /// <param name="stepText">The step text from a feature file, without its Gherkin keyword.</param>
+  /// <param name="kind">The attribute to generate the stub with. Defaults to <see cref="StepKind.When"/>.</param>
+  /// <returns>A complete method, attribute included, ready to paste into a <c>[PickleSteps]</c> class.</returns>
   public static string Generate(string stepText, StepKind kind = StepKind.When) {
     string expression = GenerateExpression(stepText);
     string methodName = GenerateMethodName(stepText);

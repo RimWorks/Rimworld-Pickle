@@ -18,7 +18,14 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
+/// <summary>Discovers every suite, runs their scenarios, and publishes progress to the dashboard.</summary>
 public static class SuiteRunner {
+  /// <summary>Builds the step environment, runs every matching scenario, and logs the outcome.</summary>
+  /// <param name="filter">A tag or name filter applied before running, or <c>null</c> to run everything.</param>
+  /// <param name="seed">The random seed handed to the run session.</param>
+  /// <param name="onScenarioCompleted">Invoked after each scenario finishes, in completion order.</param>
+  /// <param name="retries">How many times a failed scenario is retried before it counts as failed.</param>
+  /// <returns>Every scenario result from the run, across all discovered suites.</returns>
   public static async Task<List<ScenarioResult>> Run(
       string? filter = null,
       int seed = RunSession.DefaultSeed,

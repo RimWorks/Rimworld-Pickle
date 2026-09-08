@@ -9,6 +9,7 @@ namespace RimWorks.Pickle.Core.Run;
 /// the tick loop itself.
 /// </summary>
 public static class TickCostSampler {
+  /// <summary>How many recent samples the ring keeps before it starts overwriting the oldest.</summary>
   public const int Capacity = 10_000;
 
   private static readonly long[] Samples = new long[Capacity];
@@ -19,12 +20,14 @@ public static class TickCostSampler {
   public static int Count { get; private set; }
 
   /// <summary>Takes a raw Stopwatch delta. Converted to milliseconds only on read.</summary>
+  /// <param name="stopwatchTicks">The elapsed time for one tick, in <see cref="Stopwatch"/> ticks.</param>
   public static void Record(long stopwatchTicks) {
     Samples[next] = stopwatchTicks;
     next = (next + 1) % Capacity;
     Count++;
   }
 
+  /// <summary>Clears every recorded sample, so the next window starts empty.</summary>
   public static void Reset() {
     next = 0;
     Count = 0;
@@ -34,6 +37,8 @@ public static class TickCostSampler {
   /// The most recent n samples. Fewer than asked for is reported rather than padded, so a
   /// budget that never had the ticks it wanted can fail instead of passing on three.
   /// </summary>
+  /// <param name="n">How many recent samples to read.</param>
+  /// <returns>The window, or a default (all-zero) window when no samples are recorded.</returns>
   public static TickCostWindow Window(int n) {
     int available = Math.Min(Count, Capacity);
     int take = Math.Min(n, available);

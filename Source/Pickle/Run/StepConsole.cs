@@ -22,9 +22,12 @@ public static class StepConsole {
   private static StepTable? table;
   private static PickleContext context = new PickleContext();
 
+  /// <summary>Every step definition the loaded suites offer, empty until a step has run at least once.</summary>
   public static IReadOnlyList<StepDefinition> Definitions => table?.Definitions ?? [];
 
   /// <summary>Resolves and runs one step. Call on the main thread.</summary>
+  /// <param name="text">The step text to match against the loaded step definitions.</param>
+  /// <returns>The step's result, plus any state dumps its scenario instances collected while it ran.</returns>
   public static async Task<(StepResult Result, List<(string Source, string Content)> StateDumps)> Run(string text) {
     // No paramName: this message goes to a browser, and the framework would append
     // "Parameter name: text" to whatever a person reads.
@@ -47,6 +50,8 @@ public static class StepConsole {
     context = new PickleContext();
   }
 
+  /// <summary>Throws when an autorun, a scenario run or a fixture operation already owns the game, since
+  /// the console would otherwise race it for the main thread.</summary>
   internal static void RefuseWhenBusy() {
     if (AutorunState.IsAutorunning) {
       throw new InvalidOperationException("An unattended run owns the game. The console is off during autorun.");

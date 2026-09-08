@@ -14,6 +14,10 @@ namespace RimWorks.Pickle.Vanilla;
 public class WaitSteps {
   private const float DefaultTimeoutSeconds = 30f;
 
+  /// <summary>Waits for a letter whose label contains the text, so a scenario can gate on an event the game raised.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="labelSubstring">Text the letter's label must contain, matched case insensitively.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I wait for letter {string}", TimeoutSeconds = 35f)]
   public async Task WaitForLetter(PickleContext ctx, string labelSubstring) {
     await WaitFor(
@@ -23,6 +27,11 @@ public class WaitSteps {
         () => $"no letter matching '{labelSubstring}' arrived. letters: {DescribeLetters()}");
   }
 
+  /// <summary>Waits until the pawn is running the named job, which is how a scenario proves an order was taken.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="nickname">The pawn's nickname.</param>
+  /// <param name="jobDefName">The job def the pawn should be running.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I wait for {string} to have job {string}", TimeoutSeconds = 35f)]
   public async Task WaitForJob(PickleContext ctx, string nickname, string jobDefName) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -32,6 +41,10 @@ public class WaitSteps {
         () => $"pawn '{nickname}' never took job '{jobDefName}'; actual state: {PawnState.Describe(pawn)}");
   }
 
+  /// <summary>Waits until at least one thing of the def is on the map.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="defName">The thing def to wait for.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I wait for a {string} to exist", TimeoutSeconds = 35f)]
   public async Task WaitForThing(PickleContext ctx, string defName) {
     ThingDef def = DefLookup.Require<ThingDef>(defName);
@@ -41,6 +54,10 @@ public class WaitSteps {
         () => $"no {defName} appeared on the map");
   }
 
+  /// <summary>Waits until the research project finishes. The failure names the progress it reached.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="defName">The research project def.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I wait for research {string} to finish", TimeoutSeconds = 35f)]
   public async Task WaitForResearch(PickleContext ctx, string defName) {
     ResearchProjectDef project = DefLookup.Require<ResearchProjectDef>(defName);
@@ -50,6 +67,10 @@ public class WaitSteps {
         () => $"research '{defName}' did not finish; progress {project.ProgressPercent:P0}");
   }
 
+  /// <summary>Waits until the pawn is standing inside a stockpile zone, which is how a haul job is proved done.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="nickname">The pawn's nickname.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I wait until {string} reaches the stockpile", TimeoutSeconds = 35f)]
   public async Task WaitForStockpile(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -62,6 +83,10 @@ public class WaitSteps {
             $"doing {pawn.CurJobDef?.defName ?? "nothing"}");
   }
 
+  /// <summary>Waits until the pawn's pather stops. Ends when the walk really finishes rather than after a guessed tick count.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="nickname">The pawn's nickname.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   // A tick count is a guess about how far the pawn has to walk. This ends when it
   // actually stops, so a film runs exactly as long as the journey.
   [When("I wait until {string} stops moving", TimeoutSeconds = 90f)]
@@ -76,6 +101,10 @@ public class WaitSteps {
         85f);
   }
 
+  /// <summary>Waits until the pawn is drafted.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="nickname">The pawn's nickname.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I wait until {string} is drafted", TimeoutSeconds = 35f)]
   public async Task WaitForDrafted(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);

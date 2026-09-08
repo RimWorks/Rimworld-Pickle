@@ -5,7 +5,11 @@ using System.Reflection;
 
 namespace RimWorks.Pickle.Evidence;
 
+/// <summary>Runs every method tagged <see cref="PickleStateDumpAttribute"/> on a failed step's instances.</summary>
 public static class StateDumpCollector {
+  /// <summary>Invokes each dump method found and collects its output, even when a dump throws.</summary>
+  /// <param name="stepInstanceCache">The step type to instance map a failed scenario built up.</param>
+  /// <returns>One entry per dump method, naming its source and the text it produced.</returns>
   public static List<(string Source, string Content)> Collect(
       IEnumerable<KeyValuePair<Type, object>> stepInstanceCache) {
     List<(string Source, string Content)> dumps = [];

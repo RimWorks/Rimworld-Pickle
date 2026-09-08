@@ -6,7 +6,14 @@ using RimWorks.Pickle.Core.Run;
 
 namespace RimWorks.Pickle.Core.Reports;
 
+/// <summary>Renders a run's scenario results as the <c>summary.json</c> report, read by the dashboard and by scripts polling a run.</summary>
 public static class SummaryJsonWriter {
+  /// <summary>Builds the JSON summary for a run. Callers polling mid-run should check <paramref name="exitReason"/>
+  /// for <c>in-progress</c> before trusting the counts.</summary>
+  /// <param name="results">Every scenario the run produced, in report order.</param>
+  /// <param name="exitReason">Why the run stopped, or that it has not stopped yet.</param>
+  /// <param name="setName">The mod set the run targeted, or <c>null</c> for an unnamed run so old reports keep parsing unchanged.</param>
+  /// <returns>The <c>summary.json</c> document as a string.</returns>
   public static string Write(IReadOnlyList<ScenarioResult> results, string exitReason, string? setName = null) {
     int passed = results.Count(r => r.Outcome == ScenarioOutcome.Passed);
     int failed = results.Count(r => r.Outcome == ScenarioOutcome.Failed);

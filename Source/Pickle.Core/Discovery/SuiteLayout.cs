@@ -2,6 +2,7 @@ using System.IO;
 
 namespace RimWorks.Pickle.Core.Discovery;
 
+/// <summary>The folders one mod's Pickle install reads from and writes into.</summary>
 public class SuiteLayout {
   private SuiteLayout(
       string pickleDir, string featuresDir, string fixturesDir, string writableFixturesDir, string assembliesDir) {
@@ -12,8 +13,10 @@ public class SuiteLayout {
     AssembliesDir = assembliesDir;
   }
 
+  /// <summary>The mod's Pickle folder, holding Features, Fixtures and Assemblies.</summary>
   public string PickleDir { get; }
 
+  /// <summary>Where the mod's <c>.feature</c> files live.</summary>
   public string FeaturesDir { get; }
 
   /// <summary>Committed fixtures, inside the mod. Read-only wherever the mod folder is.</summary>
@@ -25,13 +28,16 @@ public class SuiteLayout {
   /// </summary>
   public string WritableFixturesDir { get; }
 
+  /// <summary>Where a mod ships its step definition assemblies.</summary>
   public string AssembliesDir { get; }
 
+  /// <summary>Builds the layout for one mod from its root folder.</summary>
   /// <param name="modRoot">The mod folder holding Pickle/.</param>
   /// <param name="writableFixturesRoot">
   /// A directory Pickle may write into. The mod folder is read-only under Docker and on a
   /// Workshop install, so a recorded fixture needs somewhere else to land.
   /// </param>
+  /// <returns>The resolved layout for <paramref name="modRoot"/>.</returns>
   public static SuiteLayout FromModRoot(string modRoot, string? writableFixturesRoot = null) {
     string pickleDir = Path.Combine(modRoot, "Pickle");
     string featuresDir = Path.Combine(pickleDir, "Features");

@@ -10,6 +10,9 @@ namespace RimWorks.Pickle.Vanilla;
 /// <summary>Weather, the calendar and temperature, which gate a lot of seasonal content.</summary>
 [PickleSteps]
 public class WorldConditionSteps {
+  /// <summary>Asserts the map's current weather matches a def.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="weatherDefName">The weather def expected.</param>
   [Then("the weather is {string}")]
   public void AssertWeather(PickleContext ctx, string weatherDefName) {
     Map map = MapLookup.RequireMap(ctx);
@@ -20,6 +23,10 @@ public class WorldConditionSteps {
         $"the weather should be '{weatherDefName}'; {DescribeWeather(map)}");
   }
 
+  /// <summary>Transitions the map to a weather def and waits for it to take effect.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="weatherDefName">The weather def to transition to.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I set the weather to {string}")]
   public async Task SetWeather(PickleContext ctx, string weatherDefName) {
     Map map = MapLookup.RequireMap(ctx);
@@ -32,6 +39,9 @@ public class WorldConditionSteps {
         () => $"the weather never became '{weatherDefName}'; {DescribeWeather(map)}");
   }
 
+  /// <summary>Asserts the map's current season.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="seasonName">The expected season's name.</param>
   [Then("the season is {word}")]
   public void AssertSeason(PickleContext ctx, string seasonName) {
     Map map = MapLookup.RequireMap(ctx);
@@ -42,6 +52,9 @@ public class WorldConditionSteps {
         $"the season should be {seasonName}; it is {GenLocalDate.Season(map)}. {DescribeDate(map)}");
   }
 
+  /// <summary>Jumps the map's calendar forward, day by day, to the first day that falls in a season.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="seasonName">The season to jump to.</param>
   // This moves the calendar and nothing else. No plant grows, no food rots and no pawn gets
   // hungry, because a season is 900000 ticks and the runner cannot tick that far.
   [When("I set the season to {word}")]
@@ -68,6 +81,9 @@ public class WorldConditionSteps {
         $"all year. it sees: {string.Join(", ", seen)}");
   }
 
+  /// <summary>Asserts the map's current hour of day.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="hour">The expected hour, 0 to 23.</param>
   [Then("the hour is {int}")]
   public void AssertHour(PickleContext ctx, int hour) {
     Map map = MapLookup.RequireMap(ctx);
@@ -77,6 +93,9 @@ public class WorldConditionSteps {
         $"the hour should be {hour}; it is {GenLocalDate.HourOfDay(map)}. {DescribeDate(map)}");
   }
 
+  /// <summary>Jumps the map's calendar forward to the next occurrence of an hour.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="hour">The hour to jump to, 0 to 23.</param>
   // The same calendar jump the season step makes, so nothing ages here either.
   [When("I set the hour to {int}")]
   public void SetHour(PickleContext ctx, int hour) {
@@ -91,6 +110,9 @@ public class WorldConditionSteps {
         $"the hour should be {hour} after the jump; it is {GenLocalDate.HourOfDay(map)}. {DescribeDate(map)}");
   }
 
+  /// <summary>Asserts whether it is currently day or night on the map, by sun glow.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="partOfDay">Either <c>day</c>/<c>daytime</c> or <c>night</c>/<c>nighttime</c>.</param>
   [Then("it is {word}")]
   public void AssertDayOrNight(PickleContext ctx, string partOfDay) {
     Map map = MapLookup.RequireMap(ctx);
@@ -102,21 +124,37 @@ public class WorldConditionSteps {
         $"it should be {partOfDay.ToLowerInvariant()}; sun glow is {glow:F2}. {DescribeDate(map)}");
   }
 
+  /// <summary>Asserts a cell's temperature is above a bound.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="x">The cell's x coordinate.</param>
+  /// <param name="z">The cell's z coordinate.</param>
+  /// <param name="bound">The lower bound, exclusive.</param>
   [Then("the temperature at \\({int}, {int}\\) is above {int}")]
   public void AssertCellTempAbove(PickleContext ctx, int x, int z, int bound) {
     AssertCellTemp(ctx, x, z, actual => actual > bound, $"should be above {bound}");
   }
 
+  /// <summary>Asserts a cell's temperature is below a bound.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="x">The cell's x coordinate.</param>
+  /// <param name="z">The cell's z coordinate.</param>
+  /// <param name="bound">The upper bound, exclusive.</param>
   [Then("the temperature at \\({int}, {int}\\) is below {int}")]
   public void AssertCellTempBelow(PickleContext ctx, int x, int z, int bound) {
     AssertCellTemp(ctx, x, z, actual => actual < bound, $"should be below {bound}");
   }
 
+  /// <summary>Asserts the map's outdoor temperature is above a bound.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="bound">The lower bound, exclusive.</param>
   [Then("the outdoor temperature is above {int}")]
   public void AssertOutdoorAbove(PickleContext ctx, int bound) {
     AssertOutdoorTemp(ctx, actual => actual > bound, $"should be above {bound}");
   }
 
+  /// <summary>Asserts the map's outdoor temperature is below a bound.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="bound">The upper bound, exclusive.</param>
   [Then("the outdoor temperature is below {int}")]
   public void AssertOutdoorBelow(PickleContext ctx, int bound) {
     AssertOutdoorTemp(ctx, actual => actual < bound, $"should be below {bound}");

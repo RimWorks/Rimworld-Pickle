@@ -11,24 +11,46 @@ namespace RimWorks.Pickle.Vanilla;
 /// </summary>
 [PickleSteps]
 public class StatSteps {
+  /// <summary>Asserts a pawn's stat value is near an expected number, within <c>StatTolerance</c>.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to check.</param>
+  /// <param name="statDefName">The stat to read.</param>
+  /// <param name="expected">The value expected.</param>
   [Then("{string} stat {string} is {float}")]
   public void AssertPawnStat(PickleContext ctx, string nickname, string statDefName, float expected) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     AssertNear(ctx, pawn, $"pawn '{nickname}'", statDefName, expected);
   }
 
+  /// <summary>Asserts a pawn's stat value is above a threshold.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to check.</param>
+  /// <param name="statDefName">The stat to read.</param>
+  /// <param name="threshold">The value the stat must exceed.</param>
   [Then("{string} stat {string} is above {float}")]
   public void AssertPawnStatAbove(PickleContext ctx, string nickname, string statDefName, float threshold) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     AssertCompared(ctx, pawn, $"pawn '{nickname}'", statDefName, actual => actual > threshold, $"above {threshold}");
   }
 
+  /// <summary>Asserts a pawn's stat value is below a threshold.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to check.</param>
+  /// <param name="statDefName">The stat to read.</param>
+  /// <param name="threshold">The value the stat must fall under.</param>
   [Then("{string} stat {string} is below {float}")]
   public void AssertPawnStatBelow(PickleContext ctx, string nickname, string statDefName, float threshold) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     AssertCompared(ctx, pawn, $"pawn '{nickname}'", statDefName, actual => actual < threshold, $"below {threshold}");
   }
 
+  /// <summary>Asserts a stat value on a thing at a cell is near an expected number, within <c>StatTolerance</c>.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="defName">The def expected at the cell.</param>
+  /// <param name="x">The cell's x coordinate.</param>
+  /// <param name="z">The cell's z coordinate.</param>
+  /// <param name="statDefName">The stat to read.</param>
+  /// <param name="expected">The value expected.</param>
   [Then("the {string} at \\({int}, {int}\\) stat {string} is {float}")]
   public void AssertThingStat(PickleContext ctx, string defName, int x, int z, string statDefName, float expected) {
     ThingDef def = DefLookup.Require<ThingDef>(defName);

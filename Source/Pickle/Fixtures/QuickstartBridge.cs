@@ -12,9 +12,11 @@ public static class QuickstartBridge {
   private const string LookupTypeName = "RimWorks.Quickstarts.QuickstartLookup";
   private const string QuickstarterTypeName = "RimWorks.Quickstarts.Quickstarter";
 
+  /// <summary>Whether RimWorks.Quickstarts is loaded, so a scenario can ask for a quickstart at all.</summary>
   public static bool IsLoaded => FindType(RegistryTypeName) != null;
 
   /// <summary>Builds and launches the named quickstart, or throws saying why it could not.</summary>
+  /// <param name="name">The quickstart's type name to resolve and launch.</param>
   public static void Launch(string name) {
     Type registry = Require(RegistryTypeName);
     Type lookup = Require(LookupTypeName);
@@ -41,6 +43,7 @@ public static class QuickstartBridge {
   }
 
   /// <summary>Every quickstart name the loaded mods offer, for a failure message.</summary>
+  /// <returns>The known quickstart type names, sorted case-insensitively, or empty when the mod is not loaded.</returns>
   public static IReadOnlyList<string> KnownNames() {
     Type? registry = FindType(RegistryTypeName);
     if (registry == null) {

@@ -11,8 +11,10 @@ public static class Dashboard {
   private const string DashboardResource = "Pickle.Dashboard.html";
   private const string ReportResource = "Pickle.ReportTemplate.html";
 
+  /// <summary>The live dashboard page, read from the embedded bundle on first use and cached after.</summary>
   public static string Html => field ??= Read(DashboardResource);
 
+  /// <summary>The standalone report template, read from the embedded bundle on first use and cached after.</summary>
   public static string ReportTemplate => field ??= Read(ReportResource);
 
   private static string Read(string resourceName) {

@@ -23,13 +23,11 @@ jobs:
       # S7718 wants catch (error_); S6772 flags JSX newlines where spacing is a CSS class;
       # S6819 prefers <fieldset>/<progress>, both of which change the rendering; S6847 reads
       # <details> as non-interactive. The correctly-roled ARIA cases were fixed instead.
-      # analyzer-severity stays off until the ~770 StyleCop doc errors are cleared.
       - uses: RimWorks/mod-ci/.github/actions/dotnet-sonar@5698991b43ade4de809d49d9695ac88e0895b298 # v1.2.1
         with:
           solution: Pickle.slnx
           project-key: RimWorks_Rimworld-Pickle
           sonar-token: ${{ secrets.SONAR_TOKEN }}
-          analyzer-severity: none
           exclusions: Dashboard/dist/**,Dashboard/node_modules/**,Styles/**,artifacts/**,**/bin/**,**/obj/**
           coverage-exclusions: Source/Pickle/**,Source/Pickle.Vanilla/**,Source/Pickle.Patches.*/**,Source/Pickle.Ref/**,Dashboard/**,.github/**
           extra-begin-args: >-

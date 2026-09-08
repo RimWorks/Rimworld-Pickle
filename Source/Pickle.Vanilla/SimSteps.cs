@@ -10,18 +10,33 @@ using Verse;
 
 namespace RimWorks.Pickle.Vanilla;
 
+/// <summary>Incidents, ticks, drafting, killing, and letters, the levers that drive a scenario forward.</summary>
 [PickleSteps]
 public class SimSteps {
+  /// <summary>Fires an incident at the storyteller's default points for the current map.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="defName">The incident def to fire.</param>
   [When("incident {string} fires")]
   public void IncidentFires(PickleContext ctx, string defName) {
     ExecuteIncident(ctx, defName, points: null);
   }
 
+  /// <summary>Fires an incident at an explicit point value for the current map.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="defName">The incident def to fire.</param>
+  /// <param name="points">The points to fire the incident with.</param>
   [When("incident {string} fires with {int} points")]
   public void IncidentFiresWithPoints(PickleContext ctx, string defName, int points) {
     ExecuteIncident(ctx, defName, points);
   }
 
+  /// <summary>
+  /// Waits a number of ticks. In fast mode this drives the tick loop directly instead of
+  /// waiting on real frames, sampling each tick's cost for the perf budget steps.
+  /// </summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="ticks">The number of game ticks to wait.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I wait {int} ticks")]
   public async Task WaitTicks(PickleContext ctx, int ticks) {
     if (PickleRunMode.Current != PickleRunMode.Mode.Fast) {
@@ -43,6 +58,9 @@ public class SimSteps {
     }
   }
 
+  /// <summary>Drafts a pawn.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="nickname">The pawn's nickname.</param>
   [When("I draft {string}")]
   public void Draft(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -50,6 +68,9 @@ public class SimSteps {
     pawn.drafter!.Drafted = true;
   }
 
+  /// <summary>Undrafts a pawn.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="nickname">The pawn's nickname.</param>
   [When("I undraft {string}")]
   public void Undraft(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -57,12 +78,17 @@ public class SimSteps {
     pawn.drafter!.Drafted = false;
   }
 
+  /// <summary>Kills a pawn outright.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="nickname">The pawn's nickname.</param>
   [When("I kill {string}")]
   public void Kill(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     pawn.Kill(null);
   }
 
+  /// <summary>Dumps every colonist's current job and state for a failure report.</summary>
+  /// <returns>A description of every colonist on the current map, or a note that there is no map.</returns>
   // Fires on any failed scenario in this suite, not just the pawn steps, so a
   // failure anywhere still shows what every colonist was doing at the time.
   [PickleStateDump]
@@ -71,6 +97,10 @@ public class SimSteps {
     return map == null ? "no current map" : PawnState.DescribeColonists(map);
   }
 
+  /// <summary>Asserts a pawn is drafted. Waits first, since draft state can land a tick after the order.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="nickname">The pawn's nickname.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} is drafted")]
   public async Task AssertDrafted(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -79,6 +109,11 @@ public class SimSteps {
         () => $"pawn '{nickname}' should be drafted; actual state: {PawnState.Describe(pawn)}");
   }
 
+  /// <summary>Asserts a pawn's current job matches a def name. Waits first, since a job is assigned on the next think cycle.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="nickname">The pawn's nickname.</param>
+  /// <param name="jobDefName">The expected job def name.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} has job {string}")]
   public async Task AssertHasJob(PickleContext ctx, string nickname, string jobDefName) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -87,6 +122,9 @@ public class SimSteps {
         () => $"pawn '{nickname}' should have job '{jobDefName}'; actual state: {PawnState.Describe(pawn)}");
   }
 
+  /// <summary>Asserts a pawn is dead. Looks the pawn up among the living or the dead, since a living-only lookup would miss it.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="nickname">The pawn's nickname.</param>
   [Then("{string} is dead")]
   public void AssertDead(PickleContext ctx, string nickname) {
     Map map = RequireMap(ctx);
@@ -94,6 +132,9 @@ public class SimSteps {
     ctx.Assert(pawn.Dead, $"pawn '{nickname}' should be dead; actual state: {PawnState.Describe(pawn)}");
   }
 
+  /// <summary>Asserts a letter whose label contains a substring has arrived.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="labelSubstring">The substring the letter's label should contain.</param>
   [Then("a letter {string} has arrived")]
   public void AssertLetterArrived(PickleContext ctx, string labelSubstring) {
     List<Letter> letters = Find.LetterStack.LettersListForReading;

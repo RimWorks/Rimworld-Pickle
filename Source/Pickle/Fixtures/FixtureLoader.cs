@@ -8,14 +8,26 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Fixtures;
 
+/// <summary>Loads game state for a scenario, either a quickstart, a save fixture, or a save/reload round
+/// trip, and waits for the game to settle before handing control back to the step.</summary>
 public static class FixtureLoader {
   private const float FixtureStepTimeoutSeconds = 175f;
 
   /// <summary>Builds the world a quickstart describes, then waits for it the same way a save load does.</summary>
+  /// <param name="quickstartName">The quickstart's name, as <see cref="QuickstartBridge"/> resolves it.</param>
+  /// <param name="driver">The driver whose waits track the load.</param>
+  /// <param name="scope">The step's wait scope, so the waits are torn down with the step.</param>
+  /// <returns>A task that completes once the quickstart has launched and the world has settled.</returns>
   public static Task LoadQuickstart(string quickstartName, PickleDriver driver, object? scope = null) {
     return LoadAndSettle(() => QuickstartBridge.Launch(quickstartName), driver, scope);
   }
 
+  /// <summary>Copies a fixture save into the saved games folder under a fixed temporary name, loads it,
+  /// and deletes the temporary copy once the load finishes or fails.</summary>
+  /// <param name="resolvedRwsPath">The full path to the fixture's <c>.rws</c> file.</param>
+  /// <param name="driver">The driver whose waits track the load.</param>
+  /// <param name="scope">The step's wait scope, so the waits are torn down with the step.</param>
+  /// <returns>A task that completes once the fixture is loaded and the temporary copy is deleted.</returns>
   public static async Task LoadFixture(string resolvedRwsPath, PickleDriver driver, object? scope = null) {
     string savedGamesFolder = GenFilePaths.SavedGamesFolderPath;
     string tempRwsPath = Path.Combine(savedGamesFolder, "__pickle_fixture.rws");
@@ -32,6 +44,11 @@ public static class FixtureLoader {
   /// Saves the running game and loads it back, so a scenario can assert state survived.
   /// Scribe errors are left in the log on purpose: the caller decides if they fail the step.
   /// </summary>
+  /// <param name="saveName">The save's name, without a file extension.</param>
+  /// <param name="driver">The driver whose waits track the save and the load.</param>
+  /// <param name="scope">The step's wait scope, so the waits are torn down with the step.</param>
+  /// <param name="keepSave">When <c>false</c>, the save file is deleted once the reload finishes or fails.</param>
+  /// <returns>A task that completes once the save has been written and loaded back.</returns>
   public static async Task SaveAndReload(string saveName, PickleDriver driver, object? scope, bool keepSave) {
     string savePath = GenFilePaths.FilePathForSavedGame(saveName);
 

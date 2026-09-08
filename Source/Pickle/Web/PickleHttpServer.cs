@@ -55,14 +55,19 @@ public static class PickleHttpServer {
   // this reference, so it never walks a collection while the run mutates it.
   private static volatile string snapshot = "{\"status\":\"idle\",\"features\":[]}";
 
+  /// <summary>The session an autorun is driving, or <c>null</c> outside an autorun. Progress and abort requests route through it.</summary>
   public static RunSession? ActiveSession { get; set; }
 
+  /// <summary>True once <see cref="Start"/> has a listener up. False after <see cref="Stop"/> or a failed start.</summary>
   public static bool IsRunning => running;
 
+  /// <summary>Replaces the snapshot the <c>/state</c> route serves.</summary>
+  /// <param name="json">The full snapshot document, already serialized.</param>
   public static void Publish(string json) {
     snapshot = json;
   }
 
+  /// <summary>Starts the dashboard on the configured or default port, unless <c>-pickle-no-http</c> was passed, then opens it in a browser.</summary>
   // On unless asked otherwise. The old -pickle-http is gone; RimWorld ignores an argument
   // nothing reads, so a command line that still passes it keeps working.
   public static void StartUnlessDisabled() {
@@ -76,6 +81,8 @@ public static class PickleHttpServer {
     OpenInBrowser(port);
   }
 
+  /// <summary>Starts the HTTP listener on a background thread. Does nothing if it is already running; logs and gives up if the port cannot be bound.</summary>
+  /// <param name="port">The TCP port to listen on.</param>
   public static void Start(int port) {
     if (running) {
       return;
@@ -97,6 +104,7 @@ public static class PickleHttpServer {
     }
   }
 
+  /// <summary>Stops the listener and releases its socket.</summary>
   public static void Stop() {
     running = false;
     try {

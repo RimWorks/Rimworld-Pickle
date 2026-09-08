@@ -6,6 +6,10 @@ using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
+/// <summary>
+/// Reads the <c>MARKER</c> environment variable at startup and, if it names a known smoke,
+/// queues that smoke on the loading long event. One process runs at most one smoke.
+/// </summary>
 [StaticConstructorOnStartup]
 public static class DevSmokeBootstrap {
   private const string LoadingEvent = "LoadingLongEvent";
