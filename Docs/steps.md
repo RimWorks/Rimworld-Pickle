@@ -54,8 +54,8 @@ happen the steps fail and say so, instead of reporting every def as unpatched.
 | `mod {string} loads before {string}` | Checks the first mod's load order index comes before the second's |
 | `mod {string} loads after {string}` | The same check, read the other way |
 
-**These need no save.** Like the def steps above, mod presence and load order are known
-before a game exists, so these run at the main menu too.
+**These need no save.** RimWorld settles which mods loaded, and in what order, before a
+game exists. These run at the main menu, like the def steps.
 
 A miss lists every loaded mod in load order, the way a def miss lists close matches.
 

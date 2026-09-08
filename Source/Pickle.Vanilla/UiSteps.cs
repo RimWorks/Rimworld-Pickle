@@ -12,6 +12,8 @@ namespace RimWorks.Pickle.Vanilla;
 /// <summary>Clicking, keys, tabs, windows and selection, the steps every scenario builds on.</summary>
 [PickleSteps]
 public class UiSteps {
+  private const string Nothing = "(none)";
+
   /// <summary>Returns to the main menu, waiting out any running long event first.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
@@ -214,10 +216,9 @@ public class UiSteps {
         $"warnings seen from: {DescribeObservedMods()}");
     RequireWarningsNotDropped(ctx);
 
-    List<string> matches = LogWatch.WarningsSinceArmed
+    List<string> matches = [.. LogWatch.WarningsSinceArmed
         .Where(w => string.Equals(w.Mod, modName, StringComparison.OrdinalIgnoreCase))
-        .Select(w => w.Message)
-        .ToList();
+        .Select(w => w.Message)];
     ctx.Assert(
         matches.Count == 0,
         $"expected no warnings from mod '{modName}'; got {matches.Count}: {string.Join(" | ", matches)}");
@@ -279,19 +280,18 @@ public class UiSteps {
         .Select(w => w.GetType().Name)
         .OrderBy(n => n)];
 
-    return names.Count == 0 ? "(none)" : string.Join(", ", names);
+    return names.Count == 0 ? Nothing : string.Join(", ", names);
   }
 
   private static List<string> WarningsMatching(string substring) {
-    return LogWatch.WarningsSinceArmed
+    return [.. LogWatch.WarningsSinceArmed
         .Where(w => w.Message.IndexOf(substring, StringComparison.OrdinalIgnoreCase) >= 0)
-        .Select(w => w.Message)
-        .ToList();
+        .Select(w => w.Message)];
   }
 
   private static string DescribeWarnings() {
     return LogWatch.WarningsSinceArmed.Count == 0
-        ? "(none)"
+        ? Nothing
         : string.Join(" | ", LogWatch.WarningsSinceArmed.Select(w => w.Message));
   }
 
@@ -302,7 +302,7 @@ public class UiSteps {
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .OrderBy(m => m, StringComparer.OrdinalIgnoreCase)];
 
-    return mods.Count == 0 ? "(none)" : string.Join(", ", mods);
+    return mods.Count == 0 ? Nothing : string.Join(", ", mods);
   }
 
   // A "no warning" step cannot tell an empty buffer from a wiped one once the 50-slot ring
@@ -339,7 +339,7 @@ public class UiSteps {
         .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
         .Take(20)];
 
-    return labels.Count == 0 ? "(none)" : string.Join(", ", labels);
+    return labels.Count == 0 ? Nothing : string.Join(", ", labels);
   }
 
   private static Command RequireGizmo(string label) {
@@ -364,7 +364,7 @@ public class UiSteps {
         .Where(l => !string.IsNullOrEmpty(l))
         .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)];
 
-    return labels.Count == 0 ? "(none)" : string.Join(", ", labels);
+    return labels.Count == 0 ? Nothing : string.Join(", ", labels);
   }
 
   private static Map RequireMap(PickleContext ctx) {
