@@ -167,6 +167,62 @@ public class UiSteps {
         $"expected no errors logged; got {LogWatch.ErrorCount}: {string.Join(" | ", LogWatch.ErrorsSinceArmed)}");
   }
 
+  /// <summary>Asserts at least one warning matching a substring was logged.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="substring">The substring to look for, case insensitive.</param>
+  [Then("a warning matching {string} was logged")]
+  public void AssertWarningLogged(PickleContext ctx, string substring) {
+    List<string> matches = WarningsMatching(substring);
+    ctx.Assert(
+        matches.Count > 0,
+        matches.Count > 0 ? null : $"expected a warning matching '{substring}'; logged: {DescribeWarnings()}");
+  }
+
+  /// <summary>Asserts no warning matching a substring was logged. Vanilla warns constantly,
+  /// so this is scoped to a substring an author names rather than a blanket check.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="substring">The substring that must not appear, case insensitive.</param>
+  [Then("no warning matching {string} was logged")]
+  public void AssertNoWarningLogged(PickleContext ctx, string substring) {
+    RequireWarningsNotDropped(ctx);
+    List<string> matches = WarningsMatching(substring);
+    ctx.Assert(
+        matches.Count == 0,
+        $"expected no warning matching '{substring}'; got {matches.Count}: {string.Join(" | ", matches)}");
+  }
+
+  /// <summary>Asserts an exact number of warnings matching a substring were logged.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="expectedCount">The exact count of matching warnings expected.</param>
+  /// <param name="substring">The substring to match, case insensitive.</param>
+  [Then("{int} warnings matching {string} were logged")]
+  public void AssertWarningCount(PickleContext ctx, int expectedCount, string substring) {
+    List<string> matches = WarningsMatching(substring);
+    ctx.Assert(
+        matches.Count == expectedCount,
+        $"expected {expectedCount} warning(s) matching '{substring}'; got {matches.Count}: {string.Join(" | ", matches)}");
+  }
+
+  /// <summary>Asserts no warning attributed to a mod was logged.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="modName">The mod's display name, as RimLogging attributes it.</param>
+  [Then("no warnings from mod {string}")]
+  public void AssertNoWarningsFromMod(PickleContext ctx, string modName) {
+    ctx.Require(
+        ModLookup.IsLoaded(modName),
+        $"mod '{modName}' is not loaded. loaded mods: {ModLookup.DescribeLoadOrder()}; " +
+        $"warnings seen from: {DescribeObservedMods()}");
+    RequireWarningsNotDropped(ctx);
+
+    List<string> matches = LogWatch.WarningsSinceArmed
+        .Where(w => string.Equals(w.Mod, modName, StringComparison.OrdinalIgnoreCase))
+        .Select(w => w.Message)
+        .ToList();
+    ctx.Assert(
+        matches.Count == 0,
+        $"expected no warnings from mod '{modName}'; got {matches.Count}: {string.Join(" | ", matches)}");
+  }
+
   /// <summary>Captures the current frame to a file and attaches it to the report.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="name">The name to give the attachment.</param>
@@ -224,6 +280,39 @@ public class UiSteps {
         .OrderBy(n => n)];
 
     return names.Count == 0 ? "(none)" : string.Join(", ", names);
+  }
+
+  private static List<string> WarningsMatching(string substring) {
+    return LogWatch.WarningsSinceArmed
+        .Where(w => w.Message.IndexOf(substring, StringComparison.OrdinalIgnoreCase) >= 0)
+        .Select(w => w.Message)
+        .ToList();
+  }
+
+  private static string DescribeWarnings() {
+    return LogWatch.WarningsSinceArmed.Count == 0
+        ? "(none)"
+        : string.Join(" | ", LogWatch.WarningsSinceArmed.Select(w => w.Message));
+  }
+
+  private static string DescribeObservedMods() {
+    List<string> mods = [.. LogWatch.WarningsSinceArmed
+        .Select(w => w.Mod)
+        .OfType<string>()
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(m => m, StringComparer.OrdinalIgnoreCase)];
+
+    return mods.Count == 0 ? "(none)" : string.Join(", ", mods);
+  }
+
+  // A "no warning" step cannot tell an empty buffer from a wiped one once the 50-slot ring
+  // has evicted entries recorded after Arm: the one it was looking for could be the one gone.
+  private static void RequireWarningsNotDropped(PickleContext ctx) {
+    long dropped = LogWatch.WarningsDroppedSinceArmed;
+    ctx.Require(
+        dropped == 0,
+        $"{dropped} warning(s) rolled out of the buffer since this scenario armed; " +
+        "cannot tell an absent warning from a dropped one");
   }
 
   private static Thing RequireSelectableThing(Map map, string label) {

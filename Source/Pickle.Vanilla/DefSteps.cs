@@ -53,9 +53,7 @@ public class DefSteps {
     Def def = DefLookup.RequireAny(defName);
     ModContentPack? owner = def.modContentPack;
 
-    bool matches = owner != null
-        && (string.Equals(owner.Name, modName, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(owner.PackageId, modName, StringComparison.OrdinalIgnoreCase));
+    bool matches = owner != null && ModLookup.Matches(owner, modName);
 
     ctx.Assert(
         matches,

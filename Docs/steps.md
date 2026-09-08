@@ -45,6 +45,20 @@ rather than a type.
 This needs Harmony or Concord loaded before the game applies XML patches. When that did not
 happen the steps fail and say so, instead of reporting every def as unpatched.
 
+## Mods
+
+| Step | Does |
+| --- | --- |
+| `mod {string} is loaded` | Matches by name or packageId, the same rule `@requires:` uses |
+| `mod {string} is not loaded` | Proves a conflict guard fired |
+| `mod {string} loads before {string}` | Checks the first mod's load order index comes before the second's |
+| `mod {string} loads after {string}` | The same check, read the other way |
+
+**These need no save.** Like the def steps above, mod presence and load order are known
+before a game exists, so these run at the main menu too.
+
+A miss lists every loaded mod in load order, the way a def miss lists close matches.
+
 ## Fixtures
 
 | Step | Does |
@@ -82,6 +96,20 @@ with `ctx.Set<T>()` still points at the old game and needs setting again.
 | `I spawn a {string} pawn at ({int}, {int})` | Spawns any `PawnKindDef`: an animal, a raider, or an anomaly entity |
 | `research {string} is finished` | Marks a research project complete |
 | `game speed is {word}` | Sets the speed: `paused`, `normal`, `fast`, `superfast`, `ultrafast` |
+
+## Storyteller and wealth
+
+| Step | Does |
+| --- | --- |
+| `the storyteller is {string}` | Checks `Find.Storyteller.def` |
+| `I set the storyteller to {string}` | Swaps the def on the live storyteller |
+| `the difficulty is {string}` | Checks `Find.Storyteller.difficultyDef` |
+| `colony wealth is above {float}` | Checks total colony wealth |
+| `colony wealth is below {float}` | |
+| `colony wealth in {word} is above {float}` | Checks one category: `items`, `buildings`, or `floors` |
+
+The wealth steps force a recount before reading. `WealthWatcher` only recounts on its own
+every 5000 ticks, so a check straight after a spawn would still see the old number.
 
 ## Shaping a colonist
 
@@ -495,6 +523,10 @@ while a follow is active.
 | `window {string} is closed` | Checks a window type is closed |
 | `the inspect pane shows {string}` | Checks the selected thing's label |
 | `no errors were logged` | Fails if the game logged an error during the scenario |
+| `a warning matching {string} was logged` | Checks at least one warning contains the text |
+| `no warning matching {string} was logged` | Checks no warning contains the text |
+| `{int} warnings matching {string} were logged` | Checks an exact count, for a step that should warn once and not twice |
+| `no warnings from mod {string}` | Checks no warning is attributed to a mod |
 | `I take a screenshot {string}` | Captures a screenshot and attaches it to the report |
 
 `I click`, `I click button`, `I hover` and `I press key` need real OS input. RimWorld
@@ -503,6 +535,10 @@ Pickle injects both at the OS level: XTEST through `xdotool` on Linux, `SendInpu
 Windows. Linux also needs a real X display. macOS has no backend, so those four steps
 throw there. Every other step here works anywhere.
 See [running tests](running.md).
+
+Vanilla warns constantly, so there is no blanket `no warnings were logged`. Every warning
+step names a substring, and a warning never fails a scenario on its own the way an error
+does.
 
 ## Dev mode
 

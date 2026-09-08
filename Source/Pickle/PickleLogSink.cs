@@ -14,7 +14,7 @@ internal static class PickleLog {
 internal sealed class PickleLogSink : ILogSink {
   public string Name => "pickle-logwatch";
 
-  public LogLevel MinLevel => LogLevel.Error;
+  public LogLevel MinLevel => LogLevel.Warn;
 
   // Checked here as well as declared above: the registry dispatches every entry to every
   // sink, so a sink that trusts MinLevel records Info lines as errors.
@@ -23,7 +23,11 @@ internal sealed class PickleLogSink : ILogSink {
       return;
     }
 
-    LogWatch.RecordError(entry.RenderedMessage);
+    if (entry.Level == LogLevel.Warn) {
+      LogWatch.RecordWarning(entry.RenderedMessage, entry.Mod);
+    } else {
+      LogWatch.RecordError(entry.RenderedMessage);
+    }
   }
 
   public void Flush() {

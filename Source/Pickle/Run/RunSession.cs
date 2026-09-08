@@ -203,7 +203,7 @@ public class RunSession {
 
       // @requires:<mod> keeps a dlc scenario out of a run that has no dlc, reported as
       // skipped rather than failed.
-      string? missingMod = RunOutcomes.MissingRequirement(scenario.Tags, IsModPresent);
+      string? missingMod = RunOutcomes.MissingRequirement(scenario.Tags, ModLookup.IsLoaded);
       if (missingMod != null) {
         Log.InfoTo(PickleLog.Channel, "skipping '{Scenario}', '{MissingMod}' is not loaded", [scenario.Name, missingMod]);
       }
@@ -315,17 +315,6 @@ public class RunSession {
     }
 
     return stepResults.FirstOrDefault(s => s.Status == StepStatus.Failed)?.FailureMessage ?? "Scenario failed";
-  }
-
-  private static bool IsModPresent(string wanted) {
-    foreach (Verse.ModContentPack pack in Verse.LoadedModManager.RunningModsListForReading) {
-      if (string.Equals(pack.Name, wanted, StringComparison.OrdinalIgnoreCase)
-          || string.Equals(pack.PackageId, wanted, StringComparison.OrdinalIgnoreCase)) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   private static void SkipRemainingSteps(ScenarioPlan scenario, List<StepResult> stepResults) {
@@ -759,7 +748,7 @@ public class RunSession {
 
     currentLoadedQuickstart = name;
     currentLoadedFixture = null;
-    LogWatch.Arm();
+    LogWatch.ArmAfterLoad();
   }
 
   private async Task LoadFixtureStep(PickleContext ctx, string fixtureName) {
@@ -777,7 +766,7 @@ public class RunSession {
 
     currentLoadedFixture = fixtureName;
     currentLoadedQuickstart = null;
-    LogWatch.Arm();
+    LogWatch.ArmAfterLoad();
   }
 
   private async Task<(string? ScreenshotPath, List<(string Source, string Content)> StateDumps)> CaptureEvidence(

@@ -10,11 +10,18 @@ public static class LogWatch {
   private static readonly object Gate = new object();
   private static readonly CircularBuffer<string> ErrorBuffer = new CircularBuffer<string>(50);
 
+  // Its own buffer, not a filter over ErrorBuffer: a warning must never be able to trip the
+  // error gate in RunSession, so it cannot share storage with what that gate reads.
+  private static readonly CircularBuffer<(string Message, string? Mod)> WarningBuffer =
+      new CircularBuffer<(string Message, string? Mod)>(50);
+
   // Engine noise no mod can prevent, so a scenario must not fail on it. Wine answers the
   // multi-monitor call with a failure whose own text reads "Success".
   private static readonly string[] IgnoredErrors = ["MonitorFromWindow failed"];
   private static bool armed;
   private static long totalRecorded;
+  private static long totalWarningsRecorded;
+  private static long warningMarkAtArm;
   private static int outsideScenario;
   private static bool everArmed;
 
@@ -55,6 +62,27 @@ public static class LogWatch {
     }
   }
 
+  /// <summary>Every warning recorded since the last <see cref="Arm"/>, oldest first, paired
+  /// with the attributed mod, or <see langword="null"/> when it could not attribute one.</summary>
+  public static IReadOnlyList<(string Message, string? Mod)> WarningsSinceArmed {
+    get {
+      lock (Gate) {
+        return WarningBuffer.GetSnapshot();
+      }
+    }
+  }
+
+  /// <summary>How many warnings since <see cref="Arm"/> have rolled out of the 50-slot buffer.
+  /// Non-zero means a "no warning" step cannot tell an empty buffer from a wiped one.</summary>
+  public static long WarningsDroppedSinceArmed {
+    get {
+      lock (Gate) {
+        long recorded = totalWarningsRecorded - warningMarkAtArm;
+        return Math.Max(0, recorded - WarningBuffer.Count);
+      }
+    }
+  }
+
   /// <summary>
   /// Errors recorded since the process started. Take one of these before an action and
   /// pass it to <see cref="ErrorsSince"/> to see only what that action logged.
@@ -85,9 +113,23 @@ public static class LogWatch {
     }
   }
 
-  /// <summary>Clears the buffer and starts recording errors, for a scenario about to run.</summary>
+  /// <summary>Clears both buffers and starts recording, for a scenario about to run.</summary>
   public static void Arm() {
     lock (Gate) {
+      ErrorBuffer.Clear();
+      WarningBuffer.Clear();
+      warningMarkAtArm = totalWarningsRecorded;
+      armed = true;
+      everArmed = true;
+    }
+  }
+
+  /// <summary>Clears the error buffer only, for a fixture load whose vanilla noise should not
+  /// fail the scenario that asked for it.</summary>
+  public static void ArmAfterLoad() {
+    lock (Gate) {
+      // the load is where the warnings worth asserting on come from, so keep them. only the
+      // error gate needs protecting from load noise.
       ErrorBuffer.Clear();
       armed = true;
       everArmed = true;
@@ -121,6 +163,17 @@ public static class LogWatch {
       if (!armed && everArmed) {
         outsideScenario++;
       }
+    }
+  }
+
+  /// <summary>Records a logged warning. Never gates a scenario the way <see cref="RecordError"/>
+  /// does, so it carries no ignore list and no outside-scenario count.</summary>
+  /// <param name="message">The rendered log message.</param>
+  /// <param name="mod">The mod RimLogging attributed the entry to, or <see langword="null"/>.</param>
+  public static void RecordWarning(string message, string? mod) {
+    lock (Gate) {
+      WarningBuffer.Enqueue((message, mod));
+      totalWarningsRecorded++;
     }
   }
 
