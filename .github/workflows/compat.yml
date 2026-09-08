@@ -67,7 +67,9 @@ jobs:
     permissions:
       contents: read
       packages: write
-    secrets: inherit
+    secrets:
+      STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+      STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
 
   suite:
     name: suite (${{ matrix.set.name }})

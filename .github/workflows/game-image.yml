@@ -10,6 +10,12 @@ on:
         description: Rebuild even when the Steam buildid has not moved.
         type: boolean
         default: false
+    # not required: a dispatch without them just skips the Steam login and uses the cached image.
+    secrets:
+      STEAM_USERNAME:
+        required: false
+      STEAM_CONFIG_VDF_B64:
+        required: false
     outputs:
       image-ref:
         description: Image ref the suite and build jobs should pull.

@@ -25,6 +25,13 @@ on:
         description: Which patch backend to run. Empty runs all three.
         type: string
         default: ''
+    secrets:
+      STEAM_USERNAME:
+        required: false
+      STEAM_CONFIG_VDF_B64:
+        required: false
+      DOCBIN_TOKEN:
+        required: false
   workflow_dispatch:
     inputs:
       live-dashboard:
@@ -109,7 +116,9 @@ jobs:
     permissions:
       contents: read
       packages: write
-    secrets: inherit
+    secrets:
+      STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+      STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
 
   build:
     name: build and test
