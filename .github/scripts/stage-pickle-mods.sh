@@ -179,5 +179,8 @@ cat > "$CONFIG_DIR/Prefs.xml" <<'EOF'
 </PrefsData>
 EOF
 
+# the game runs as uid 1000 and rewrites ModsConfig.xml, but the runner owns these
+chmod -R 777 "$CONFIG_DIR"
+
 echo "staged '$BACKENDS':"
 find "$MODS_DIR" -name '*.dll' -o -name 'About.xml' | sort
