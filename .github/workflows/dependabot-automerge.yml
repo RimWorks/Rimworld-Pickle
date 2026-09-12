@@ -2,7 +2,6 @@ name: dependabot-automerge
 
 on: pull_request_target
 
-# A called workflow cannot hold more than its caller, and the repo default is read.
 permissions:
   contents: write
   pull-requests: write

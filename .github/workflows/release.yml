@@ -9,7 +9,6 @@ permissions:
   contents: write
   issues: write
   pull-requests: write
-  # NuGet trusted publishing exchanges this token for a short-lived API key.
   id-token: write
 
 concurrency:
@@ -17,10 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # the gate: main is pushed to directly with admin bypass, so branch protection cannot
-  # hold publishing back. These have to pass in this run.
   ci:
-    # a called workflow cannot hold more than its caller, and ci's jobs need these.
     permissions:
       contents: read
       packages: write

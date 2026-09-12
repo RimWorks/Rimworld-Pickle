@@ -11,17 +11,12 @@ on:
 permissions:
   contents: read
 
-# literal prefix: github.workflow is the caller's name when this is called.
 concurrency:
   group: sonar-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   analyze:
-    # Ignored on purpose: S3358 else-if ternary chains match the C# house style;
-    # S7718 wants catch (error_); S6772 flags JSX newlines where spacing is a CSS class;
-    # S6819 prefers <fieldset>/<progress>, both of which change the rendering; S6847 reads
-    # <details> as non-interactive. The correctly-roled ARIA cases were fixed instead.
     uses: RimWorks/mod-ci/.github/workflows/sonar.yml@eae5a8f32bee86128ae88bf8821ebaca65ddc1e9 # v1.4.1
     with:
       solution: Pickle.slnx

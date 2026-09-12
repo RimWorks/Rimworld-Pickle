@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     uses: RimWorks/mod-ci/.github/workflows/ship-list.yml@eae5a8f32bee86128ae88bf8821ebaca65ddc1e9 # v1.4.1

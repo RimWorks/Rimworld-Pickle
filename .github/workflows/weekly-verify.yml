@@ -2,14 +2,12 @@ name: weekly-verify
 
 on:
   schedule:
-    # Saturday 14:00 UTC, staggered so the repos never push Steam at once.
     - cron: '0 14 * * 6'
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# shares the release group so two workflows never push the same workshop item at once
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
@@ -36,15 +34,12 @@ jobs:
       - name: Install release dependencies
         run: npm ci --ignore-scripts
 
-      # the dashboard bundles are embedded resources, so they must exist before compiling
       - name: Install dashboard dependencies
         run: npm --prefix Dashboard ci --ignore-scripts
 
       - name: Build dashboard
         run: npm --prefix Dashboard run build
 
-      # Krafs.Rimworld.Ref floats on 1.6.* with no lock file, so this is where a new
-      # RimWorld release enters and where breakage would first show up.
       - name: dotnet restore
         run: dotnet restore Pickle.slnx
 
@@ -55,8 +50,6 @@ jobs:
           echo "RIMWORLD_REF=${version:-unknown}" >> "$GITHUB_ENV"
           echo "resolved RimWorld ref: ${version:-unknown}"
 
-      # Assemblies/ is gitignored, so a checkout has no DLLs. Skipping this publishes a
-      # mod with no code in it.
       - name: dotnet build
         run: dotnet build Pickle.slnx -c Release --nologo --no-restore
 

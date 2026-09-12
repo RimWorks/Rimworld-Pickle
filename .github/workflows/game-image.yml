@@ -1,8 +1,5 @@
 name: game image
 
-# Builds the runnable RimWorld image Pickle's suite runs against. Kept separate from ci
-# so a rebuild can be triggered on its own and the image cannot change as a side effect.
-
 on:
   workflow_call:
     inputs:
@@ -10,7 +7,6 @@ on:
         description: Rebuild even when the Steam buildid has not moved.
         type: boolean
         default: false
-    # not required: a dispatch without them just skips the Steam login and uses the cached image.
     secrets:
       STEAM_USERNAME:
         required: false
@@ -30,9 +26,10 @@ on:
         type: boolean
         default: false
   schedule:
-    # RimWorld ships fixes without telling anyone, and the action skips when the buildid
-    # is unchanged, so a weekly poll is nearly free.
     - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
 
 jobs:
   image:
@@ -47,45 +44,19 @@ jobs:
     steps:
       - name: Build RimWorld 1.6 game image
         id: image
-        uses: RimWorks/steam-game-image-action@adf14e9284efc3d23f726fbdaf566d67efe23f90 # v1.2.0
+        uses: RimWorks/steam-game-image-action@187e9b65e5495b62bba77b45830e648ffae20169 # v2.0.0
         with:
           steam-username: ${{ secrets.STEAM_USERNAME }}
           steam-config-vdf: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
           app-id: '294100'
           branch: 'version-1.6.4633'
-          # No include-paths, so the whole game lands on the action's xvfb runtime base
-          # and RimWorld can actually be launched from it.
           image: ghcr.io/${{ github.repository_owner }}/rimworld-game-runnable
           registry-password: ${{ secrets.GITHUB_TOKEN }}
           skip-if-unchanged: ${{ inputs.force && 'false' || 'true' }}
 
-      - name: Refuse to leave the image public
-        env:
-          OWNER: ${{ github.repository_owner }}
-        run: |
-          # This image holds the whole paid game, not just the managed assemblies, so a
-          # publicly pullable package would be redistributing it.
-          name='rimworld-game-runnable'
-
-          # A refused token means the package is not anonymously readable, which is the
-          # outcome we want, so neither call may abort the step.
-          curl -sS -o "${RUNNER_TEMP}/ghcr-token.json" \
-            "https://ghcr.io/token?scope=repository:${OWNER}/${name}:pull&service=ghcr.io" || true
-          token="$(jq -r '.token // empty' "${RUNNER_TEMP}/ghcr-token.json" 2>/dev/null || true)"
-
-          code="$(curl -s -o /dev/null -w '%{http_code}' \
-            -H "Authorization: Bearer ${token}" \
-            "https://ghcr.io/v2/${OWNER}/${name}/tags/list")"
-
-          if [[ "$code" == "200" ]]; then
-            echo "::error::ghcr.io/${OWNER}/${name} is publicly pullable and contains the" \
-                 "whole game. Set the package to private before running the suite again."
-            exit 1
-          fi
-
-          echo "not anonymously pullable (HTTP ${code})"
-
-          echo "package is not anonymously pullable (HTTP ${code})"
+      - uses: RimWorks/steam-game-image-action/.github/actions/ghcr-private-check@187e9b65e5495b62bba77b45830e648ffae20169 # v2.0.0
+        with:
+          package: rimworld-game-runnable
 
       - name: Report what was built
         run: |
@@ -102,7 +73,6 @@ jobs:
   image-windows:
     name: rimworld 1.6 windows image
     runs-on: ubuntu-latest
-    # Never gates the Linux path. A caller reads windows-image-ref and skips when it is empty.
     continue-on-error: true
     outputs:
       image-ref: ${{ steps.image.outputs.image-ref }}
@@ -113,39 +83,18 @@ jobs:
     steps:
       - name: Build RimWorld 1.6 Windows game image
         id: image
-        uses: RimWorks/steam-game-image-action@5fcae0edf5f2665b01bbcbe8391587a977bbfd5d # steam-platform support
+        uses: RimWorks/steam-game-image-action@187e9b65e5495b62bba77b45830e648ffae20169 # v2.0.0
         with:
           steam-username: ${{ secrets.STEAM_USERNAME }}
           steam-config-vdf: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
           app-id: '294100'
           branch: 'version-1.6.4633'
-          # The Windows depot needs wine, which the default runtime base has none of.
           steam-platform: windows
           base-image: ghcr.io/rimworks/steam-game-image-action/runtime-base-proton:latest
           image: ghcr.io/${{ github.repository_owner }}/rimworld-game-runnable-windows
           registry-password: ${{ secrets.GITHUB_TOKEN }}
           skip-if-unchanged: ${{ inputs.force && 'false' || 'true' }}
 
-      - name: Refuse to leave the image public
-        env:
-          OWNER: ${{ github.repository_owner }}
-        run: |
-          # Same rule as the Linux image: this holds the whole paid game.
-          name='rimworld-game-runnable-windows'
-
-          curl -sS -o "${RUNNER_TEMP}/ghcr-token-win.json" \
-            "https://ghcr.io/token?scope=repository:${OWNER}/${name}:pull&service=ghcr.io" || true
-          token="$(jq -r '.token // empty' "${RUNNER_TEMP}/ghcr-token-win.json" 2>/dev/null || true)"
-
-          code="$(curl -s -o /dev/null -w '%{http_code}' \
-            -H "Authorization: Bearer ${token}" \
-            "https://ghcr.io/v2/${OWNER}/${name}/tags/list")"
-
-          if [[ "$code" == "200" ]]; then
-            echo "::error::ghcr.io/${OWNER}/${name} is publicly pullable and contains the" \
-                 "whole game. Set the package to private before running the suite again."
-            exit 1
-          fi
-
-          echo "package is not anonymously pullable (HTTP ${code})"
-
+      - uses: RimWorks/steam-game-image-action/.github/actions/ghcr-private-check@187e9b65e5495b62bba77b45830e648ffae20169 # v2.0.0
+        with:
+          package: rimworld-game-runnable-windows

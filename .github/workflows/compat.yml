@@ -1,7 +1,5 @@
 name: compat
 
-# One game launch per mod set, then a single merged report showing which scenario broke
-# under which set. Off the push path on purpose: every set is a full suite run.
 on:
   schedule:
     - cron: '0 7 * * 1'
@@ -12,7 +10,9 @@ on:
         type: string
         default: ''
 
-# literal, and deliberately not per ref: one game launch at a time whatever triggered it.
+permissions:
+  contents: read
+
 concurrency:
   group: compat
   cancel-in-progress: true
@@ -29,37 +29,16 @@ jobs:
       - name: Read the sets
         id: read
         run: |
-          matrix="$(python3 -c "
-          import json
-          sets = json.load(open('compat-sets.json'))['sets']
-          print(json.dumps({'set': sets}))
-          ")"
+          matrix="$(jq -c '{set: .sets}' compat-sets.json)"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
           echo "$matrix"
 
   dashboard:
     name: dashboard
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Setup Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: Dashboard/package-lock.json
-
-      - name: Install
-        run: npm --prefix Dashboard ci --ignore-scripts
-
-      - name: Build
-        run: npm --prefix Dashboard run build
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: dashboard-dist
-          path: Dashboard/dist
+    uses: RimWorks/mod-ci/.github/workflows/node-build.yml@af064c716a33a2e81ee9f9504734c9fe06cd55e9 # v1.5.0
+    with:
+      working-directory: Dashboard
+      artifact-name: dashboard-dist
 
   game-image:
     name: rimworld 1.6 image
@@ -80,25 +59,12 @@ jobs:
       contents: read
       packages: read
     strategy:
-      # Every set should be reported, not just the first one that breaks. That is the
-      # whole point of merging them.
       fail-fast: false
       matrix: ${{ fromJSON(needs.sets.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v7
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: dashboard-dist
-          path: Dashboard/dist
-
-      - name: Build the mod
-        run: dotnet build Pickle.slnx -c Release
+      - uses: ./.github/actions/build-mod
 
       - name: Stage mods and config
         env:
@@ -108,55 +74,17 @@ jobs:
             "${{ matrix.set.backend }}" "$RUNNER_TEMP/mods" "$RUNNER_TEMP/config" \
             "${{ matrix.set.extraMods }}"
 
-          mkdir -p "$RUNNER_TEMP/mods/Pickle"
-          tar -c --exclude=.git --exclude=node_modules --exclude=Source \
-              --exclude=Dashboard --exclude=pickle-reports . \
-            | tar -x -C "$RUNNER_TEMP/mods/Pickle"
-
       - name: Run the suite
         env:
-          GAME_IMAGE: ${{ needs.game-image.outputs.image-ref }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUITE_FILTER: ${{ inputs.suite-filter }}
           SET_NAME: ${{ matrix.set.name }}
         run: |
           echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          docker pull -q "$GAME_IMAGE"
-
-          mkdir -p "$PWD/pickle-reports"
-          chmod 777 "$PWD/pickle-reports"
-
-          CFG="/pickle-home/.config/unity3d/Ludeon Studios/RimWorld by Ludeon Studios/Config"
-          run_arg="-pickle-run"
-          [[ -n "$SUITE_FILTER" ]] && run_arg="-pickle-run=$SUITE_FILTER"
-
-          # No film and no dashboard: nobody watches a scheduled run, and a merged report
-          # links its frames rather than embedding them.
-          docker run --rm --init --name "pickle-compat-$SET_NAME" --user 0 \
-            -e HOME=/pickle-home \
-            -v "$RUNNER_TEMP/mods:/game/Mods:ro" \
-            -v "$RUNNER_TEMP/config:$CFG" \
-            -v "$PWD/pickle-reports:/out" \
-            "$GAME_IMAGE" \
-            xvfb-run -a -s '-screen 0 1920x1080x24' \
-              /game/RimWorldLinux "$run_arg" \
-                -pickle-max-film-seconds=0 \
-                -pickle-set-name="$SET_NAME" \
-                -pickle-report-dir=/out -logfile /out/Player.log \
-            > "$RUNNER_TEMP/container.log" 2>&1 &
-          game=$!
-
-          ( until [[ -f pickle-reports/Player.log ]]; do sleep 1; done
-            tail -n +1 -f pickle-reports/Player.log \
-              | grep --line-buffered -oE 'pickle: .*' ) &
-          follow=$!
-
-          # A failing set must not stop the merge, so the status is recorded, not raised.
-          status=0
-          wait "$game" || status=$?
-          sleep 1
-          kill "$follow" 2>/dev/null || true
-          echo "set $SET_NAME exited $status"
+          .github/scripts/run-suite.sh \
+            "${{ needs.game-image.outputs.image-ref }}" \
+            "$RUNNER_TEMP/mods" "$RUNNER_TEMP/config" "$PWD/pickle-reports" \
+            || echo "set $SET_NAME exited $?"
 
       - uses: actions/upload-artifact@v7
         if: always()
@@ -179,8 +107,6 @@ jobs:
 
       - name: Merge the reports
         run: |
-          # The merger reads each set's name out of its own payload, so the order here
-          # only decides the column order.
           mapfile -t reports < <(find sets -name report.html | sort)
           if [[ ${#reports[@]} -eq 0 ]]; then
             echo "::error title=Pickle compat::no set produced a report"
@@ -189,7 +115,6 @@ jobs:
 
           python3 .github/scripts/merge-reports.py merged.html "${reports[@]}"
 
-          # Films are linked, and the merger set-prefixes those paths.
           for dir in sets/compat-*/screenshots/film; do
             [[ -d "$dir" ]] || continue
             set_name="$(basename "$(dirname "$(dirname "$dir")")")"

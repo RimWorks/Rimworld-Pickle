@@ -139,6 +139,12 @@ fi
 ACTIVE="${ACTIVE}
 rimworks.pickle"
 
+# the repo root is the mod folder once it is built; source and history do not ship
+mkdir -p "$MODS_DIR/Pickle"
+tar -c --exclude=.git --exclude=node_modules --exclude=Source \
+    --exclude=Dashboard --exclude=pickle-reports . \
+  | tar -x -C "$MODS_DIR/Pickle"
+
 cat > "$CONFIG_DIR/ModsConfig.xml" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <ModsConfigData>
