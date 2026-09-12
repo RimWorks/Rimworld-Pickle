@@ -54,9 +54,6 @@ jobs:
           registry-password: ${{ secrets.GITHUB_TOKEN }}
           skip-if-unchanged: ${{ inputs.force && 'false' || 'true' }}
 
-      - uses: RimWorks/steam-game-image-action/.github/actions/ghcr-private-check@187e9b65e5495b62bba77b45830e648ffae20169 # v2.0.0
-        with:
-          package: rimworld-game-runnable
 
       - name: Report what was built
         run: |
@@ -95,6 +92,3 @@ jobs:
           registry-password: ${{ secrets.GITHUB_TOKEN }}
           skip-if-unchanged: ${{ inputs.force && 'false' || 'true' }}
 
-      - uses: RimWorks/steam-game-image-action/.github/actions/ghcr-private-check@187e9b65e5495b62bba77b45830e648ffae20169 # v2.0.0
-        with:
-          package: rimworld-game-runnable-windows
