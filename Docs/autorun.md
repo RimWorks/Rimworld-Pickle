@@ -119,10 +119,10 @@ The merger reads each set's name out of its own report, so the order on the comm
 only decides the column order. A single report in still reads as a single report out.
 
 `compat-sets.json` lists the sets `.github/workflows/compat.yml` runs on a schedule. Add a
-mod with `owner/repo:AssetPrefix:packageId`, which
+mod with `owner/repo:AssetPrefix:packageId:tag:sha256`, which
 [stage-pickle-mods.sh](https://github.com/RimWorks/Rimworld-Pickle/blob/main/.github/scripts/stage-pickle-mods.sh)
-pulls from that repository's latest release. Steam Workshop items do not work: staging one
-needs credentials the script does not take.
+pulls from that release and refuses the zip if the hash does not match. Steam Workshop items
+do not work: staging one needs credentials the script does not take.
 
 Every set is a full suite run, so keep the list short.
 

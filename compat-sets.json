@@ -1,8 +1,9 @@
 {
   "$comment": [
     "Mod sets the compat workflow runs the suite against, one game launch each.",
-    "extraMods is a comma separated list of owner/repo:AssetPrefix:packageId, staged from",
-    "GitHub releases by .github/scripts/stage-pickle-mods.sh. A Workshop-only mod cannot go",
+    "extraMods is a comma separated list of owner/repo:AssetPrefix:packageId:tag:sha256,",
+    "staged from GitHub releases by .github/scripts/stage-pickle-mods.sh, which refuses a",
+    "zip whose sha256 does not match. A Workshop-only mod cannot go",
     "here: staging one needs Steam credentials the script deliberately does not take.",
     "Backends live in ci.yml, not here. This file is only about other people's mods, so",
     "baseline is the control column every other set is compared against.",
@@ -17,12 +18,12 @@
     {
       "name": "hugslib",
       "backend": "harmony",
-      "extraMods": "UnlimitedHugs/RimworldHugsLib:HugsLib_:UnlimitedHugs.HugsLib"
+      "extraMods": "UnlimitedHugs/RimworldHugsLib:HugsLib_:UnlimitedHugs.HugsLib:v12.0.0:54ba7685907e8a70c22fbbd4534595e918c6dd0f3a97e665f61954ab27520a98"
     },
     {
       "name": "vehicle-framework",
       "backend": "harmony",
-      "extraMods": "SmashPhil/Vehicle-Framework:Vehicle-Framework-:SmashPhil.VehicleFramework"
+      "extraMods": "SmashPhil/Vehicle-Framework:Vehicle-Framework-:SmashPhil.VehicleFramework:v1.6.2144:b7cf20deafd7ce4b9746a222e0789ab9821a533eeddf808a3951c295f9df8f8b"
     }
   ]
 }
