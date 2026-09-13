@@ -93,6 +93,14 @@ print(match[0]["browser_download_url"])')" || {
     exit 1
   fi
 
+  # a symlink entry escapes the same way without a ../ in any name: Assemblies -> /home/runner
+  # and unzip writes every later member through it, so the long listing is the check
+  bad="$(unzip -Z "$tmp/mod.zip" | grep -E '^l' || true)"
+  if [[ -n "$bad" ]]; then
+    echo "error: the ${repo} zip contains a symlink entry, refusing to extract" >&2
+    exit 1
+  fi
+
   unzip -qo "$tmp/mod.zip" -d "$tmp/x"
 
   inner="$(dirname "$(dirname "$(find "$tmp/x" -mindepth 2 -maxdepth 3 -path '*/About/About.xml' -print -quit)")")"
