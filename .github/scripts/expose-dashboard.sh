@@ -8,9 +8,20 @@ PORT="${1:-27750}"
 CLOUDFLARED="${RUNNER_TEMP:-/tmp}/cloudflared"
 LOG="${RUNNER_TEMP:-/tmp}/cloudflared.log"
 
+# pinned and verified because this binary runs on the runner; hash is the
+# cloudflared-linux-amd64 line from the SHA256 Checksums block in that release's notes
+CLOUDFLARED_TAG=2026.9.1
+CLOUDFLARED_SHA256=03f1f25d1cc93b9ad6c60569d44060bc4f17ed97075760ed8cfca4b12dcd68cc
+
 if ! curl -sSfL --proto '=https' --proto-redir '=https' -o "$CLOUDFLARED" \
-  https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64; then
+  "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDFLARED_TAG}/cloudflared-linux-amd64"; then
   echo "::warning title=Pickle dashboard::could not download cloudflared"
+  exit 1
+fi
+
+if ! printf '%s  %s\n' "$CLOUDFLARED_SHA256" "$CLOUDFLARED" | sha256sum --check --status -; then
+  echo "::warning title=Pickle dashboard::cloudflared sha256 was" \
+    "$(sha256sum < "$CLOUDFLARED" | cut -d' ' -f1), expected ${CLOUDFLARED_SHA256}"
   exit 1
 fi
 chmod +x "$CLOUDFLARED"

@@ -17,17 +17,17 @@ jobs:
     name: verify against current RimWorld, then republish
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           dotnet-version: 10.0.x
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 22
 
@@ -61,7 +61,7 @@ jobs:
           passed=$(grep -oE 'Passed:[[:space:]]+[0-9]+' test-output.txt | grep -oE '[0-9]+' | tail -1)
           echo "TESTS_PASSED=${passed:-unknown}" >> "$GITHUB_ENV"
 
-      - uses: RimWorks/mod-ci/.github/actions/steam-republish@eae5a8f32bee86128ae88bf8821ebaca65ddc1e9 # v1.4.1
+      - uses: RimWorks/mod-ci/.github/actions/steam-republish@d6261858b6b74c0cd3ca03c6402c954d58ac7fee # v1.5.1
         with:
           workshop-id: ${{ vars.WORKSHOP_ID }}
           steam-username: ${{ secrets.STEAM_USERNAME }}

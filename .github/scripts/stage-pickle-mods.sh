@@ -38,8 +38,10 @@ gh_api() {
 
 # A release zip is either the mod folder itself or one directory holding it, and both
 # shapes are common. About/About.xml is what identifies the mod root either way.
+# deliberately unpinned: the point is catching a break against whatever these mods
+# shipped last, and nothing staged here reaches a release artifact
 stage_release_zip() {
-  local repo="$1" prefix="$2" dest="$3" tmp json url inner
+  local repo="$1" prefix="$2" dest="$3" tmp json url inner bad
   tmp="$(mktemp -d)"
 
   json="$(gh_api "https://api.github.com/repos/${repo}/releases/latest")" || {
@@ -60,6 +62,16 @@ print(match[0]["browser_download_url"])')" || {
   }
 
   curl -sSfL "${https_only[@]}" "$url" -o "$tmp/mod.zip"
+
+  # these DLLs get loaded by a real game process, so an entry that escapes the temp dir
+  # could overwrite anything the runner can write
+  # grep -q would SIGPIPE unzip and the pipeline status would fail the check open
+  bad="$(unzip -Z1 "$tmp/mod.zip" | grep -E '(^|/)\.\./|^/' || true)"
+  if [[ -n "$bad" ]]; then
+    echo "error: the ${repo} zip contains a path traversal or absolute entry, refusing to extract" >&2
+    exit 1
+  fi
+
   unzip -qo "$tmp/mod.zip" -d "$tmp/x"
 
   inner="$(dirname "$(dirname "$(find "$tmp/x" -mindepth 2 -maxdepth 3 -path '*/About/About.xml' -print -quit)")")"
