@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 # run-suite-windows.sh <image-ref> <mods-dir> <config-dir> <report-dir>
-# Exits with the game container's status.
-#
-# no set -e: it would abort on the failing wait below before the status is captured.
 set -uo pipefail
 
 IMAGE="${1:?usage: run-suite-windows.sh <image-ref> <mods-dir> <config-dir> <report-dir>}"
@@ -18,7 +15,6 @@ docker pull -q "$IMAGE" || exit 1
 mkdir -p "$REPORT_DIR"
 chmod 777 "$REPORT_DIR"
 
-# paths handed to the exe are wine paths; Z: is the container root
 : > "$TMP/container.log"
 docker run --rm --name pickle-suite-win \
   -v "$MODS_DIR:/game/Mods:ro" \

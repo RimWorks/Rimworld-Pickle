@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
-# Puts Pickle's dashboard on a temporary public URL so a CI run can be watched live.
 #   expose-dashboard.sh [port]
-# The URL is random, unauthenticated and dies with the job, so treat it as throwaway.
 set -uo pipefail
 
 PORT="${1:-27750}"
 CLOUDFLARED="${RUNNER_TEMP:-/tmp}/cloudflared"
 LOG="${RUNNER_TEMP:-/tmp}/cloudflared.log"
 
-# pinned and verified because this binary runs on the runner; hash is the
-# cloudflared-linux-amd64 line from the SHA256 Checksums block in that release's notes
 CLOUDFLARED_TAG=2026.9.1
 CLOUDFLARED_SHA256=03f1f25d1cc93b9ad6c60569d44060bc4f17ed97075760ed8cfca4b12dcd68cc
 
@@ -26,7 +22,6 @@ if ! printf '%s  %s\n' "$CLOUDFLARED_SHA256" "$CLOUDFLARED" | sha256sum --check 
 fi
 chmod +x "$CLOUDFLARED"
 
-# Wait for the dashboard itself, or the tunnel points at nothing.
 for _ in $(seq 1 90); do
   if curl -sS -o /dev/null "http://localhost:${PORT}/" 2>/dev/null; then
     break
@@ -39,14 +34,11 @@ done
 for i in $(seq 1 90); do
   url="$(grep -ohE 'https://[a-z0-9-]+\.trycloudflare\.com' "$LOG" 2>/dev/null | head -1)"
   if [[ -n "${url:-}" ]]; then
-    # Annotations only surface once the job ends, so the streaming log is the only
-    # place this is usable while the run is still going.
     echo "::notice title=Pickle dashboard::${url}"
     printf '\n========================================\n'
     printf '  DASHBOARD: %s\n' "$url"
     printf '========================================\n\n'
 
-    # Scenario lines push it off screen, so repeat it near the tail of the log.
     while sleep 45; do
       echo "--- dashboard: ${url}"
     done

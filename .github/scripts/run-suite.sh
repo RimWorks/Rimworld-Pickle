@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 # run-suite.sh <image-ref> <mods-dir> <config-dir> <report-dir>
-# Reads SUITE_FILTER, FILM_SECONDS, LIVE_DASHBOARD and SET_NAME from the environment.
-# Exits with the game container's status.
-#
-# no set -e: it would abort on the failing wait below before the status is captured.
 set -uo pipefail
 
 IMAGE="${1:?usage: run-suite.sh <image-ref> <mods-dir> <config-dir> <report-dir>}"
@@ -25,7 +21,6 @@ start=$SECONDS
 docker pull -q "$IMAGE" || exit 1
 echo "pulled in $((SECONDS - start))s"
 
-# the host and the container do not agree on user ids
 mkdir -p "$REPORT_DIR"
 chmod 777 "$REPORT_DIR"
 
@@ -36,7 +31,6 @@ echo "running: $run_arg"
 game_args=("$run_arg" "-pickle-max-film-seconds=$FILM_SECONDS")
 [[ -n "$SET_NAME" ]] && game_args+=("-pickle-set-name=$SET_NAME")
 
-# a failed download costs the videos, not the run: FilmEncoder keeps the frames
 mounts=()
 if [[ "$FILM_SECONDS" != "0" ]]; then
   if "$HERE/fetch-ffmpeg.sh" "$TMP/ffmpeg"; then
@@ -52,7 +46,6 @@ if [[ "$LIVE_DASHBOARD" == "true" ]]; then
   game_args+=(-pickle-http)
 fi
 
-# redirected, not piped, so $! stays the container and its status reaches wait
 : > "$TMP/container.log"
 docker run --rm --name "pickle-suite${SET_NAME:+-$SET_NAME}" \
   -v "$MODS_DIR:/game/Mods:ro" \
@@ -76,7 +69,6 @@ container_follow=$!
     ls -la "$REPORT_DIR" || true
   fi ) &
 
-# -o because RimLogging prefixes every line, so the match cannot anchor
 ( until [[ -f "$REPORT_DIR/Player.log" ]]; do sleep 1; done
   tail -n +1 -f "$REPORT_DIR/Player.log" \
     | grep --line-buffered -oE 'pickle: .*' ) &
