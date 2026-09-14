@@ -22,17 +22,14 @@ export default {
         [
             '@semantic-release/exec',
             {
-                // The dashboard bundles are embedded resources, so they have to exist
-                // before the mod is compiled. Harmony/ and Concord/ hold the patching
-                // backends that loadFolders.xml selects between; a zip without them
-                // installs a Pickle that cannot patch anything.
+                // the dashboard bundles are embedded resources, so they have to exist before the compile
                 prepareCmd: [
                     'node scripts/write-stamp.mjs',
                     'npm --prefix Dashboard ci',
                     'npm --prefix Dashboard run build',
                     'dotnet build Pickle.slnx -c Release -p:Version=${nextRelease.version}',
                     'dotnet pack Source/Pickle.Ref/Pickle.Ref.csproj -c Release -p:Version=${nextRelease.version} -o artifacts',
-                    'zip -r Pickle-${nextRelease.version}.zip About Assemblies Defs Harmony Concord Languages Patches Pickle loadFolders.xml -x "*.pdb" "About/Preview.xcf" "About/Workshop/*"',
+                    'npx package-mod Pickle ${nextRelease.version}',
                 ].join(' && '),
 
                 // The workflow gets NUGET_API_KEY from trusted publishing. Skipped
@@ -67,7 +64,7 @@ export default {
             '@semantic-release/github',
             {
                 assets: [
-                    { path: 'Pickle-*.zip', label: 'Pickle mod' },
+                    { path: 'dist/Pickle-*.zip', label: 'Pickle mod' },
                     { path: 'artifacts/RimWorks.Pickle.Ref.*.nupkg', label: 'Reference package' },
                 ],
             },

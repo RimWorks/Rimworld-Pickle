@@ -25,9 +25,13 @@ package-lock.json
 release.config.mjs
 lychee.toml
 Pickle.slnx
-LICENSE
 
 *.md
 *.pdb
 *.xcf
 *.zip
+dist
+artifacts
+nupkgs
+Styles
+compat-sets.json

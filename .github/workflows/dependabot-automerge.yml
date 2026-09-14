@@ -10,4 +10,4 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    uses: RimWorks/mod-ci/.github/workflows/dependabot-automerge.yml@f10430c71960ac8d11c9cfb4b5b31cdfbc83cab9 # v1.5.2
+    uses: RimWorks/mod-ci/.github/workflows/dependabot-automerge.yml@v1.10

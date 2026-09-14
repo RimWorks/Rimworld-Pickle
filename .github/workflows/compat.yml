@@ -35,7 +35,7 @@ jobs:
 
   dashboard:
     name: dashboard
-    uses: RimWorks/mod-ci/.github/workflows/node-build.yml@f10430c71960ac8d11c9cfb4b5b31cdfbc83cab9 # v1.5.2
+    uses: RimWorks/mod-ci/.github/workflows/node-build.yml@v1.10
     with:
       working-directory: Dashboard
       artifact-name: dashboard-dist
