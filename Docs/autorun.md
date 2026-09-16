@@ -41,7 +41,7 @@ and falls back.
 Without the flag, Pickle uses `/out/pickle-reports` when `/out` exists and is writable,
 and the save folder otherwise. `/out` is a mount your harness has to provide. A container
 that does not mount it gets the save folder, which is `/data/PickleReports` under
-docker-game.
+gamecrate.
 
 ## Choosing what runs
 
