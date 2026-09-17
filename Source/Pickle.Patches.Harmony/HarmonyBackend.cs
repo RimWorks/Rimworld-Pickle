@@ -13,12 +13,14 @@ namespace RimWorks.Pickle.Patches.Harmony;
 /// </summary>
 [StaticConstructorOnStartup]
 public class HarmonyBackend : IPatchBackend {
+  private const string BackendName = "Harmony";
+
   static HarmonyBackend() {
     PatchBackends.Register(new HarmonyBackend(), PatchBackends.HarmonyPriority);
   }
 
   /// <inheritdoc/>
-  public string Name => "Harmony";
+  public string Name => BackendName;
 
   /// <summary>Prefix on <see cref="UIRoot.UIRootOnGUI"/> that runs Pickle's per-frame work before the game draws.</summary>
   public static void UIRootOnGUIPrefix() {
@@ -60,6 +62,18 @@ public class HarmonyBackend : IPatchBackend {
   /// <summary>Prefix on <see cref="LoadedModManager.ClearCachedPatches"/> that clears Pickle's patch attribution cache alongside it.</summary>
   public static void ClearCachedPatchesPrefix() {
     PickleHooks.BeforeClearCachedPatches();
+  }
+
+  /// <summary>Postfix on <see cref="PatchProbe.Target"/> that proves Harmony runs what it accepts.</summary>
+  public static void ProbeTargetPostfix() {
+    PatchProbe.Record(BackendName);
+  }
+
+  /// <inheritdoc/>
+  public void ApplyProbe() {
+    new HarmonyLib.Harmony("rimworks.pickle.probe").Patch(
+        typeof(PatchProbe).GetMethod(nameof(PatchProbe.Target)),
+        postfix: Handler(nameof(ProbeTargetPostfix)));
   }
 
   /// <inheritdoc/>

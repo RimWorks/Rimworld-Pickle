@@ -13,4 +13,7 @@ public interface IPatchBackend {
 
   /// <summary>Hooks that must land before RimWorld applies XML patches at load.</summary>
   void ApplyEarly();
+
+  /// <summary>Hooks <see cref="PatchProbe.Target"/> so it calls <see cref="PatchProbe.Record"/>. Called at most once per backend.</summary>
+  void ApplyProbe();
 }

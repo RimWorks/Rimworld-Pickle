@@ -14,12 +14,14 @@ namespace RimWorks.Pickle.Patches.Concord;
 /// </summary>
 [StaticConstructorOnStartup]
 public class ConcordBackend : IPatchBackend {
+  private const string BackendName = "Concord";
+
   static ConcordBackend() {
     PatchBackends.Register(new ConcordBackend(), PatchBackends.ConcordPriority);
   }
 
   /// <inheritdoc/>
-  public string Name => "Concord";
+  public string Name => BackendName;
 
   /// <summary>Head injection on <see cref="UIRoot.UIRootOnGUI"/> that runs Pickle's per-frame work before the game draws.</summary>
   public static void BeforeUIRootOnGUI() {
@@ -61,6 +63,19 @@ public class ConcordBackend : IPatchBackend {
   /// <summary>Head injection on <see cref="LoadedModManager.ClearCachedPatches"/> that clears Pickle's patch attribution cache alongside it.</summary>
   public static void BeforeClearCachedPatches() {
     PickleHooks.BeforeClearCachedPatches();
+  }
+
+  /// <summary>Tail injection on <see cref="PatchProbe.Target"/> that proves Concord runs what it accepts.</summary>
+  public static void AfterProbeTarget() {
+    PatchProbe.Record(BackendName);
+  }
+
+  /// <inheritdoc/>
+  public void ApplyProbe() {
+    Patcher.Patch(
+        typeof(PatchProbe).GetMethod(nameof(PatchProbe.Target)),
+        Injection(nameof(AfterProbeTarget)),
+        At.Tail);
   }
 
   /// <inheritdoc/>
