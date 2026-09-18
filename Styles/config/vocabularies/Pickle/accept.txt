@@ -78,3 +78,5 @@ flamegraph
 telemetry
 TPS
 gamecrate
+vibecode
+Vibecoding
