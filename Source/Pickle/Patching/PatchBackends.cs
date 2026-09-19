@@ -9,7 +9,8 @@ namespace RimWorks.Pickle.Patching;
 
 /// <summary>
 /// Picks one backend and applies it. [StaticConstructorOnStartup] order is undefined, so
-/// nothing applies until all have registered. Highest priority wins, so Concord beats Harmony.
+/// nothing applies until all have registered. Highest priority wins, so Concord beats Harmony,
+/// unless its probe patch never runs.
 /// </summary>
 [StaticConstructorOnStartup]
 public static class PatchBackends {
@@ -20,6 +21,8 @@ public static class PatchBackends {
   public const int HarmonyPriority = 0;
 
   private static readonly List<(IPatchBackend Backend, int Priority)> Registered = new();
+
+  private static readonly Dictionary<string, bool> ProbeResults = new();
 
   private static bool applied;
   private static bool appliedEarly;
@@ -59,7 +62,7 @@ public static class PatchBackends {
 
     // A backend that throws must not take the run down with it when another one is
     // loaded and working, so each is tried in turn.
-    foreach ((IPatchBackend backend, int _) in found.OrderByDescending(r => r.Priority)) {
+    foreach ((IPatchBackend backend, int _) in InTrialOrder(found)) {
       try {
         backend.ApplyEarly();
         PatchAttribution.Arm();
@@ -89,7 +92,7 @@ public static class PatchBackends {
 
     // A backend that throws hands over to the next one rather than leaving the game
     // unpatched while a working library sits right there.
-    foreach ((IPatchBackend backend, int priority) in Registered.OrderByDescending(r => r.Priority)) {
+    foreach ((IPatchBackend backend, int priority) in InTrialOrder(Registered)) {
       try {
         backend.Apply();
       } catch (Exception ex) {
@@ -111,6 +114,53 @@ public static class PatchBackends {
 
     Log.ErrorTo(PickleLog.Channel, "every patching backend failed to apply; Pickle cannot run steps.");
     MissingBackendNotice.ShowIfDevMode();
+  }
+
+  // Probes in priority order and stops at the first backend that passes. Probing every backend
+  // would put two libraries on the probe method at once, and a backend that loses a contended
+  // method - which is the very failure this looks for - would then lose it here too.
+  //
+  // A backend whose probe did not fire goes after the ones never probed, which go after the
+  // winner. With no winner the order is the plain priority order again.
+  private static IEnumerable<(IPatchBackend Backend, int Priority)> InTrialOrder(
+      IEnumerable<(IPatchBackend Backend, int Priority)> backends) {
+    List<(IPatchBackend Backend, int Priority)> byPriority = [.. backends.OrderByDescending(r => r.Priority)];
+    List<(IPatchBackend Backend, int Priority)> failed = [];
+
+    foreach ((IPatchBackend Backend, int Priority) entry in byPriority) {
+      if (Probe(entry.Backend)) {
+        return [entry, .. byPriority.Skip(failed.Count + 1), .. failed];
+      }
+
+      failed.Add(entry);
+    }
+
+    return byPriority;
+  }
+
+  // Keyed by name: the early pass creates its own backend instances, and a probe patches the
+  // same method each time it runs, so every library is probed once per session.
+  private static bool Probe(IPatchBackend backend) {
+    if (ProbeResults.TryGetValue(backend.Name, out bool known)) {
+      return known;
+    }
+
+    bool works;
+    try {
+      works = backend.Probe();
+    } catch (Exception ex) {
+      Log.WarnTo(PickleLog.Channel, ex, $"{backend.Name} backend threw while probing");
+      works = false;
+    }
+
+    if (!works) {
+      Log.WarnTo(PickleLog.Channel,
+          "{Backend} reports it does not run what it accepts; it is tried after every backend that passes",
+          [backend.Name]);
+    }
+
+    ProbeResults[backend.Name] = works;
+    return works;
   }
 
   private static void CollectBackends(Assembly assembly, List<(IPatchBackend Backend, int Priority)> into) {

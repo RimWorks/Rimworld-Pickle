@@ -25,7 +25,9 @@ Pickle is a test runner for mod authors, not a mod for players.
 Pickle needs RimWorld 1.6 and one patching library. Either
 [Harmony](https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077) or
 [Concord](https://steamcommunity.com/sharedfiles/filedetails/?id=3758333473) works.
-Pickle prefers Concord when both are active, and logs which one it used.
+Pickle prefers Concord when both are active, and logs which one it used. When a library
+accepts patches that never run, as Concord does after a failed startup, Pickle falls back
+to the other one.
 
 1. Subscribe to Pickle on the Steam Workshop, or unzip a
    [release](https://github.com/RimWorks/Rimworld-Pickle/releases) into `Mods/`.
