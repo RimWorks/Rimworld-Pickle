@@ -39,7 +39,7 @@ internal static class TagStore {
       return;
     }
 
-    Store[tag] = new TagEntry { Rect = screenRect, Duplicate = false };
+    Store[tag] = new TagEntry { Rect = screenRect, Duplicate = false, UiScale = Prefs.UIScale };
   }
 
   public static void BeginFrame() {
@@ -47,7 +47,10 @@ internal static class TagStore {
   }
 
   public static bool TryGet(string tag, out Rect rect, out bool duplicate) {
-    if (Store.TryGetValue(tag, out TagEntry? entry)) {
+    // A rect recorded before the interface scale changed describes a layout that no longer
+    // exists, and scaling it to screen space aims the pointer off the window. Treating it as
+    // absent makes the caller wait for the frame that redraws the widget at the new scale.
+    if (Store.TryGetValue(tag, out TagEntry? entry) && Mathf.Approximately(entry.UiScale, Prefs.UIScale)) {
       rect = entry.Rect;
       duplicate = entry.Duplicate;
       return true;
@@ -56,6 +59,13 @@ internal static class TagStore {
     rect = default;
     duplicate = false;
     return false;
+  }
+
+  /// <summary>Whether the tag is held, but from a frame drawn at another interface scale.</summary>
+  /// <param name="tag">The tag to look for.</param>
+  /// <returns>True when a stale-scale entry is the only thing the store holds for that tag.</returns>
+  public static bool HeldAtAnotherScale(string tag) {
+    return Store.TryGetValue(tag, out TagEntry? entry) && !Mathf.Approximately(entry.UiScale, Prefs.UIScale);
   }
 
   public static bool TryGetDuplicate(string tag, out Rect duplicateRect) {
@@ -71,6 +81,9 @@ internal static class TagStore {
 
 internal class TagEntry {
   public Rect Rect { get; set; }
+
+  /// <summary>The interface scale the rect was measured at.</summary>
+  public float UiScale { get; set; }
 
   public bool Duplicate { get; set; }
 
