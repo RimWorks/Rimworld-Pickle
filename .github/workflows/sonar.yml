@@ -1,7 +1,10 @@
 name: sonar
 
 on:
-  pull_request:
+  # pull_request_target, not pull_request: a fork's PR gets no secrets otherwise and the
+  # scan dies on an empty token. mod-ci checks out the PR head and passes the PR
+  # coordinates to the scanner itself.
+  pull_request_target:
     types: [opened, synchronize, reopened]
   workflow_call:
     secrets:
@@ -12,7 +15,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: sonar-${{ github.ref }}
+  # github.ref is the base branch under pull_request_target, so key on the PR instead.
+  group: sonar-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
