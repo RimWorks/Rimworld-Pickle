@@ -116,15 +116,26 @@ public static class PatchBackends {
     MissingBackendNotice.ShowIfDevMode();
   }
 
-  // A backend whose probe did not fire goes after every backend whose probe did, instead of
-  // being dropped: if no probe fires anywhere, the order is the plain priority order again.
+  // Probes in priority order and stops at the first backend that passes. Probing every backend
+  // would put two libraries on the probe method at once, and a backend that loses a contended
+  // method - which is the very failure this looks for - would then lose it here too.
+  //
+  // A backend whose probe did not fire goes after the ones never probed, which go after the
+  // winner. With no winner the order is the plain priority order again.
   private static IEnumerable<(IPatchBackend Backend, int Priority)> InTrialOrder(
       IEnumerable<(IPatchBackend Backend, int Priority)> backends) {
-    return backends
-        .Select(r => (Entry: r, Works: Probe(r.Backend)))
-        .OrderByDescending(r => r.Works)
-        .ThenByDescending(r => r.Entry.Priority)
-        .Select(r => r.Entry);
+    List<(IPatchBackend Backend, int Priority)> byPriority = [.. backends.OrderByDescending(r => r.Priority)];
+    List<(IPatchBackend Backend, int Priority)> failed = [];
+
+    foreach ((IPatchBackend Backend, int Priority) entry in byPriority) {
+      if (Probe(entry.Backend)) {
+        return [entry, .. byPriority.Skip(failed.Count + 1), .. failed];
+      }
+
+      failed.Add(entry);
+    }
+
+    return byPriority;
   }
 
   // Keyed by name: the early pass creates its own backend instances, and a probe patches the
