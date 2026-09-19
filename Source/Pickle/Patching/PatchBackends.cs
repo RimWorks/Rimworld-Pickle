@@ -136,16 +136,15 @@ public static class PatchBackends {
 
     bool works;
     try {
-      backend.ApplyProbe();
-      works = PatchProbe.Fired(backend.Name);
+      works = backend.Probe();
     } catch (Exception ex) {
-      Log.WarnTo(PickleLog.Channel, ex, $"{backend.Name} backend threw while patching the probe");
+      Log.WarnTo(PickleLog.Channel, ex, $"{backend.Name} backend threw while probing");
       works = false;
     }
 
     if (!works) {
       Log.WarnTo(PickleLog.Channel,
-          "{Backend} accepted a probe patch that never ran; it is tried after every backend that passes",
+          "{Backend} reports it does not run what it accepts; it is tried after every backend that passes",
           [backend.Name]);
     }
 

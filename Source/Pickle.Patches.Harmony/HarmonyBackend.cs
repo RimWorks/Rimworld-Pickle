@@ -70,10 +70,12 @@ public class HarmonyBackend : IPatchBackend {
   }
 
   /// <inheritdoc/>
-  public void ApplyProbe() {
+  public bool Probe() {
     new HarmonyLib.Harmony("rimworks.pickle.probe").Patch(
         typeof(PatchProbe).GetMethod(nameof(PatchProbe.Target)),
         postfix: Handler(nameof(ProbeTargetPostfix)));
+
+    return PatchProbe.Fired(BackendName);
   }
 
   /// <inheritdoc/>
