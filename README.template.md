@@ -42,7 +42,7 @@ You can also watch a run from a browser on any machine. That is the only way to 
 
 ## Requirements
 
-RimWorld 1.6 and one patching library. Harmony or Concord both work. Pickle prefers Concord when you have both.
+RimWorld 1.6 and one patching library. Harmony or Concord both work. Pickle prefers Concord when you have both, and falls back to Harmony when Concord accepts patches that never run.
 
 ## Getting started
 

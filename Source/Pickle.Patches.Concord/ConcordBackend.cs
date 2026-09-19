@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using System.Xml;
 using Concord;
@@ -14,12 +15,14 @@ namespace RimWorks.Pickle.Patches.Concord;
 /// </summary>
 [StaticConstructorOnStartup]
 public class ConcordBackend : IPatchBackend {
+  private const string BackendName = "Concord";
+
   static ConcordBackend() {
     PatchBackends.Register(new ConcordBackend(), PatchBackends.ConcordPriority);
   }
 
   /// <inheritdoc/>
-  public string Name => "Concord";
+  public string Name => BackendName;
 
   /// <summary>Head injection on <see cref="UIRoot.UIRootOnGUI"/> that runs Pickle's per-frame work before the game draws.</summary>
   public static void BeforeUIRootOnGUI() {
@@ -63,6 +66,28 @@ public class ConcordBackend : IPatchBackend {
     PickleHooks.BeforeClearCachedPatches();
   }
 
+  /// <summary>Tail injection on <see cref="PatchProbe.Target"/> that proves Concord runs what it accepts.</summary>
+  public static void AfterProbeTarget() {
+    PatchProbe.Record(BackendName);
+  }
+
+  /// <inheritdoc/>
+  // Concord publishes its own readiness: RimWorldAdapter.Ready turns true only once wiring
+  // finished, which is a direct answer where the probe is an inference. Adapters before v1.6.2
+  // have no such property, and there the probe is the only signal.
+  public bool Probe() {
+    if (AdapterReady() == false) {
+      return false;
+    }
+
+    Patcher.Patch(
+        typeof(PatchProbe).GetMethod(nameof(PatchProbe.Target)),
+        Injection(nameof(AfterProbeTarget)),
+        At.Tail);
+
+    return PatchProbe.Fired(BackendName);
+  }
+
   /// <inheritdoc/>
   public void ApplyEarly() {
     Patcher.Patch(
@@ -104,6 +129,33 @@ public class ConcordBackend : IPatchBackend {
         typeof(MainMenuDrawer).GetMethod(nameof(MainMenuDrawer.DoMainMenuControls)),
         Injection(nameof(AfterMainMenuControls)),
         At.Tail);
+  }
+
+  /// <summary>Concord's own readiness flag, or null when the loaded adapter has none.</summary>
+  // By reflection: the backend compiles against the Concord runtime, while the flag lives in the
+  // RimWorld adapter, which ships with the mod rather than with the package.
+  private static bool? AdapterReady() {
+    foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies()) {
+      Type? adapter;
+      try {
+        adapter = assembly.GetType("Concord.RimWorld.RimWorldAdapter", throwOnError: false);
+      } catch (Exception) {
+        continue;
+      }
+
+      if (adapter?.GetProperty("Ready", BindingFlags.Public | BindingFlags.Static) is not { } ready
+          || ready.PropertyType != typeof(bool)) {
+        continue;
+      }
+
+      try {
+        return (bool)ready.GetValue(null);
+      } catch (Exception) {
+        return null;
+      }
+    }
+
+    return null;
   }
 
   private static MethodBase Injection(string name) {
