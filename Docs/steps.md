@@ -513,6 +513,7 @@ while a follow is active.
 | `the main menu is open` | Quits to the main menu if a game is loaded, then waits for `UIRoot_Entry`. The way into the `Page_` stack |
 | `I click {string}` | Clicks a tagged widget |
 | `I click button {string}` | Clicks a vanilla button by label. Pickle tags those for you |
+| `I click button keyed {string}` | Clicks a button by the translation key its label comes from, so the scenario runs in any language |
 | `I click gizmo {string}` | Runs a gizmo on the current selection |
 | `I hover {string}` | Moves the pointer onto a tagged widget |
 | `I press key {string}` | Sends a real key through XTEST, so `Input.GetKeyDown` sees it. Accepts `Escape`, `Return`, `Space`, `Tab`, `Delete`, `Backspace`, a letter, or a digit |
@@ -569,3 +570,14 @@ PickleUI.Tag("my-button", buttonRect);
 
 Vanilla buttons need no tagging. Pickle records them by label, so
 `I click button "Research"` works out of the box.
+
+A label is whatever the game drew, in the player's language: `I click button "Research"`
+finds nothing on a French client, where the button reads `Recherche`. Name the translation
+key instead, and the scenario runs anywhere:
+
+```gherkin
+When I click button keyed "Research"
+```
+
+The key is the one the drawing code translates, vanilla's own or your mod's. When no
+translation is loaded for it the step fails and names the active language.
