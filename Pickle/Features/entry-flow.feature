@@ -12,3 +12,10 @@ Feature: entry flow
     Then window "Page_SelectStoryteller" is open
     When I click button "Back"
     Then window "Page_SelectScenario" is open
+
+  Scenario: a button answers to the key its label came from
+    Given the main menu is open
+    When I click button keyed "NewColony"
+    Then window "Page_SelectScenario" is open
+    When I click button keyed "Next"
+    Then window "Page_SelectStoryteller" is open
