@@ -550,6 +550,8 @@ into a tile, so Pickle scans the grid for the closest one.
 | `I select {string}` | Selects a pawn or thing by name |
 | `I open the {string} tab` | Opens a main tab by def name or label |
 | `I close all dialogs` | Closes every open window |
+| `the screen is clear` | Closes every window Pickle does not own, and keeps them shut for the rest of the scenario. Setup for any scenario that clicks |
+| `windows are allowed to open again` | Lets the game open its own windows again, before the scenario ends |
 | `window {string} is open` | Checks a window type is open |
 | `window {string} is closed` | Checks a window type is closed |
 | `the inspect pane shows {string}` | Checks the selected thing's label |
