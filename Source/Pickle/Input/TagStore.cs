@@ -29,17 +29,28 @@ internal static class TagStore {
       return;
     }
 
-    // Convert window-local rect to game-window space using the active GUI group matrix.
-    // Rects tagged inside windows/groups are local; a backend expects game-window coords.
-    Rect screenRect = GUIUtility.GUIToScreenRect(rect);
+    // Unclip a window-local rect into game-window GUI space. Rects tagged inside windows or
+    // groups are local, and every consumer wants GUI space: InputBackends.ToScreen applies
+    // Prefs.UIScale itself, and hit tests compare against UI.MousePositionOnUIInverted.
+    //
+    // GUIToScreenRect cannot do it. Measured at 1920x1080 on one button drawn in one place: it
+    // adds the clip origin UNSCALED and the local offset SCALED, so at 150% a window at GUI
+    // y 375 holding a local y 285 came back as 802.5 - neither GUI space (660) nor screen space
+    // (990). ToScreen then multiplied it by 1.5 again and sent the pointer to 1203 on a screen
+    // 1080 tall. At scale 1 the two spaces coincide, which is why only a scaled interface ever
+    // saw it.
+    //
+    // GUIToScreenPoint(zero) is exact for the origin: the scaled term vanishes at zero.
+    Vector2 clipOrigin = GUIUtility.GUIToScreenPoint(Vector2.zero);
+    Rect guiRect = new(rect.position + clipOrigin, rect.size);
 
     if (Store.TryGetValue(tag, out TagEntry? entry)) {
       entry.Duplicate = true;
-      entry.DuplicateRect = screenRect;
+      entry.DuplicateRect = guiRect;
       return;
     }
 
-    Store[tag] = new TagEntry { Rect = screenRect, Duplicate = false, UiScale = Prefs.UIScale };
+    Store[tag] = new TagEntry { Rect = guiRect, Duplicate = false, UiScale = Prefs.UIScale };
   }
 
   public static void BeginFrame() {
