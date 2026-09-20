@@ -41,8 +41,24 @@ public static class SuiteRunner {
       PickleHttpServer.ActiveSession = session;
 
       Dictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> published = new();
-      void PublishSnapshot() =>
+
+      // The dashboard is a view of the run, not a part of it, so nothing it does may end one.
+      // A snapshot builds from live game state and can meet that state mid-change: translating a
+      // label while the game holds no active language threw here, and the exception travelled out
+      // through OnProgress, ended the run in "infrastructure-error", and was reported against
+      // whichever scenario happened to be running. Log the first failure and keep going. A browser
+      // that misses a frame costs nothing; a run that dies costs the whole suite.
+      bool snapshotFailureLogged = false;
+      void PublishSnapshot() {
+        try {
           PickleHttpServer.Publish(RunnerSnapshot.Build(parsedFeatures, published, session, true));
+        } catch (Exception ex) {
+          if (!snapshotFailureLogged) {
+            snapshotFailureLogged = true;
+            Log.WarnTo(PickleLog.Channel, ex, "dashboard snapshot failed, the run continues without it");
+          }
+        }
+      }
       session.OnProgress = PublishSnapshot;
       PublishSnapshot();
 
