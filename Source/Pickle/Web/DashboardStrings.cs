@@ -69,8 +69,15 @@ public static class DashboardStrings {
 
   // A key with no entry translates to the key itself, which would read as
   // "Pickle_RunAll" on a button. Fall back to nothing and let the browser decide.
+  //
+  // There may also be no language at all. SelectLanguage does not finish inside the call: the
+  // game reloads the language data and only then points activeLanguage at it, and every frame in
+  // between has none. CanTranslate dereferences it, so a snapshot published in that window throws
+  // NullReferenceException - out of PublishSnapshot, out of the runner, and the whole run dies
+  // with exitReason "infrastructure-error" while the game is left unable to quit. A scenario that
+  // switches language is enough to hit it. A dashboard label is never worth a run.
   private static string Translate(string key) {
-    if (!key.CanTranslate()) {
+    if (LanguageDatabase.activeLanguage == null || !key.CanTranslate()) {
       return string.Empty;
     }
 
