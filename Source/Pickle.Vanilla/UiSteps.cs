@@ -205,6 +205,30 @@ public class UiSteps {
         $"expected {expectedCount} warning(s) matching '{substring}'; got {matches.Count}: {string.Join(" | ", matches)}");
   }
 
+  /// <summary>Asserts at least one warning attributed to a mod was logged.</summary>
+  /// <remarks>
+  /// The counterpart of <c>no warnings from mod</c>, and the only way a scenario can prove that
+  /// attribution is looked at rather than merely not contradicted: a check that never matches
+  /// passes the negative form for the wrong reason, and nothing in a report shows the difference.
+  /// </remarks>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="modName">The mod's name or packageId, as every other mod step takes it.</param>
+  [Then("a warning from mod {string} was logged")]
+  public void AssertWarningFromMod(PickleContext ctx, string modName) {
+    ModContentPack? mod = ModLookup.Find(modName);
+    ctx.Require(
+        mod != null,
+        $"mod '{modName}' is not loaded. loaded mods: {ModLookup.DescribeLoadOrder()}; " +
+        $"warnings seen from: {DescribeObservedMods()}");
+
+    List<string> matches = [.. LogWatch.WarningsSinceArmed
+        .Where(w => string.Equals(w.Mod, mod!.Name, StringComparison.OrdinalIgnoreCase))
+        .Select(w => w.Message)];
+    ctx.Assert(
+        matches.Count > 0,
+        $"expected a warning from mod '{mod!.Name}'; warnings seen from: {DescribeObservedMods()}");
+  }
+
   /// <summary>Asserts no warning attributed to a mod was logged.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="modName">The mod's display name, as RimLogging attributes it.</param>
