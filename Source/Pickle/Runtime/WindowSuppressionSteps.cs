@@ -14,8 +14,10 @@ namespace RimWorks.Pickle.Runtime;
 // would do nothing and the scenario would read a stale result as a pass.
 [PickleSteps]
 public class WindowSuppressionSteps {
-  private static Dialog_MessageBox? foreign;
-  private static TagClickTestWindow? own;
+  // One instance of a steps class serves one scenario, so these hold that scenario's windows
+  // and nothing leaks into the next one.
+  private Dialog_MessageBox? foreign;
+  private TagClickTestWindow? own;
 
   /// <summary>Opens a window belonging to the game, which suppression is meant to drop.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
