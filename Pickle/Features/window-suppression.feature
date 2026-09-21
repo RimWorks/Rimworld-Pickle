@@ -29,3 +29,17 @@ Feature: window suppression
     And a window Pickle does not own opens
     Then window "Dialog_MessageBox" is open
     And no errors were logged
+
+  # Documented in Docs/steps.md: a window the scenario itself means to open is dropped as well, and
+  # lifting suppression first is what lets it through. Written last on purpose: it lifts suppression
+  # itself, so it cannot sit between the scenarios above, where the third relies on the second
+  # having left it on. The window opening at the end is its own control: it shows that the
+  # dropped one was dropped by suppression and not by a window that never opened.
+  Scenario: a window the scenario means to open is dropped until suppression is lifted
+    Given the screen is clear
+    When a window Pickle does not own opens
+    Then window "Dialog_MessageBox" is closed
+    When windows are allowed to open again
+    And a window Pickle does not own opens
+    Then window "Dialog_MessageBox" is open
+    And no errors were logged

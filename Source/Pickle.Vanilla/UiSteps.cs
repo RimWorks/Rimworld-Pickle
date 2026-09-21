@@ -149,7 +149,7 @@ public class UiSteps {
     }
   }
 
-  /// <summary>Closes every window the runner does not own, and keeps them closed for the rest of the scenario.</summary>
+  /// <summary>Closes every window the runner does not own and drops every one that opens afterwards, the scenario's own included, until the scenario ends.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   // Closing once is not enough on a real load order: a log viewer that tails errors, or a mod
