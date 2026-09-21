@@ -9,6 +9,8 @@ namespace RimWorks.Pickle.Vanilla;
 /// <summary>Shapes a generated colonist, so a scenario never depends on a random roll.</summary>
 [PickleSteps]
 public class ColonistSteps {
+  private const string None = "(none)";
+
   /// <summary>Sets a pawn's adult backstory.</summary>
   /// <param name="ctx">The running scenario's context.</param>
   /// <param name="nickname">The pawn to change.</param>
@@ -150,7 +152,7 @@ public class ColonistSteps {
     ctx.Assert(
         drawn == texturePath,
         $"pawn '{nickname}' body should be drawn from '{texturePath}'; it is drawn from " +
-        $"'{drawn ?? "(no graphic)"}' with body type {pawn.story?.bodyType?.defName ?? "(none)"}");
+        $"'{drawn ?? "(no graphic)"}' with body type {pawn.story?.bodyType?.defName ?? None}");
   }
 
   /// <summary>Sets a pawn's passion for a skill. Refuses a skill the pawn cannot use at all, where a passion would mean nothing.</summary>
@@ -228,9 +230,9 @@ public class ColonistSteps {
   private static string DescribeStory(Pawn pawn) {
     string traits = pawn.story?.traits?.allTraits.Count > 0
         ? string.Join(", ", pawn.story.traits.allTraits.Select(t => t.def.defName))
-        : "(none)";
+        : None;
 
-    return $"childhood {pawn.story?.Childhood?.defName ?? "(none)"}, " +
-        $"adulthood {pawn.story?.Adulthood?.defName ?? "(none)"}, traits {traits}";
+    return $"childhood {pawn.story?.Childhood?.defName ?? None}, " +
+        $"adulthood {pawn.story?.Adulthood?.defName ?? None}, traits {traits}";
   }
 }
