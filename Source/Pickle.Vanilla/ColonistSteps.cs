@@ -108,6 +108,51 @@ public class ColonistSteps {
     };
   }
 
+  /// <summary>
+  /// Sets a pawn's body type and redraws the pawn with it. The body type is independent of the
+  /// gender, so a female pawn can be <c>Fat</c>, <c>Thin</c> or <c>Hulk</c>, and the age is not
+  /// checked against it. The change lasts only until the game chooses again: adding or removing a
+  /// Biotech gene that carries a body type (<c>Body_Fat</c>, <c>Body_Thin</c>, <c>Body_Hulk</c>)
+  /// re-applies one, and so does a child growing up.
+  /// </summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to change.</param>
+  /// <param name="bodyTypeDefName">The body type def to set, case insensitive, such as <c>Fat</c>.</param>
+  [Given("{string} body type is {word}")]
+  public void SetBodyType(PickleContext ctx, string nickname, string bodyTypeDefName) {
+    Pawn pawn = PawnLookup.RequireLiving(nickname);
+    ctx.Require(pawn.story != null, $"pawn '{nickname}' has no story, so it has no body type");
+
+    List<BodyTypeDef> all = DefDatabase<BodyTypeDef>.AllDefsListForReading;
+    BodyTypeDef? bodyType = all.FirstOrDefault(
+        b => string.Equals(b.defName, bodyTypeDefName, StringComparison.OrdinalIgnoreCase));
+    ctx.Require(
+        bodyType != null,
+        $"no body type '{bodyTypeDefName}'; the body types are {string.Join(", ", all.Select(b => b.defName))}");
+
+    pawn.story!.bodyType = bodyType!;
+    pawn.Drawer.renderer.SetAllGraphicsDirty();
+  }
+
+  /// <summary>
+  /// Asserts the graphic the game draws a pawn's body with, which follows the body type. Reading it
+  /// initializes the pawn's render tree, as drawing would.
+  /// </summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to check.</param>
+  /// <param name="texturePath">The texture path, such as <c>Things/Pawn/Humanlike/Bodies/Naked_Fat</c>.</param>
+  [Then("{string} body is drawn from {string}")]
+  public void AssertBodyDrawnFrom(PickleContext ctx, string nickname, string texturePath) {
+    Pawn pawn = PawnLookup.RequireLiving(nickname);
+    pawn.Drawer.renderer.renderTree.EnsureInitialized(PawnRenderFlags.None);
+    string? drawn = pawn.Drawer.renderer.BodyGraphic?.path;
+
+    ctx.Assert(
+        drawn == texturePath,
+        $"pawn '{nickname}' body should be drawn from '{texturePath}'; it is drawn from " +
+        $"'{drawn ?? "(no graphic)"}' with body type {pawn.story?.bodyType?.defName ?? "(none)"}");
+  }
+
   /// <summary>Sets a pawn's passion for a skill. Refuses a skill the pawn cannot use at all, where a passion would mean nothing.</summary>
   /// <param name="ctx">The running step's context.</param>
   /// <param name="nickname">The pawn's nickname.</param>

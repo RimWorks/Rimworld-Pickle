@@ -36,6 +36,17 @@ Feature: pawn steps
     Given a colonist "Empty" exists
     Then "Empty" is carrying 0 "Silver"
 
+  Scenario: a body type can be set on a pawn of either gender and is what the pawn is drawn with
+    Given a colonist "Wide" exists
+    And "Wide" gender is female
+    And "Wide" body type is Fat
+    Then "Wide" body is drawn from "Things/Pawn/Humanlike/Bodies/Naked_Fat"
+    When "Wide" body type is Thin
+    Then "Wide" body is drawn from "Things/Pawn/Humanlike/Bodies/Naked_Thin"
+    When "Wide" gender is male
+    And "Wide" body type is Hulk
+    Then "Wide" body is drawn from "Things/Pawn/Humanlike/Bodies/Naked_Hulk"
+
   Scenario: one pawn can be ordered to attack another
     Given a colonist "Fighter" exists
     And a colonist "Victim" exists

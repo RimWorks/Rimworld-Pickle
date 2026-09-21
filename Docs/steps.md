@@ -122,6 +122,8 @@ every 5000 ticks, so a check straight after a spawn would still see the old numb
 | `I take the trait {string} from {string}` | Removes a trait |
 | `{string} is {int} years old` | Sets biological age |
 | `{string} gender is {word}` | `male` or `female` |
+| `{string} body type is {word}` | Sets the body type, such as `Fat`, `Thin` or `Hulk`, and redraws the pawn |
+| `{string} body is drawn from {string}` | Checks the texture path the pawn's body is drawn with |
 | `{string} has {word} passion for {string}` | `none`, `minor` or `major` |
 | `{string} can do {string}` | Checks a work type is enabled |
 <!-- RimWorld calls a work type a pawn refuses "disabled", so Google's "turn off"
@@ -136,6 +138,18 @@ set a skill level can still meet a pawn that refuses the job.
 Changing a backstory or trait drops the pawn's disabled-work cache, so the new
 capabilities apply straight away.
 <!-- vale Google.WordListCase = YES -->
+
+The body type is a def name, one of `Male`, `Female`, `Thin`, `Fat`, `Hulk`, `Child` or
+`Baby`, and it is separate from the gender. A female pawn can be `Fat`. The step sets what
+you ask for and does not check the age against it. An unknown name fails and lists the body
+types the game has. The pawn is redrawn, and `body is drawn from` and `apparel ... is drawn
+from` read the texture path the game then draws with, such as
+`Things/Pawn/Humanlike/Bodies/Naked_Fat`. The game appends the body type to a worn apparel's
+texture, for example `Things/Pawn/Humanlike/Apparel/Pants/Pants_Fat`.
+
+The game can choose the body type again. Adding or removing a Biotech gene that carries one,
+such as `Body_Fat`, `Body_Thin` or `Body_Hulk`, replaces it, and so does a child growing
+up. Set it after the genes and the age.
 
 ## Simulation
 
@@ -423,6 +437,7 @@ about, the failure says so. The value you are reading is then the def default.
 | `{string} is wielding nothing` | Checks the pawn holds no weapon |
 | `{string} is wearing {string}` | Checks worn apparel for a def |
 | `{string} apparel covers {string}` | Checks a body part group is covered |
+| `{string} apparel {string} is drawn from {string}` | Checks the texture path a worn apparel def is drawn with |
 
 `{string} is carrying {int} {string}` only counts hands and inventory. A weapon and worn
 apparel live in different places, so none of this was reachable through it.
