@@ -47,6 +47,28 @@ Feature: pawn steps
     And "Wide" body type is Hulk
     Then "Wide" body is drawn from "Things/Pawn/Humanlike/Bodies/Naked_Hulk"
 
+  Scenario Outline: <who> is drawn with the textures of the <body> body type
+    Given a colonist "Sample" exists
+    And "Sample" is <age> years old
+    And "Sample" gender is <gender>
+    And "Sample" body type is <body>
+    When I dress "Sample" in "Apparel_BasicShirt"
+    Then "Sample" body is drawn from "Things/Pawn/Humanlike/Bodies/Naked_<body>"
+    And "Sample" apparel "Apparel_BasicShirt" is drawn from "Things/Pawn/Humanlike/Apparel/ShirtBasic/ShirtBasic_<body>"
+
+    Examples:
+      | who        | age | gender | body   |
+      | fat man    | 30  | male   | Fat    |
+      | thin man   | 30  | male   | Thin   |
+      | hulk man   | 30  | male   | Hulk   |
+      | man        | 30  | male   | Male   |
+      | boy        | 8   | male   | Child  |
+      | fat woman  | 30  | female | Fat    |
+      | thin woman | 30  | female | Thin   |
+      | hulk woman | 30  | female | Hulk   |
+      | woman      | 30  | female | Female |
+      | girl       | 8   | female | Child  |
+
   Scenario: one pawn can be ordered to attack another
     Given a colonist "Fighter" exists
     And a colonist "Victim" exists
