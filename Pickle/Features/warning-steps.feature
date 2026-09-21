@@ -18,3 +18,11 @@ Feature: warning steps
   Scenario: a packageId names the same mod as its display name does
     Then no warnings from mod "rimworks.rimlogging"
     And no warnings from mod "RimLogging"
+  # A warning the suite owns, so attribution is asserted against something that exists rather
+  # than against a silence. Both names must find it: the display name RimLogging records, and
+  # the packageId every neighbouring step takes.
+  Scenario: an attributed warning is found by display name and by packageId
+    When Pickle logs a warning for its own tests
+    Then a warning from mod "Pickle" was logged
+    And a warning from mod "rimworks.pickle" was logged
+    And a warning matching "pickle-attribution-canary" was logged

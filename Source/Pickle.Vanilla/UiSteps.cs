@@ -205,6 +205,19 @@ public class UiSteps {
         $"expected {expectedCount} warning(s) matching '{substring}'; got {matches.Count}: {string.Join(" | ", matches)}");
   }
 
+  /// <summary>Logs a warning from this assembly, so a scenario can assert on attribution.</summary>
+  /// <remarks>
+  /// Attribution cannot be asserted against a warning nobody controls: in a staged set the only
+  /// mods that warn at all are the framework ones, and a third-party warning depends on that
+  /// mod's own behaviour and timing. This produces one on demand, inside the scenario, carrying
+  /// this mod's identity - which is what the assertions around it need in order to mean anything.
+  /// </remarks>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  [When("Pickle logs a warning for its own tests")]
+  public void LogTestWarning(PickleContext ctx) {
+    Log.Warning("pickle-attribution-canary");
+  }
+
   /// <summary>Asserts at least one warning attributed to a mod was logged.</summary>
   /// <remarks>
   /// The counterpart of <c>no warnings from mod</c>, and the only way a scenario can prove that

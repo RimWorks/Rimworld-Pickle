@@ -557,6 +557,7 @@ into a tile, so Pickle scans the grid for the closest one.
 | `a warning matching {string} was logged` | Checks at least one warning contains the text |
 | `no warning matching {string} was logged` | Checks no warning contains the text |
 | `{int} warnings matching {string} were logged` | Checks an exact count, for a step that should warn once and not twice |
+| `Pickle logs a warning for its own tests` | Logs one warning from Pickle's own assembly, for asserting on attribution |
 | `a warning from mod {string} was logged` | Checks at least one warning is attributed to a mod. Takes a name or a packageId |
 | `no warnings from mod {string}` | Checks no warning is attributed to a mod |
 | `I take a screenshot {string}` | Captures a screenshot and attaches it to the report |
