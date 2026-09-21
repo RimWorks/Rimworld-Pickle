@@ -49,25 +49,26 @@ Feature: pawn steps
 
   Scenario Outline: <who> is drawn with the textures of the <body> body type
     Given a colonist "Sample" exists
+    And I strip "Sample"
     And "Sample" is <age> years old
     And "Sample" gender is <gender>
     And "Sample" body type is <body>
-    When I dress "Sample" in "Apparel_BasicShirt"
+    When I dress "Sample" in "<apparel>"
     Then "Sample" body is drawn from "Things/Pawn/Humanlike/Bodies/Naked_<body>"
-    And "Sample" apparel "Apparel_BasicShirt" is drawn from "Things/Pawn/Humanlike/Apparel/ShirtBasic/ShirtBasic_<body>"
+    And "Sample" apparel "<apparel>" is drawn from "Things/Pawn/Humanlike/Apparel/<worn>_<body>"
 
     Examples:
-      | who        | age | gender | body   |
-      | fat man    | 30  | male   | Fat    |
-      | thin man   | 30  | male   | Thin   |
-      | hulk man   | 30  | male   | Hulk   |
-      | man        | 30  | male   | Male   |
-      | boy        | 8   | male   | Child  |
-      | fat woman  | 30  | female | Fat    |
-      | thin woman | 30  | female | Thin   |
-      | hulk woman | 30  | female | Hulk   |
-      | woman      | 30  | female | Female |
-      | girl       | 8   | female | Child  |
+      | who        | age | gender | body   | apparel            | worn                 |
+      | fat man    | 30  | male   | Fat    | Apparel_BasicShirt | ShirtBasic/ShirtBasic |
+      | thin man   | 30  | male   | Thin   | Apparel_BasicShirt | ShirtBasic/ShirtBasic |
+      | hulk man   | 30  | male   | Hulk   | Apparel_BasicShirt | ShirtBasic/ShirtBasic |
+      | man        | 30  | male   | Male   | Apparel_BasicShirt | ShirtBasic/ShirtBasic |
+      | boy        | 8   | male   | Child  | Apparel_KidShirt   | KidShirt/KidShirt     |
+      | fat woman  | 30  | female | Fat    | Apparel_BasicShirt | ShirtBasic/ShirtBasic |
+      | thin woman | 30  | female | Thin   | Apparel_BasicShirt | ShirtBasic/ShirtBasic |
+      | hulk woman | 30  | female | Hulk   | Apparel_BasicShirt | ShirtBasic/ShirtBasic |
+      | woman      | 30  | female | Female | Apparel_BasicShirt | ShirtBasic/ShirtBasic |
+      | girl       | 8   | female | Child  | Apparel_KidShirt   | KidShirt/KidShirt     |
 
   Scenario: one pawn can be ordered to attack another
     Given a colonist "Fighter" exists
