@@ -10,3 +10,11 @@ Feature: warning steps
 
   Scenario: a mod nothing warns from reports clean
     Then no warnings from mod "RimLogging"
+
+  # The same mod, named the other way. Every neighbouring step - @requires:, mod ... is loaded -
+  # takes a packageId, so a scenario is written with one sooner or later; before the fix this step
+  # let it past the requirement and then compared it against an attribution that is always a
+  # display name, so it matched nothing and passed whatever the mod had logged.
+  Scenario: a packageId names the same mod as its display name does
+    Then no warnings from mod "rimworks.rimlogging"
+    And no warnings from mod "RimLogging"
