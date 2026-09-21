@@ -49,8 +49,8 @@ happen the steps fail and say so, instead of reporting every def as unpatched.
 
 | Step | Does |
 | --- | --- |
-| `the language is {string}` (When) | Switches the active language by folder prefix and waits for the reload |
-| `the language is {string}` (Then) | Checks which language is active |
+| `the language is set to {string}` | Switches the active language by folder prefix and waits for the reload |
+| `the language is {string}` | Checks which language is active |
 | `mod {string} is loaded` | Matches by name or packageId, the same rule `@requires:` uses |
 | `mod {string} is not loaded` | Proves a conflict guard fired |
 | `mod {string} loads before {string}` | Checks the first mod's load order index comes before the second's |

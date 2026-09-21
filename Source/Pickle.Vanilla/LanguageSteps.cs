@@ -20,7 +20,10 @@ public class LanguageSteps {
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="folderName">The language folder, by prefix: English, French, German.</param>
   /// <returns>A task that completes once the language is active.</returns>
-  [When("the language is {string}", TimeoutSeconds = 40f)]
+  // The step table ignores the keyword, so an action and an assertion cannot share their text:
+  // declaring both as "the language is {string}" made every scenario in this file fail with
+  // "Ambiguous step", found by running them.
+  [When("the language is set to {string}", TimeoutSeconds = 40f)]
   public async Task SetLanguage(PickleContext ctx, string folderName) {
     // Folder names carry the native name too - "French (Français)" - so an exact match on "French"
     // finds nothing. Exact first, so "Russian" cannot take "Russian (Русский)" by accident.
