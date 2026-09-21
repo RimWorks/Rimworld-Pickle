@@ -14,6 +14,8 @@ namespace RimWorks.Pickle.Vanilla;
 public class UiSteps {
   private const string Nothing = "(none)";
 
+  private float? scaleBeforeScenario;
+
   /// <summary>Returns to the main menu, waiting out any running long event first.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
@@ -55,6 +57,52 @@ public class UiSteps {
   [When("I click button {string}")]
   public async Task ClickButton(PickleContext ctx, string label) {
     await ctx.Click($"btn:{label}");
+  }
+
+  /// <summary>Changes the interface scale the way the Options page does, for the scenario only.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="percent">The scale to set, in percent; 100 is unscaled.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
+  // Writing Prefs.UIScale is not enough, and a scenario that only writes it tests nothing. Widgets
+  // are laid out in UI.screenWidth/screenHeight, two cached fields that only Root.OnGUI recomputes,
+  // and a window already open keeps the rect it was given in the old space until something tells it
+  // the resolution moved. A tag recorded from such a rect points where nothing is drawn any more,
+  // and the click that follows misses for a reason that has nothing to do with the conversion under
+  // test. So: write it, drop the label widths measured at the old scale, let frames pass for the
+  // fields, lay the open windows out again as WindowStack.AdjustWindowsIfResolutionChanged does,
+  // and refuse to continue if the GUI space did not follow.
+  //
+  // Prefs.Save is never called and the hook below puts the value back, so a run leaves the player's
+  // scale as it found it.
+  [Given("the interface scale is {int} percent")]
+  public async Task InterfaceScaleIs(PickleContext ctx, int percent) {
+    scaleBeforeScenario ??= Prefs.UIScale;
+
+    Prefs.UIScale = percent / 100f;
+    GenUI.ClearLabelWidthCache();
+    await ctx.WaitFrames(2);
+
+    foreach (Window window in Find.WindowStack.Windows.ToList()) {
+      window.Notify_ResolutionChanged();
+    }
+
+    await ctx.WaitFrames(5);
+
+    int expected = UnityEngine.Mathf.RoundToInt(UnityEngine.Screen.height / Prefs.UIScale);
+    ctx.Require(
+        Verse.UI.screenHeight == expected,
+        $"the GUI space did not follow the scale: UI.screenHeight is {Verse.UI.screenHeight}, and "
+        + $"{UnityEngine.Screen.height} pixels at {Prefs.UIScale:0.##} make {expected}. Every rect "
+        + "measured now still belongs to the old layout");
+  }
+
+  /// <summary>Puts the interface scale back, so one scenario's scale cannot reach the next.</summary>
+  [AfterScenario]
+  public void RestoreInterfaceScale() {
+    if (scaleBeforeScenario is float previous) {
+      Prefs.UIScale = previous;
+      scaleBeforeScenario = null;
+    }
   }
 
   /// <summary>Presses a key.</summary>
