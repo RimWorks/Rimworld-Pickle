@@ -1,3 +1,4 @@
+using RimWorks.Pickle.Core.Ui;
 using Verse;
 
 namespace RimWorks.Pickle.Runtime;
@@ -8,8 +9,6 @@ namespace RimWorks.Pickle.Runtime;
 /// frame and swallows the click the scenario was about to make.
 /// </summary>
 public static class WindowSuppression {
-  private const string OwnAssemblyPrefix = "RimWorks.Pickle";
-
   /// <summary>Whether foreign windows are currently being dropped as they open.</summary>
   public static bool Active { get; private set; }
 
@@ -29,17 +28,17 @@ public static class WindowSuppression {
   /// <param name="window">The window to judge.</param>
   /// <returns><c>true</c> when the window belongs to Pickle itself.</returns>
   public static bool IsOwn(Window window) {
-    return window.GetType().Assembly.GetName().Name.StartsWith(OwnAssemblyPrefix, System.StringComparison.Ordinal);
+    return WindowSuppressionRule.IsOwn(AssemblyNameOf(window));
   }
 
   /// <summary>Whether a window opening right now should be allowed onto the stack.</summary>
   /// <param name="window">The window about to be added.</param>
   /// <returns><c>false</c> to drop the window instead of adding it.</returns>
   public static bool ShouldAdd(Window window) {
-    if (!Active) {
-      return true;
-    }
+    return WindowSuppressionRule.Allows(Active, AssemblyNameOf(window));
+  }
 
-    return IsOwn(window);
+  private static string? AssemblyNameOf(Window window) {
+    return window?.GetType().Assembly.GetName().Name;
   }
 }
