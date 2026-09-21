@@ -31,7 +31,7 @@ Feature: gear steps
     Given a colonist "Tailored" exists
     And "Tailored" gender is female
     And "Tailored" body type is Fat
-    When I dress "Tailored" in "Apparel_Pants"
-    Then "Tailored" apparel "Apparel_Pants" is drawn from "Things/Pawn/Humanlike/Apparel/Pants/Pants_Fat"
+    When I dress "Tailored" in "Apparel_BasicShirt"
+    Then "Tailored" apparel "Apparel_BasicShirt" is drawn from "Things/Pawn/Humanlike/Apparel/ShirtBasic/ShirtBasic_Fat"
     When "Tailored" body type is Hulk
-    Then "Tailored" apparel "Apparel_Pants" is drawn from "Things/Pawn/Humanlike/Apparel/Pants/Pants_Hulk"
+    Then "Tailored" apparel "Apparel_BasicShirt" is drawn from "Things/Pawn/Humanlike/Apparel/ShirtBasic/ShirtBasic_Hulk"

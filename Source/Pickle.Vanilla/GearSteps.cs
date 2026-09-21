@@ -133,7 +133,7 @@ public class GearSteps {
   /// <param name="ctx">The running scenario's context.</param>
   /// <param name="nickname">The pawn to check.</param>
   /// <param name="defName">The worn apparel def.</param>
-  /// <param name="texturePath">The texture path, such as <c>Things/Pawn/Humanlike/Apparel/Pants/Pants_Fat</c>.</param>
+  /// <param name="texturePath">The texture path, such as <c>Things/Pawn/Humanlike/Apparel/ShirtBasic/ShirtBasic_Fat</c>.</param>
   [Then("{string} apparel {string} is drawn from {string}")]
   public void AssertApparelDrawnFrom(PickleContext ctx, string nickname, string defName, string texturePath) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
@@ -147,7 +147,20 @@ public class GearSteps {
     ctx.Assert(
         drawn.Contains(texturePath),
         $"pawn '{nickname}' apparel '{defName}' should be drawn from '{texturePath}'; it is drawn from " +
-        $"{(drawn.Count == 0 ? "nothing, as no render node holds it" : string.Join(", ", drawn.Select(d => $"'{d}'")))}");
+        $"{(drawn.Count == 0 ? "nothing" : string.Join(", ", drawn.Select(d => $"'{d}'")))}. " +
+        DescribeWhyNotDrawn(pawn, def));
+  }
+
+  // A worn apparel with an empty worn graphic path has no render node at all, and so does an apparel
+  // that is not worn, so the failure has to say which of the two it is.
+  private static string DescribeWhyNotDrawn(Pawn pawn, ThingDef def) {
+    Apparel? worn = pawn.apparel?.WornApparel.FirstOrDefault(a => a.def == def);
+    if (worn == null) {
+      return $"The pawn is not wearing it; {DescribeWorn(pawn)}";
+    }
+
+    return $"It is worn, with body type {pawn.story?.bodyType?.defName ?? "(none)"} and worn graphic path " +
+        $"'{worn.WornGraphicPath}'";
   }
 
   private static IEnumerable<PawnRenderNode> DrawnNodes(PawnRenderNode? node) {

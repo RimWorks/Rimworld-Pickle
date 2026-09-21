@@ -145,7 +145,7 @@ you ask for and does not check the age against it. An unknown name fails and lis
 types the game has. The pawn is redrawn, and `body is drawn from` and `apparel ... is drawn
 from` read the texture path the game then draws with, such as
 `Things/Pawn/Humanlike/Bodies/Naked_Fat`. The game appends the body type to a worn apparel's
-texture, for example `Things/Pawn/Humanlike/Apparel/Pants/Pants_Fat`.
+texture, for example `Things/Pawn/Humanlike/Apparel/ShirtBasic/ShirtBasic_Fat`.
 
 The game can choose the body type again. Adding or removing a Biotech gene that carries one,
 such as `Body_Fat`, `Body_Thin` or `Body_Hulk`, replaces it, and so does a child growing
