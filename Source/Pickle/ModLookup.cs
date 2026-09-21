@@ -30,6 +30,14 @@ public static class ModLookup {
     return null;
   }
 
+  /// <summary>The loaded mod matching a name or packageId, or <c>null</c> when none does.</summary>
+  /// <param name="wanted">The mod name or packageId, case insensitive.</param>
+  /// <returns>The matching mod, or <c>null</c>.</returns>
+  public static ModContentPack? Find(string wanted) {
+    int? index = IndexOf(wanted);
+    return index == null ? null : LoadedModManager.RunningModsListForReading[index.Value];
+  }
+
   /// <summary>Whether a mod matches a name or packageId, also checking <see cref="ModContentPack.PackageIdPlayerFacing"/>
   /// since a Steam copy's <see cref="ModContentPack.PackageId"/> carries a <c>_steam</c> postfix.</summary>
   /// <param name="mod">The mod to test.</param>

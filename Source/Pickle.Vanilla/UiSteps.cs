@@ -210,14 +210,21 @@ public class UiSteps {
   /// <param name="modName">The mod's display name, as RimLogging attributes it.</param>
   [Then("no warnings from mod {string}")]
   public void AssertNoWarningsFromMod(PickleContext ctx, string modName) {
+    ModContentPack? mod = ModLookup.Find(modName);
     ctx.Require(
-        ModLookup.IsLoaded(modName),
+        mod != null,
         $"mod '{modName}' is not loaded. loaded mods: {ModLookup.DescribeLoadOrder()}; " +
         $"warnings seen from: {DescribeObservedMods()}");
     RequireWarningsNotDropped(ctx);
 
+    // RimLogging attributes an entry to the mod's display name, while every neighbouring step
+    // takes a name OR a packageId. Comparing the argument straight against the attribution made
+    // a packageId pass the requirement above and then match nothing at all, so the step asserted
+    // nothing and reported green. Compare against the resolved mod instead: both forms work, and
+    // the one people reach for first - the packageId, which is what @requires: and
+    // `mod ... is loaded` take - stops being a silent no-op.
     List<string> matches = [.. LogWatch.WarningsSinceArmed
-        .Where(w => string.Equals(w.Mod, modName, StringComparison.OrdinalIgnoreCase))
+        .Where(w => string.Equals(w.Mod, mod!.Name, StringComparison.OrdinalIgnoreCase))
         .Select(w => w.Message)];
     ctx.Assert(
         matches.Count == 0,
