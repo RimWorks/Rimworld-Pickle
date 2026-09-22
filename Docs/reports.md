@@ -82,7 +82,13 @@ from `attempts`, which is always at least 1. See
 | `passed` | Every scenario passed |
 | `failed` | At least one scenario failed |
 | `infrastructure-error` | Pickle failed before it could finish |
-| `in-progress` | The run did not finish. The watchdog or a crash stopped it |
+| `watchdog-timeout` | The watchdog stopped the run. Counts are partial |
+| `in-progress` | The run did not finish, and nothing wrote a final reason |
+| `completed` | A run started from the runner window or the dashboard finished |
+| `cancelled` | A run started from the runner window or the dashboard was stopped by hand |
+
+Only autorun writes `passed`, `failed` or `infrastructure-error`. A run you start from
+the window reports `completed` whether or not scenarios failed, so read the counts there.
 
 An `in-progress` value with a zero exit code means the process died without reporting.
 Treat the file as the record of truth in that case.
