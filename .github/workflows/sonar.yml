@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   analyze:
-    uses: RimWorks/mod-ci/.github/workflows/sonar.yml@v1.10
+    uses: RimWorks/mod-ci/.github/workflows/sonar.yml@v1
     with:
       solution: Pickle.slnx
       project-key: RimWorks_Rimworld-Pickle

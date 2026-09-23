@@ -41,18 +41,18 @@ jobs:
       pull-requests: write
       id-token: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
       - name: Setup Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@v7
         with:
           node-version: 22
 
@@ -60,12 +60,12 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Get a NuGet API key by trusted publishing
-        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        uses: NuGet/login@v1
         id: nuget-login
         with:
           user: aequasi
 
-      - uses: RimWorks/mod-ci/.github/actions/steam-login@v1.10
+      - uses: RimWorks/mod-ci/.github/actions/steam-login@v1
         with:
           steam-config-vdf-b64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
 
@@ -81,7 +81,7 @@ jobs:
           STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
         run: ./node_modules/.bin/semantic-release
 
-      - uses: RimWorks/mod-ci/.github/actions/discord-release@v1.10
+      - uses: RimWorks/mod-ci/.github/actions/discord-release@v1
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           mod-name: Pickle
