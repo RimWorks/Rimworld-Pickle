@@ -502,6 +502,28 @@ while moving nothing you could see, so a control built on one read as a clean ne
 now refuse when `WorldRendererUtility.WorldRendered` is true, and say why. A follow parks the
 camera for as long as the world view stays open.
 
+## World camera
+
+| Step | Does |
+| --- | --- |
+| `I move the world camera to tile {int}` | Jumps the planet camera to a tile |
+| `I zoom the world camera in` | One step closer |
+| `I zoom the world camera out` | One step further |
+| `I zoom the world camera all the way in` | Closest view |
+| `I zoom the world camera all the way out` | Widest view |
+| `I turn the world camera north up` | Turns the planet so north is up |
+| `the world camera is looking at tile {int}` | Checks the centered tile |
+
+These are the mirror of the Camera section. They refuse when the world map is not on screen,
+for the same reason the colony steps refuse when it is.
+
+Zoom and rotation are animated, so each step waits for the camera to stop moving before it
+returns. A camera that never settles fails the step after 5 seconds.
+
+Pickle reads the centered tile off `CurrentlyLookingAtPointOnSphere`, not off the screen, so
+the assert works without anything being drawn. RimWorld has no public way to turn a direction
+into a tile, so Pickle scans the grid for the closest one.
+
 ## Alerts and messages
 
 | Step | Does |

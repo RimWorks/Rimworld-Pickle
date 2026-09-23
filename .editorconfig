@@ -402,7 +402,7 @@ dotnet_diagnostic.SA1310.severity = none # field must not contain underscore —
 # One exact file per section. Sonar ignores globs like [*.cs] and drops the rule silently.
 # Pickle reaches into RimWorld's private internals on purpose: there is no public API for
 # reading the patch tree, the letter stack, the debug action list, or Unity's input queue.
-# S3011 (accessibility bypass) is the whole job in these four files.
+# S3011 (accessibility bypass) is the whole job in the files below.
 [Source/Pickle/Patching/PatchAttribution.cs]
 dotnet_diagnostic.S3011.severity = none # reads Harmony's and Concord's private patch registries
 
@@ -414,6 +414,9 @@ dotnet_diagnostic.S3011.severity = none # reads the private letter and message s
 
 [Source/Pickle.Vanilla/DevModeSteps.cs]
 dotnet_diagnostic.S3011.severity = none # invokes private dev-mode debug actions
+
+[Source/Pickle.Vanilla/WorldCameraSteps.cs]
+dotnet_diagnostic.S3011.severity = none # writes the private desiredAltitude, the only real zoom knob
 
 # LoadFrom is correct here: the game hands us a mod's own directory and the step assembly
 # is not on any probing path, so Load cannot find it.

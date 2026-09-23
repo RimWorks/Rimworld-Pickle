@@ -77,8 +77,7 @@ public static class CameraSteps {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     followed = pawn;
 
-    // The hook outlives the step, so it checks the view every frame rather than trusting
-    // the guard above. Opening the world view mid-follow parks the camera instead.
+    // The hook outlives the step, so it rechecks rather than trusting the guard above.
     followHook = () => {
       if (followed is { Spawned: true } && !WorldRendererUtility.WorldRendered) {
         Find.CameraDriver.JumpToCurrentMapLoc(followed.DrawPos);
