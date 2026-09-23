@@ -80,3 +80,4 @@ TPS
 gamecrate
 vibecode
 Vibecoding
+zsh
