@@ -86,10 +86,48 @@ public class ScenarioFilterTests {
     Assert.Equal("walks", Assert.Single(plan.Scenarios).Name);
   }
 
+  [Fact]
+  public void A_file_name_term_matches_without_its_extension() {
+    Assert.True(ScenarioFilter.Matches("MyMod", Path, Scenario("walks", 12), "pawn-steps"));
+    Assert.False(ScenarioFilter.Matches("MyMod", Path, Scenario("walks", 12), "map-steps"));
+  }
+
+  [Fact]
+  public void An_excluded_term_drops_scenarios_the_includes_picked() {
+    List<(DiscoveredSuite Suite, FeaturePlan Plan)> kept =
+        ScenarioFilter.FilterFeatures(Features(), "pawn-steps.feature,!@known-defect");
+
+    (DiscoveredSuite _, FeaturePlan plan) = Assert.Single(kept);
+    Assert.Equal("walks", Assert.Single(plan.Scenarios).Name);
+  }
+
+  [Fact]
+  public void An_exclude_only_filter_keeps_every_other_scenario() {
+    List<(DiscoveredSuite Suite, FeaturePlan Plan)> kept = ScenarioFilter.FilterFeatures(Features(), "!@known-defect");
+
+    Assert.Equal(2, kept.Count);
+    Assert.Equal("walks", Assert.Single(kept[0].Plan.Scenarios).Name);
+    Assert.Equal("grows", Assert.Single(kept[1].Plan.Scenarios).Name);
+  }
+
+  [Fact]
+  public void An_exclusion_beats_an_inclusion_of_the_same_scenario() {
+    InvalidOperationException ex = Assert.Throws<InvalidOperationException>(
+        () => ScenarioFilter.FilterFeatures(Features(), "@known-defect,!@known-defect"));
+
+    Assert.Contains("matched no scenarios", ex.Message, StringComparison.Ordinal);
+    Assert.Contains("a ! prefix excludes", ex.Message, StringComparison.Ordinal);
+  }
+
+  [Fact]
+  public void An_exclusion_that_empties_the_run_throws() {
+    Assert.Throws<InvalidOperationException>(() => ScenarioFilter.FilterFeatures(Features(), "!MyMod"));
+  }
+
   private static List<(DiscoveredSuite Suite, FeaturePlan Plan)> Features() {
     DiscoveredSuite suite = new DiscoveredSuite("MyMod", "fx", "fx", [], [], [], []);
     return [
-      (suite, new FeaturePlan("pawn", new TagSet([]), [Scenario("walks", 12), Scenario("sleeps", 20)], Path)),
+      (suite, new FeaturePlan("pawn", new TagSet([]), [Scenario("walks", 12), Scenario("sleeps", 20, "@known-defect")], Path)),
       (suite, new FeaturePlan("map", new TagSet([]), [Scenario("grows", 8)], "/mods/MyMod/Pickle/Features/map-steps.feature")),
     ];
   }

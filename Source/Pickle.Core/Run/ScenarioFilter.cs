@@ -10,7 +10,7 @@ namespace RimWorks.Pickle.Core.Run;
 
 /// <summary>
 /// Decides which scenarios a run includes. A filter is a comma separated list of terms
-/// and a scenario runs when any one of them picks it.
+/// and a scenario runs when any one of them picks it. A <c>!</c> prefix excludes instead.
 /// </summary>
 public static class ScenarioFilter {
   /// <summary>
@@ -60,7 +60,8 @@ public static class ScenarioFilter {
 
   /// <summary>
   /// Whether a feature path matches a term, comparing case insensitively and treating
-  /// <c>\</c> and <c>/</c> as the same separator. A term also matches on the bare file name.
+  /// <c>\</c> and <c>/</c> as the same separator. A bare file name matches, with or
+  /// without the <c>.feature</c> extension.
   /// </summary>
   /// <param name="sourcePath">The feature file's path, or <c>null</c>.</param>
   /// <param name="term">The path or file name to match against.</param>
@@ -75,7 +76,8 @@ public static class ScenarioFilter {
 
     return string.Equals(source, wanted, StringComparison.OrdinalIgnoreCase)
         || source.EndsWith("/" + wanted, StringComparison.OrdinalIgnoreCase)
-        || string.Equals(Path.GetFileName(sourcePath), term, StringComparison.OrdinalIgnoreCase);
+        || string.Equals(Path.GetFileName(sourcePath), term, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Path.GetFileNameWithoutExtension(sourcePath), term, StringComparison.OrdinalIgnoreCase);
   }
 
   /// <summary>
@@ -92,10 +94,14 @@ public static class ScenarioFilter {
       return [.. parsedFeatures];
     }
 
+    List<string> includes = [.. terms.Where(t => t[0] != '!')];
+    List<string> excludes = [.. terms.Where(t => t[0] == '!').Select(t => t.Substring(1)).Where(t => t.Length > 0)];
+
     List<(DiscoveredSuite Suite, FeaturePlan Plan)> kept = new();
     foreach ((DiscoveredSuite suite, FeaturePlan plan) in parsedFeatures) {
       List<ScenarioPlan> scenarios = [.. plan.Scenarios
-          .Where(s => terms.Any(t => Matches(suite.ModName, plan.SourcePath, s, t)))];
+          .Where(s => (includes.Count == 0 || includes.Any(t => Matches(suite.ModName, plan.SourcePath, s, t)))
+              && !excludes.Any(t => Matches(suite.ModName, plan.SourcePath, s, t)))];
       if (scenarios.Count > 0) {
         kept.Add((suite, new FeaturePlan(plan.Name, plan.Tags, scenarios, plan.SourcePath)));
       }
@@ -125,6 +131,9 @@ public static class ScenarioFilter {
           .AppendLine(string.Join(", ", suite.Select(f => Path.GetFileName(f.Plan.SourcePath ?? string.Empty))));
     }
 
-    return message.Append("  terms are @tag, mod name, feature path, path::name, path:line, or ::name").ToString();
+    return message
+        .AppendLine("  terms are @tag, mod name, feature path, path::name, path:line, or ::name")
+        .Append("  a ! prefix excludes, and exclusions beat inclusions")
+        .ToString();
   }
 }

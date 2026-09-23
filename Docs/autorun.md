@@ -51,11 +51,12 @@ so you can combine a whole feature with one scenario from another.
 | Term | Runs |
 | --- | --- |
 | `MyMod` | Every scenario in that mod |
-| `pawn-steps.feature` | Every scenario in that file |
+| `pawn-steps.feature` | Every scenario in that file. The `.feature` suffix is optional |
 | `@film` | Every scenario with that tag |
 | `pawn-steps.feature::skills` | Scenarios in that file whose name contains `skills` |
 | `::skills` | Scenarios in any file whose name contains `skills` |
 | `pawn-steps.feature:24` | The scenario declared on line 24 |
+| `!@known-defect` | Skips every scenario with that tag |
 
 ```sh
 ./RimWorldLinux -pickle-run="pawn-steps.feature::skills,@film"
@@ -63,6 +64,19 @@ so you can combine a whole feature with one scenario from another.
 
 Names match on a substring and ignore case, so you rarely need the whole thing. A line
 number is exact, which is what you want when two scenarios share a prefix.
+
+### Skipping scenarios
+
+Put `!` in front of any term to exclude what it picks. Pickle applies the picks first, then
+drops whatever the exclusions match, so `!` always wins over a term that selected the same
+scenario.
+
+```sh
+./RimWorldLinux -pickle-run="MyMod,!@known-defect"
+```
+
+A filter with only exclusions runs the whole suite minus those scenarios. Quote the filter in
+bash or zsh, since both treat a bare `!` as history expansion.
 
 A filter that matches nothing is an error, not an empty pass. Pickle logs the terms you
 gave and the features it found, then exits 2. This is what stops a renamed feature file
