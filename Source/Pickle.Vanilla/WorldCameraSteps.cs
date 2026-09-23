@@ -20,6 +20,24 @@ public static class WorldCameraSteps {
   private static readonly FieldInfo? DesiredAltitude =
       typeof(WorldCameraDriver).GetField("desiredAltitude", BindingFlags.Instance | BindingFlags.NonPublic);
 
+  /// <summary>Opens the planet view.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <returns>A task that completes once the world is on screen.</returns>
+  [When("I open the world view")]
+  public static async Task OpenWorldView(PickleContext ctx) {
+    ctx.Require(CameraJumper.TryShowWorld(), "the world view would not open; the game has to be in play");
+    await ctx.WaitUntil(() => WorldRendererUtility.WorldRendered, SettleSeconds);
+  }
+
+  /// <summary>Closes the planet view and goes back to the colony.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <returns>A task that completes once the world is off screen.</returns>
+  [When("I close the world view")]
+  public static async Task CloseWorldView(PickleContext ctx) {
+    CameraJumper.TryHideWorld();
+    await ctx.WaitUntil(() => !WorldRendererUtility.WorldRendered, SettleSeconds);
+  }
+
   /// <summary>Jumps the planet camera to a tile and selects that tile's layer.</summary>
   /// <param name="ctx">The running scenario's context.</param>
   /// <param name="tile">The tile id to jump to.</param>
@@ -83,6 +101,20 @@ public static class WorldCameraSteps {
   public static void AssertLookingAtTile(PickleContext ctx, int tile) {
     int at = CenteredTile(RequireWorldCamera(ctx));
     ctx.Assert(at == tile, $"the world camera is looking at tile {at}, not {tile}");
+  }
+
+  /// <summary>Asserts the planet camera sits at one end of its zoom range.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="end">Either <c>in</c> or <c>out</c>.</param>
+  [Then("the world camera is zoomed all the way {word}")]
+  public static void AssertZoomedAllTheWay(PickleContext ctx, string end) {
+    WorldCameraDriver camera = RequireWorldCamera(ctx);
+    ctx.Require(end == "in" || end == "out", $"'{end}' is not a zoom end; use 'in' or 'out'");
+
+    float want = end == "in" ? 0f : 1f;
+    ctx.Assert(
+        Mathf.Abs(camera.AltitudePercent - want) < 0.02f,
+        $"the world camera is at {camera.AltitudePercent:P0} of its zoom range, not all the way {end}");
   }
 
   private static int CenteredTile(WorldCameraDriver camera) {

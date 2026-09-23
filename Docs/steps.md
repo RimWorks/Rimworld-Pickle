@@ -506,6 +506,8 @@ camera for as long as the world view stays open.
 
 | Step | Does |
 | --- | --- |
+| `I open the world view` | Puts the planet on screen and waits for it |
+| `I close the world view` | Goes back to the colony |
 | `I move the world camera to tile {int}` | Jumps the planet camera to a tile |
 | `I zoom the world camera in` | One step closer |
 | `I zoom the world camera out` | One step further |
@@ -513,6 +515,7 @@ camera for as long as the world view stays open.
 | `I zoom the world camera all the way out` | Widest view |
 | `I turn the world camera north up` | Turns the planet so north is up |
 | `the world camera is looking at tile {int}` | Checks the centered tile |
+| `the world camera is zoomed all the way {word}` | Checks the zoom end, `in` or `out` |
 
 These are the mirror of the Camera section. They refuse when the world map is not on screen,
 for the same reason the colony steps refuse when it is.
