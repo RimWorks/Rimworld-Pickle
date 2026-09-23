@@ -496,6 +496,12 @@ missing object.
 RimWorld has no follow of its own, so Pickle steers the camera once per rendered frame
 while a follow is active.
 
+**Every step here drives the colony camera, not the world one.** `Find.CameraDriver` keeps
+working while the world map or a mod's orbital view is on screen. These steps used to pass
+while moving nothing you could see, so a control built on one read as a clean negative. They
+now refuse when `WorldRendererUtility.WorldRendered` is true, and say why. A follow parks the
+camera for as long as the world view stays open.
+
 ## Alerts and messages
 
 | Step | Does |

@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using RimWorks.Pickle.Runtime;
 using RimWorld;
+using RimWorld.Planet;
 using UnityEngine;
 using Verse;
 
@@ -42,6 +43,7 @@ public static class CameraSteps {
   /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I move the camera to {string}")]
   public static async Task MoveToPawn(PickleContext ctx, string nickname) {
+    RequireMapView(ctx);
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     Find.CameraDriver.JumpToCurrentMapLoc(pawn.Position);
     await ctx.WaitFrames(1);
@@ -69,12 +71,16 @@ public static class CameraSteps {
   /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I follow {string}")]
   public static async Task Follow(PickleContext ctx, string nickname) {
+    RequireMapView(ctx);
     StopFollowing();
 
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     followed = pawn;
+
+    // The hook outlives the step, so it checks the view every frame rather than trusting
+    // the guard above. Opening the world view mid-follow parks the camera instead.
     followHook = () => {
-      if (followed is { Spawned: true }) {
+      if (followed is { Spawned: true } && !WorldRendererUtility.WorldRendered) {
         Find.CameraDriver.JumpToCurrentMapLoc(followed.DrawPos);
       }
     };
@@ -128,6 +134,7 @@ public static class CameraSteps {
   /// <param name="z">The expected z coordinate.</param>
   [Then("the camera is looking at \\({int}, {int}\\)")]
   public static void AssertLookingAt(PickleContext ctx, int x, int z) {
+    RequireMapView(ctx);
     IntVec3 at = Find.CameraDriver.MapPosition;
     ctx.Assert(
         at.x == x && at.z == z,
@@ -139,6 +146,7 @@ public static class CameraSteps {
   /// <param name="nickname">The pawn expected to be visible.</param>
   [Then("the camera can see {string}")]
   public static void AssertCanSee(PickleContext ctx, string nickname) {
+    RequireMapView(ctx);
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     ctx.Assert(
         Find.CameraDriver.InViewOf(pawn),
@@ -156,6 +164,7 @@ public static class CameraSteps {
   }
 
   private static async Task SetSize(PickleContext ctx, float size) {
+    RequireMapView(ctx);
     Find.CameraDriver.SetRootSize(Mathf.Clamp(size, CloseSize, FarSize));
     await ctx.WaitFrames(1);
   }
@@ -163,6 +172,16 @@ public static class CameraSteps {
   private static Map RequireMap(PickleContext ctx) {
     Map? map = Find.CurrentMap;
     ctx.Require(map != null, "no current map is loaded; load a save first with 'the save ... is loaded'");
+    RequireMapView(ctx);
     return map!;
+  }
+
+  // CameraDriver is the colony camera and keeps working off the map view, so without this every
+  // step here passes while moving nothing the player can see.
+  private static void RequireMapView(PickleContext ctx) {
+    ctx.Require(
+        !WorldRendererUtility.WorldRendered,
+        "the world is on screen, so these steps drive a camera nobody is looking at; "
+            + "close the world view, or use a world-camera step");
   }
 }
