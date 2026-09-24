@@ -21,21 +21,32 @@ public static class MessagesNdjsonWriter {
     List<string> lines = new List<string> { MetaLine };
     int nextId = 1;
 
-    Dictionary<string, string> pickleIdsByFeature = new Dictionary<string, string>();
     foreach (IGrouping<string, ScenarioResult> feature in results.GroupBy(r => r.FeatureName)) {
-      string pickleId = (nextId++).ToString(CultureInfo.InvariantCulture);
-      pickleIdsByFeature[feature.Key] = pickleId;
       lines.Add(BuildSource(feature.Key));
       lines.Add(BuildGherkinDocument(feature.Key));
-      lines.Add(BuildPickle(pickleId, feature.Key));
+    }
+
+    // A pickle is one compiled scenario, not one feature, and its steps are what every
+    // testStep's pickleStepId has to resolve against.
+    List<(string PickleId, List<string> StepIds)> pickles = new();
+    foreach (ScenarioResult scenario in results) {
+      string pickleId = (nextId++).ToString(CultureInfo.InvariantCulture);
+      List<string> pickleStepIds = new();
+      for (int i = 0; i < scenario.Steps.Count; i++) {
+        pickleStepIds.Add((nextId++).ToString(CultureInfo.InvariantCulture));
+      }
+
+      pickles.Add((pickleId, pickleStepIds));
+      lines.Add(BuildPickle(pickleId, scenario, pickleStepIds));
     }
 
     lines.Add(BuildTestRunStarted());
 
     bool anyFailed = false;
-    foreach (ScenarioResult scenario in results) {
+    for (int i = 0; i < results.Count; i++) {
+      ScenarioResult scenario = results[i];
       anyFailed |= scenario.Outcome == ScenarioOutcome.Failed;
-      AppendScenario(lines, scenario, pickleIdsByFeature[scenario.FeatureName], ref nextId, readAttachmentBytes);
+      AppendScenario(lines, scenario, pickles[i].PickleId, pickles[i].StepIds, ref nextId, readAttachmentBytes);
     }
 
     lines.Add(BuildTestRunFinished(!anyFailed));
@@ -46,6 +57,7 @@ public static class MessagesNdjsonWriter {
       List<string> lines,
       ScenarioResult scenario,
       string pickleId,
+      IReadOnlyList<string> pickleStepIds,
       ref int nextId,
       Func<string, byte[]?>? readAttachmentBytes) {
     string testCaseId = (nextId++).ToString(CultureInfo.InvariantCulture);
@@ -54,7 +66,7 @@ public static class MessagesNdjsonWriter {
       stepIds.Add((nextId++).ToString(CultureInfo.InvariantCulture));
     }
 
-    lines.Add(BuildTestCase(testCaseId, pickleId, stepIds));
+    lines.Add(BuildTestCase(testCaseId, pickleId, stepIds, pickleStepIds));
 
     string testCaseStartedId = (nextId++).ToString(CultureInfo.InvariantCulture);
     lines.Add(BuildTestCaseStarted(testCaseStartedId, testCaseId));
@@ -88,17 +100,29 @@ public static class MessagesNdjsonWriter {
     return $"{{\"gherkinDocument\":{{\"uri\":{uri},\"feature\":{{\"name\":{uri}}}}}}}";
   }
 
-  private static string BuildPickle(string pickleId, string featureName) {
-    string uri = JsonEscape.Quote(featureName);
-    return $"{{\"pickle\":{{\"id\":{JsonEscape.Quote(pickleId)},\"uri\":{uri},\"name\":{uri}}}}}";
+  private static string BuildPickle(string pickleId, ScenarioResult scenario, IReadOnlyList<string> pickleStepIds) {
+    string steps = string.Join(
+        ",",
+        scenario.Steps.Select((step, i) =>
+            $"{{\"id\":{JsonEscape.Quote(pickleStepIds[i])},\"text\":{JsonEscape.Quote($"{step.Keyword} {step.Text}".Trim())}}}"));
+
+    return "{\"pickle\":{\"id\":" + JsonEscape.Quote(pickleId)
+        + ",\"uri\":" + JsonEscape.Quote(scenario.FeatureName)
+        + ",\"name\":" + JsonEscape.Quote(scenario.ScenarioName)
+        + ",\"steps\":[" + steps + "]}}";
   }
 
   private static string BuildTestRunStarted() {
     return $"{{\"testRunStarted\":{{\"timestamp\":{Timestamp}}}}}";
   }
 
-  private static string BuildTestCase(string testCaseId, string pickleId, IReadOnlyList<string> stepIds) {
-    string steps = string.Join(",", stepIds.Select(id => $"{{\"id\":{JsonEscape.Quote(id)},\"pickleStepId\":{JsonEscape.Quote(id)}}}"));
+  private static string BuildTestCase(
+      string testCaseId, string pickleId, IReadOnlyList<string> stepIds, IReadOnlyList<string> pickleStepIds) {
+    string steps = string.Join(
+        ",",
+        stepIds.Select((id, i) =>
+            $"{{\"id\":{JsonEscape.Quote(id)},\"pickleStepId\":{JsonEscape.Quote(pickleStepIds[i])}}}"));
+
     return $"{{\"testCase\":{{\"id\":{JsonEscape.Quote(testCaseId)},\"pickleId\":{JsonEscape.Quote(pickleId)},\"testSteps\":[{steps}]}}}}";
   }
 

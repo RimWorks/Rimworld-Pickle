@@ -71,7 +71,7 @@ public class MessagesNdjsonWriterTests {
 
     Assert.Equal(distinctFeatures, envelopeNames.Count(n => n == "source"));
     Assert.Equal(distinctFeatures, envelopeNames.Count(n => n == "gherkinDocument"));
-    Assert.Equal(distinctFeatures, envelopeNames.Count(n => n == "pickle"));
+    Assert.Equal(results.Count, envelopeNames.Count(n => n == "pickle"));
     Assert.Equal(results.Count, envelopeNames.Count(n => n == "testCase"));
     Assert.Equal(results.Count, envelopeNames.Count(n => n == "testCaseStarted"));
     Assert.Equal(results.Count, envelopeNames.Count(n => n == "testCaseFinished"));
@@ -175,6 +175,90 @@ public class MessagesNdjsonWriterTests {
 
     string parsedMessage = testStepFinished.GetProperty("testStepResult").GetProperty("message").GetString()!;
     Assert.Equal(failureMessage, parsedMessage);
+  }
+
+  [Fact]
+  public void Write_EveryPickleCarriesItsStepsWithTheirText() {
+    List<ScenarioResult> results = ReportWriterTestData.BuildTwoFeatureRun();
+    string[] lines = SplitLines(MessagesNdjsonWriter.Write(results));
+
+    List<JsonElement> pickles = [.. lines
+        .Where(l => EnvelopeName(l) == "pickle")
+        .Select(l => JsonDocument.Parse(l).RootElement.GetProperty("pickle").Clone())];
+
+    Assert.Equal(results.Count, pickles.Count);
+    for (int i = 0; i < results.Count; i++) {
+      Assert.Equal(results[i].ScenarioName, pickles[i].GetProperty("name").GetString());
+      JsonElement steps = pickles[i].GetProperty("steps");
+      Assert.Equal(results[i].Steps.Count, steps.GetArrayLength());
+      Assert.Equal(
+          $"{results[i].Steps[0].Keyword} {results[i].Steps[0].Text}".Trim(),
+          steps[0].GetProperty("text").GetString());
+    }
+  }
+
+  [Fact]
+  public void Write_EveryIdReferenceResolvesToSomethingDeclared() {
+    string[] lines = SplitLines(MessagesNdjsonWriter.Write(ReportWriterTestData.BuildTwoFeatureRun()));
+
+    HashSet<string> pickleIds = new();
+    HashSet<string> pickleStepIds = new();
+    HashSet<string> testCaseIds = new();
+    HashSet<string> testStepIds = new();
+    HashSet<string> testCaseStartedIds = new();
+    List<(string Kind, string Id)> references = new();
+
+    foreach (string line in lines) {
+      using JsonDocument document = JsonDocument.Parse(line);
+      JsonProperty envelope = document.RootElement.EnumerateObject().First();
+      JsonElement body = envelope.Value;
+
+      switch (envelope.Name) {
+        case "pickle":
+          pickleIds.Add(body.GetProperty("id").GetString()!);
+          foreach (JsonElement step in body.GetProperty("steps").EnumerateArray()) {
+            pickleStepIds.Add(step.GetProperty("id").GetString()!);
+          }
+
+          break;
+        case "testCase":
+          testCaseIds.Add(body.GetProperty("id").GetString()!);
+          references.Add(("pickle", body.GetProperty("pickleId").GetString()!));
+          foreach (JsonElement step in body.GetProperty("testSteps").EnumerateArray()) {
+            testStepIds.Add(step.GetProperty("id").GetString()!);
+            references.Add(("pickleStep", step.GetProperty("pickleStepId").GetString()!));
+          }
+
+          break;
+        case "testCaseStarted":
+          testCaseStartedIds.Add(body.GetProperty("id").GetString()!);
+          references.Add(("testCase", body.GetProperty("testCaseId").GetString()!));
+          break;
+        case "testStepStarted":
+        case "testStepFinished":
+          references.Add(("testCaseStarted", body.GetProperty("testCaseStartedId").GetString()!));
+          references.Add(("testStep", body.GetProperty("testStepId").GetString()!));
+          break;
+        case "attachment":
+        case "testCaseFinished":
+          references.Add(("testCaseStarted", body.GetProperty("testCaseStartedId").GetString()!));
+          break;
+        default:
+          break;
+      }
+    }
+
+    Dictionary<string, HashSet<string>> declared = new() {
+      ["pickle"] = pickleIds,
+      ["pickleStep"] = pickleStepIds,
+      ["testCase"] = testCaseIds,
+      ["testStep"] = testStepIds,
+      ["testCaseStarted"] = testCaseStartedIds,
+    };
+
+    Assert.NotEmpty(references);
+    List<(string Kind, string Id)> dangling = [.. references.Where(r => !declared[r.Kind].Contains(r.Id))];
+    Assert.Empty(dangling);
   }
 
   private static string[] SplitLines(string ndjson) {
