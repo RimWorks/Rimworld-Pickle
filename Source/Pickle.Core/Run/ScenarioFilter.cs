@@ -81,8 +81,8 @@ public static class ScenarioFilter {
   }
 
   /// <summary>
-  /// Narrows parsed features to the ones a filter picks. A filter that matches nothing
-  /// throws rather than returning an empty run, which CI otherwise reads as a pass.
+  /// Narrows parsed features to the ones a filter picks. An empty run throws rather than
+  /// returning nothing, whether the filter missed or no mod shipped a scenario at all.
   /// </summary>
   /// <param name="parsedFeatures">Every discovered feature and its parsed plan.</param>
   /// <param name="filter">A comma separated filter, or <c>null</c> to keep everything.</param>
@@ -91,6 +91,12 @@ public static class ScenarioFilter {
       IReadOnlyList<(DiscoveredSuite Suite, FeaturePlan Plan)> parsedFeatures, string? filter) {
     IReadOnlyList<string> terms = SplitTerms(filter);
     if (terms.Count == 0) {
+      if (!parsedFeatures.Any(f => f.Plan.Scenarios.Count > 0)) {
+        throw new InvalidOperationException(
+            "pickle: no scenarios were discovered. no loaded mod ships a Pickle/Features "
+            + "directory holding a .feature file with at least one scenario.");
+      }
+
       return [.. parsedFeatures];
     }
 

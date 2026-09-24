@@ -78,6 +78,23 @@ public class ScenarioFilterTests {
   }
 
   [Fact]
+  public void An_empty_filter_still_throws_when_nothing_was_discovered() {
+    InvalidOperationException ex = Assert.Throws<InvalidOperationException>(
+        () => ScenarioFilter.FilterFeatures([], null));
+
+    Assert.Contains("no scenarios were discovered", ex.Message, StringComparison.Ordinal);
+  }
+
+  [Fact]
+  public void An_empty_filter_throws_when_every_feature_is_scenarioless() {
+    DiscoveredSuite suite = new DiscoveredSuite("MyMod", "fx", "fx", [], [], [], []);
+    List<(DiscoveredSuite Suite, FeaturePlan Plan)> empty =
+        [(suite, new FeaturePlan("pawn", new TagSet([]), [], Path))];
+
+    Assert.Throws<InvalidOperationException>(() => ScenarioFilter.FilterFeatures(empty, null));
+  }
+
+  [Fact]
   public void A_matching_filter_keeps_only_the_scenarios_it_picks() {
     List<(DiscoveredSuite Suite, FeaturePlan Plan)> kept =
         ScenarioFilter.FilterFeatures(Features(), "pawn-steps.feature::walks");

@@ -28,9 +28,10 @@ docker run --rm --name pickle-suite-win \
   > "$TMP/container.log" 2>&1 &
 game=$!
 
+# exec replaces the subshell with tail, so $! is tail rather than a parent that outlives it.
 ( until [[ -f "$REPORT_DIR/Player.log" ]]; do sleep 2; done
-  tail -n +1 -f "$REPORT_DIR/Player.log" \
-    | grep --line-buffered -oE 'pickle: .*' ) &
+  exec tail -n +1 -f "$REPORT_DIR/Player.log" \
+    > >(grep --line-buffered -oE 'pickle: .*') ) &
 follow=$!
 
 status=0

@@ -82,6 +82,9 @@ A filter that matches nothing is an error, not an empty pass. Pickle logs the te
 gave and the features it found, then exits 2. This is what stops a renamed feature file
 from leaving the pipeline green forever.
 
+A run with no filter fails the same way when no loaded mod ships a scenario. Discovery
+finding nothing used to exit 0, which read as a clean pass in CI.
+
 ## Flaky scenarios
 
 Game tests race the simulation. RimWorld assigns much of a pawn's state on the next think
@@ -146,7 +149,7 @@ Every set is a full suite run, so keep the list short.
 | --- | --- |
 | 0 | Every scenario passed |
 | 1 | At least one scenario failed |
-| 2 | Pickle itself failed, or the filter matched no scenarios |
+| 2 | Pickle itself failed, or the run had no scenarios in it |
 
 Read `exitReason` in `summary.json` when you need more than the code. A run that the
 watchdog stops reports its reason there.

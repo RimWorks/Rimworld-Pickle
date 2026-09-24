@@ -59,7 +59,9 @@ docker run --rm --name "pickle-suite${SET_NAME:+-$SET_NAME}" \
 game=$!
 echo "game container started, waiting for its log ..."
 
-tail -n +1 -f "$TMP/container.log" | sed 's/^/[container] /' &
+# Process substitution, not a pipe: $! after `tail | sed` is sed's pid, so the kill below
+# misses tail and the follower holds this script's stdout open.
+tail -n +1 -f "$TMP/container.log" > >(sed 's/^/[container] /') &
 container_follow=$!
 
 ( sleep 45
@@ -68,10 +70,12 @@ container_follow=$!
     docker ps -a --filter name=pickle-suite --format '{{.Status}} {{.Image}}'
     ls -la "$REPORT_DIR" || true
   fi ) &
+watchdog=$!
 
+# exec replaces the subshell with tail, so $! is tail rather than a parent that outlives it.
 ( until [[ -f "$REPORT_DIR/Player.log" ]]; do sleep 1; done
-  tail -n +1 -f "$REPORT_DIR/Player.log" \
-    | grep --line-buffered -oE 'pickle: .*' ) &
+  exec tail -n +1 -f "$REPORT_DIR/Player.log" \
+    > >(grep --line-buffered -oE 'pickle: .*') ) &
 follow=$!
 
 dashboard=
@@ -83,5 +87,5 @@ fi
 status=0
 wait "$game" || status=$?
 sleep 1
-kill "$follow" "$container_follow" ${dashboard:-} 2>/dev/null || true
+kill "$follow" "$container_follow" "$watchdog" ${dashboard:-} 2>/dev/null || true
 exit "$status"
