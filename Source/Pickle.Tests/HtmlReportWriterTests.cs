@@ -157,6 +157,33 @@ public class HtmlReportWriterTests {
   }
 
   [Fact]
+  public void A_film_whose_folder_is_gone_reads_as_an_absence_while_a_real_one_still_links() {
+    using TempFilmDir dir = new TempFilmDir(withVideo: false);
+    string gone = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName(), "0000.jpg");
+    List<ScenarioResult> results =
+    [
+        new ScenarioResult(
+                "filmed",
+                "Film",
+                new Core.Model.TagSet([]),
+                ScenarioOutcome.Failed,
+                [new StepResult("Then", "it fails", StepStatus.Failed, 1)],
+                1) {
+              Attachments = [("film-frames", gone), ("film-frames", Path.Combine(dir.Path, "0000.jpg"))],
+            },
+        ];
+
+    JsonElement attachments = Payload(results)
+        .GetProperty("features")[0]
+        .GetProperty("scenarios")[0]
+        .GetProperty("attachments");
+
+    Assert.Equal(1, attachments.GetArrayLength());
+    Assert.Equal("film-frames", attachments[0].GetProperty("name").GetString());
+    Assert.Equal("screenshots/film/a-scenario/0000.jpg", attachments[0].GetProperty("content").GetString());
+  }
+
+  [Fact]
   public void Payload_carries_attempts_and_earlier_failures() {
     string payload = HtmlReportWriter.BuildPayload(ReportWriterTestData.BuildFlakyRun(), "passed", null);
 
@@ -210,8 +237,8 @@ public class HtmlReportWriterTests {
         .GetProperty("attachments")[0];
   }
 
-  // BuildAttachment probes the disk for film.webm beside the frames, so the branches only
-  // separate when the file really is or is not there.
+  // Expand probes the disk for film.webm beside the frames, so the branches only separate
+  // when the file really is or is not there.
   private sealed class TempFilmDir : System.IDisposable {
     private readonly string root;
 

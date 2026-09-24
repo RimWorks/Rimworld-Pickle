@@ -1,5 +1,8 @@
 name: compat
 
+# Weekly comparison run: one suite leg per mod combination in compat-sets.json. A red set is the
+# answer, so the legs report instead of gating - mod-sets is what turns that on in the reusable.
+
 on:
   schedule:
     - cron: '0 7 * * 1'
@@ -18,20 +21,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # a `uses:` job cannot run steps, so the file has to be read into an output first. the reusable
+  # checks the names, the duplicates and the backends.
   sets:
     name: read compat-sets.json
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.read.outputs.matrix }}
+      sets: ${{ steps.read.outputs.sets }}
     steps:
       - uses: actions/checkout@v7
 
       - name: Read the sets
         id: read
         run: |
-          matrix="$(jq -c '{set: .sets}' compat-sets.json)"
-          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
-          echo "$matrix"
+          set -euo pipefail
+          sets="$(jq -c '.sets' compat-sets.json)"
+          echo "sets=$sets" >> "$GITHUB_OUTPUT"
+          jq . <<< "$sets"
 
   dashboard:
     name: dashboard
@@ -40,6 +46,7 @@ jobs:
       working-directory: Dashboard
       artifact-name: dashboard-dist
 
+  # ci.yml calls this too, so the steam branch and the image name stay pinned in one place
   game-image:
     name: rimworld 1.6 image
     uses: ./.github/workflows/game-image.yml
@@ -51,100 +58,28 @@ jobs:
       STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
 
   suite:
-    name: suite (${{ matrix.set.name }})
+    name: suite
     needs: [sets, dashboard, game-image]
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
+    uses: RimWorks/mod-ci/.github/workflows/pickle-suite.yml@v1
     permissions:
       contents: read
       packages: read
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.sets.outputs.matrix) }}
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: ./.github/actions/build-mod
-
-      - name: Stage mods and config
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          .github/scripts/stage-pickle-mods.sh \
-            "${{ matrix.set.backend }}" "$RUNNER_TEMP/mods" "$RUNNER_TEMP/config" \
-            "${{ matrix.set.extraMods }}"
-
-      - name: Run the suite
-        env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SUITE_FILTER: ${{ inputs.suite-filter }}
-          SET_NAME: ${{ matrix.set.name }}
-        run: |
-          echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          .github/scripts/run-suite.sh \
-            "${{ needs.game-image.outputs.image-ref }}" \
-            "$RUNNER_TEMP/mods" "$RUNNER_TEMP/config" "$PWD/pickle-reports" \
-            || echo "set $SET_NAME exited $?"
-
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: compat-${{ matrix.set.name }}
-          path: pickle-reports/
-
-  merge:
-    name: merged report
-    needs: suite
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/download-artifact@v7
-        with:
-          pattern: compat-*
-          path: sets
-
-      - name: Merge the reports
-        run: |
-          mapfile -t reports < <(find sets -name report.html | sort)
-          if [[ ${#reports[@]} -eq 0 ]]; then
-            echo "::error title=Pickle compat::no set produced a report"
-            exit 1
-          fi
-
-          python3 .github/scripts/merge-reports.py merged.html "${reports[@]}"
-
-          for dir in sets/compat-*/screenshots/film; do
-            [[ -d "$dir" ]] || continue
-            set_name="$(basename "$(dirname "$(dirname "$dir")")")"
-            mkdir -p "screenshots/${set_name#compat-}"
-            cp -r "$dir" "screenshots/${set_name#compat-}/film"
-          done
-
-      - name: Publish the counts
-        if: always()
-        run: |
-          python3 - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
-          import json, pathlib
-
-          print("## Pickle compat\n")
-          print("| Set | Result |")
-          print("|---|---|")
-          for summary in sorted(pathlib.Path("sets").glob("compat-*/summary.json")):
-              d = json.loads(summary.read_text())
-              name = d.get("setName") or summary.parent.name
-              print(f"| {name} | {d['passed']} passed, {d['failed']} failed, "
-                    f"{d['skipped']} skipped ({d['exitReason']}) |")
-
-          print("\nDownload **merged-report** below and open `merged.html`. Select "
-                "**Compare sets** to see which scenario broke under which set.")
-          EOF
-
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: merged-report
-          path: |
-            merged.html
-            screenshots/
+      # the reusable reads this run's dashboard artifact through the api
+      actions: read
+    with:
+      game-image: ${{ needs.game-image.outputs.image-ref }}
+      mod-name: Pickle
+      mod-package-id: rimworks.pickle
+      # the checkout is Pickle, so no release is staged over it
+      pickle-version: self
+      mod-sets: ${{ needs.sets.outputs.sets }}
+      suite-filter: ${{ inputs.suite-filter }}
+      # every discovered feature, including the ones the sets' own mods ship
+      unfiltered: true
+      build-command: dotnet build Pickle.slnx -c Release
+      # the dashboard bundles are embedded resources, so the build needs them on disk
+      build-artifacts: dashboard-dist:Dashboard/dist
+      dotnet-version: 10.0.x
+      # (0 retries + 1) * 30 + 15 for checkout, build, the pull and staging = 45, under the 50
+      run-timeout: 30
+      timeout-minutes: 50

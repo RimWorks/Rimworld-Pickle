@@ -114,157 +114,83 @@ jobs:
         run: dotnet format Pickle.slnx --verify-no-changes
 
   suite:
-    name: suite (${{ matrix.backends }})
+    name: suite
     needs: [dashboard, game-image]
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
     permissions:
       contents: read
       packages: read
-      checks: write
-    strategy:
-      fail-fast: false
-      matrix:
-        backends: ${{ inputs.backend != ''
-          && fromJSON(format('["{0}"]', inputs.backend))
-          || (github.event_name == 'pull_request'
-          && fromJSON('["harmony"]')
-          || fromJSON('["harmony","concord","both"]')) }}
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: ./.github/actions/build-mod
-
-      - name: Stage mods and config
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          .github/scripts/stage-pickle-mods.sh \
-            "${{ matrix.backends }}" "$RUNNER_TEMP/mods" "$RUNNER_TEMP/config"
-
-      - name: Run the suite
-        env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LIVE_DASHBOARD: ${{ github.event_name != 'workflow_dispatch' || inputs.live-dashboard }}
-          FILM_SECONDS: ${{ github.event_name == 'workflow_dispatch' && !inputs.film && '0' || '60' }}
-          SUITE_FILTER: ${{ inputs.suite-filter }}
-        run: |
-          echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          .github/scripts/run-suite.sh \
-            "${{ needs.game-image.outputs.image-ref }}" \
-            "$RUNNER_TEMP/mods" "$RUNNER_TEMP/config" "$PWD/pickle-reports"
-
-      - name: Publish the counts
-        if: always()
-        run: |
-          {
-            echo "## Pickle suite (${{ matrix.backends }})"
-            if [ -f pickle-reports/summary.md ]; then
-              tail -n +2 pickle-reports/summary.md
-            else
-              echo "The run produced no summary. Read Player.log in the artifact below."
-            fi
-            echo
-            echo "[Download **pickle-report-${{ matrix.backends }}**](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)"
-            echo "for \`report.html\` (open it in a browser; failures carry screenshots),"
-            echo "plus \`junit.xml\` and the full \`Player.log\`."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Publish the scenario results
-        if: always()
-        uses: dorny/test-reporter@v3
-        with:
-          name: suite (${{ matrix.backends }})
-          path: pickle-reports/junit.xml
-          reporter: java-junit
-          fail-on-error: false
-
-      - name: Publish the report
-        if: always()
-        env:
-          DOCBIN_TOKEN: ${{ secrets.DOCBIN_TOKEN }}
-        run: |
-          if [[ -z "${DOCBIN_TOKEN:-}" ]] || [[ ! -f pickle-reports/report.html ]]; then
-            echo "skipping docbin upload (no token or no report)"
-            exit 0
-          fi
-
-          name="pickle-${{ matrix.backends }}-${{ github.run_id }}"
-          out="$(npx -y docbin@1.13.0 push pickle-reports/report.html \
-            --name "$name" --type html --visibility unlisted --expires 30d 2>&1 | head -1)"
-          url="${out%% (*}"
-
-          if [[ "$url" == https://* ]]; then
-            echo "::notice title=Pickle report::${url}"
-            echo "<a href=\"${url}\" target=\"_blank\" rel=\"noopener\"><strong>Open the report</strong></a> - failures carry screenshots." \
-              >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "docbin upload did not return a url: $out"
-          fi
-
-      - name: Upload the report
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: pickle-report-${{ matrix.backends }}
-          path: pickle-reports/
-          if-no-files-found: warn
+      actions: read
+    uses: RimWorks/mod-ci/.github/workflows/pickle-suite.yml@v1
+    secrets:
+      DOCBIN_TOKEN: ${{ secrets.DOCBIN_TOKEN }}
+    with:
+      mod-name: Pickle
+      mod-package-id: rimworks.pickle
+      # the checkout is Pickle, so nothing stages a release of it
+      pickle-version: self
+      # Pickle's own features are the suite, so there is no filter to fall back to
+      unfiltered: true
+      suite-filter: ${{ inputs.suite-filter }}
+      game-image: ${{ needs.game-image.outputs.image-ref }}
+      backends: ${{ inputs.backend != ''
+        && format('["{0}"]', inputs.backend)
+        || (github.event_name == 'pull_request'
+        && '["harmony"]'
+        || '["harmony","concord","both"]') }}
+      build-command: dotnet build Pickle.slnx -c Release
+      # the dashboard bundles are embedded resources, so the build needs them on disk
+      build-artifacts: dashboard-dist:Dashboard/dist
+      dotnet-version: 10.0.x
+      film-seconds: ${{ (github.event_name != 'workflow_dispatch' || inputs.film) && 60 || 0 }}
+      live-dashboard: ${{ github.event_name != 'workflow_dispatch' || inputs.live-dashboard }}
+      publish-report: true
+      run-timeout: 25
+      timeout-minutes: 45
 
   suite-windows:
     name: suite (windows)
     needs: [dashboard, game-image]
+    # mod-ci's game-image.yml downloads the linux depot, so this leg runs on the ref built here
     if: needs.game-image.outputs.windows-image-ref != ''
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
     permissions:
       contents: read
       packages: read
+      actions: read
+    env:
+      REPORT_DIR: ${{ github.workspace }}/pickle-reports
     steps:
       - uses: actions/checkout@v7
 
+      # the verdict inside the action is node
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
       - uses: ./.github/actions/build-mod
 
-      - name: Stage mods and config
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          .github/scripts/stage-pickle-mods.sh \
-            harmony "$RUNNER_TEMP/mods" "$RUNNER_TEMP/config-src"
-
-          mkdir -p "$RUNNER_TEMP/config/Config"
-          cp "$RUNNER_TEMP/config-src"/* "$RUNNER_TEMP/config/Config/"
-          chmod -R 777 "$RUNNER_TEMP/config"
-
-      - name: Run the suite
-        env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          .github/scripts/run-suite-windows.sh \
-            "${{ needs.game-image.outputs.windows-image-ref }}" \
-            "$RUNNER_TEMP/mods" "$RUNNER_TEMP/config" "$PWD/pickle-reports"
-
-      - name: Publish the counts
-        if: always()
-        run: |
-          {
-            echo "## Pickle suite (windows)"
-            if [ -f pickle-reports/summary.md ]; then
-              tail -n +2 pickle-reports/summary.md
-            else
-              echo "The run produced no summary. Read Player.log in the artifact below."
-              echo
-              echo "Last lines of the container log:"
-              echo '```'
-              tail -20 "$RUNNER_TEMP/container.log" 2>/dev/null || echo "(none)"
-              echo '```'
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload the report
-        if: always()
-        uses: actions/upload-artifact@v7
+      # the pickle-run action, not a second pickle-suite.yml call: two calls in one run collide on
+      # the reusable's merged-report artifact and each merge swallows the other call's legs
+      - uses: RimWorks/mod-ci/.github/actions/pickle-run@v1
         with:
-          name: pickle-report-windows
-          path: pickle-reports/
+          game-image: ${{ needs.game-image.outputs.windows-image-ref }}
+          mod-name: Pickle
+          mod-package-id: rimworks.pickle
+          pickle-version: self
+          unfiltered: true
+          backend: harmony
+          platform: windows
+          set-name: windows
+          run-timeout: 25
+          timeout-minutes: 45
+          report-dir: ${{ env.REPORT_DIR }}
+
+      # not pickle-report-*: that stem is what the linux call's merge job downloads, and this leg
+      # is not one of its legs
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: windows-report
+          path: ${{ env.REPORT_DIR }}/
           if-no-files-found: warn

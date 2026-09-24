@@ -122,23 +122,28 @@ Name each run, and point each at its own directory:
 ./RimWorldLinux -pickle-run -pickle-set-name=ve      -pickle-report-dir=$PWD/out/ve
 ```
 
-Then merge them into one file:
+Then merge them into one file. The merger ships in
+[mod-ci](https://github.com/RimWorks/mod-ci) and takes the directory that holds one directory
+per set:
 
 ```sh
-.github/scripts/merge-reports.py merged.html out/vanilla/report.html out/ve/report.html
+node mod-ci/.github/actions/pickle-run/merge-reports.mjs out merged.html
 ```
 
 `merged.html` opens from disk like any report. It gains a **Compare sets** view: scenarios
 down, sets across, and a highlight on every row where the sets disagree. That highlight is
 the answer you came for.
 
-The merger reads each set's name out of its own report, so the order on the command line
-only decides the column order. A single report in still reads as a single report out.
+The merger reads each set's name out of its own report, and falls back to the directory name.
+The columns come out in directory order. A single report in still reads as a single report
+out.
 
 `compat-sets.json` lists the sets `.github/workflows/compat.yml` runs on a schedule. Add a
-mod with `owner/repo:AssetPrefix:packageId:tag:sha256`, which
-[stage-pickle-mods.sh](https://github.com/RimWorks/Rimworld-Pickle/blob/main/.github/scripts/stage-pickle-mods.sh)
-pulls from that release and refuses the zip if the hash does not match. Steam Workshop items
+mod with `owner/repo:AssetPrefix:packageId`, and the `stage-mods` action in
+[mod-ci](https://github.com/RimWorks/mod-ci) pulls it from that project's latest GitHub release.
+Floating is the point: a pinned version answers the compatibility question about one old tag
+forever. There is no checksum. The action refuses a zip containing path traversal, an absolute
+entry, or a symlink instead, because those survive a floating version. Steam Workshop items
 do not work: staging one needs credentials the script does not take.
 
 Every set is a full suite run, so keep the list short.

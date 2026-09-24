@@ -18,6 +18,7 @@ jobs:
       contents: read
       packages: write
       checks: write
+      actions: read
     uses: ./.github/workflows/ci.yml
     secrets:
       STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
