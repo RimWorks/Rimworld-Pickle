@@ -51,6 +51,19 @@ public static class SummaryJsonWriter {
 
       // Absent, not zero. A scenario that measured nothing would otherwise read as the
       // fastest one in the run.
+      // A failing scenario carries what a CI verdict has to print, so nothing downstream needs
+      // report.html to name the failure.
+      if (scenario.Outcome == ScenarioOutcome.Failed) {
+        builder.Append(",\"feature\":").Append(JsonEscape.Quote(scenario.FeatureName));
+        builder.Append(",\"failureMessage\":").Append(JsonEscape.Quote(scenario.FailureMessage ?? string.Empty));
+
+        StepResult? failing = scenario.Steps.FirstOrDefault(s => s.Status == StepStatus.Failed);
+        if (failing != null) {
+          builder.Append(",\"failingStep\":")
+              .Append(JsonEscape.Quote((failing.Keyword + " " + failing.Text).Trim()));
+        }
+      }
+
       if (scenario.TickCost.HasValue) {
         (int ticks, double meanMs, double maxMs) = scenario.TickCost.Value;
         builder.Append(",\"tickCost\":{\"ticks\":").Append(ticks)

@@ -58,7 +58,6 @@ public static class AutorunBootstrap {
       File.WriteAllText(
           Path.Combine(reportDir, "messages.ndjson"),
           MessagesNdjsonWriter.Write(results, path => File.Exists(path) ? File.ReadAllBytes(path) : null));
-      File.WriteAllText(Path.Combine(reportDir, "summary.json"), SummaryJsonWriter.Write(results, exitReason, setName));
       File.WriteAllText(Path.Combine(reportDir, "summary.md"), SummaryMarkdownWriter.Write(results));
       File.WriteAllText(
           Path.Combine(reportDir, "report.html"),
@@ -69,6 +68,9 @@ public static class AutorunBootstrap {
               path => File.Exists(path) ? File.ReadAllBytes(path) : null,
               Web.DashboardStrings.BuildJson(),
               setName));
+
+      // last: a reader that sees a fresh summary.json can trust every other file beside it
+      File.WriteAllText(Path.Combine(reportDir, "summary.json"), SummaryJsonWriter.Write(results, exitReason, setName));
     } catch (Exception ex) {
       if (onError != null) {
         onError($"pickle: failed writing reports: {ex.Message}");

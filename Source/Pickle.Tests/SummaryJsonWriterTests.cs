@@ -84,4 +84,35 @@ public class SummaryJsonWriterTests {
     // Absent, not zero: a scenario that measured nothing is not the fastest one.
     Assert.False(scenarios[1].TryGetProperty("tickCost", out _));
   }
+  [Fact]
+  public void Write_FailingScenario_CarriesFeatureStepAndMessage() {
+    List<ScenarioResult> results = ReportWriterTestData.BuildTwoFeatureRun();
+    string json = SummaryJsonWriter.Write(results, "failed");
+
+    JsonElement scenarios = JsonDocument.Parse(json).RootElement.GetProperty("scenarios");
+    ScenarioResult expected = results.Single(r => r.Outcome == ScenarioOutcome.Failed);
+    JsonElement entry = scenarios.EnumerateArray()
+        .Single(e => e.GetProperty("outcome").GetString() == "Failed");
+
+    Assert.Equal(expected.FeatureName, entry.GetProperty("feature").GetString());
+    Assert.Equal(expected.FailureMessage, entry.GetProperty("failureMessage").GetString());
+
+    StepResult failing = expected.Steps.Single(s => s.Status == StepStatus.Failed);
+    Assert.Equal(
+        (failing.Keyword + " " + failing.Text).Trim(),
+        entry.GetProperty("failingStep").GetString());
+  }
+
+  [Fact]
+  public void Write_PassingScenario_HasNoFailureFields() {
+    List<ScenarioResult> results = ReportWriterTestData.BuildTwoFeatureRun();
+    string json = SummaryJsonWriter.Write(results, "completed");
+
+    JsonElement passing = JsonDocument.Parse(json).RootElement.GetProperty("scenarios")
+        .EnumerateArray().First(e => e.GetProperty("outcome").GetString() == "Passed");
+
+    Assert.False(passing.TryGetProperty("feature", out _));
+    Assert.False(passing.TryGetProperty("failureMessage", out _));
+    Assert.False(passing.TryGetProperty("failingStep", out _));
+  }
 }
