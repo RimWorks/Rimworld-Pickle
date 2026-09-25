@@ -20,7 +20,6 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <!-- No refs glob: this project compiles nothing, it only packs Pickle's ref assembly. -->
   <ItemGroup Condition="'$(HasGameRefs)' == 'false'">
     <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" PrivateAssets="all" />
   </ItemGroup>
