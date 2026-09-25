@@ -18,6 +18,7 @@ namespace RimWorks.Pickle.Runtime;
 public class PickleDriver : MonoBehaviour {
   private static PickleDriver? instance;
   private static bool warnedFrameReadback;
+  private static bool readFramesOnThisThread;
 
   private readonly ConcurrentQueue<Action> mainThreadQueue = new();
 
@@ -27,7 +28,6 @@ public class PickleDriver : MonoBehaviour {
   private readonly List<PendingWait> pendingWaits = [];
   private int frameCounter;
 
-  private RenderTexture? frameTarget;
   private Texture2D? frameScratch;
   private int mainThreadId;
 
@@ -164,13 +164,8 @@ public class PickleDriver : MonoBehaviour {
     StartCoroutine(CaptureFrameCoroutine(filePath, maxWidth));
   }
 
-  /// <summary>Releases the render texture and scratch texture the filmstrip capture reuses.</summary>
+  /// <summary>Releases the scratch texture the filmstrip capture reuses.</summary>
   public void ReleaseFrameBuffers() {
-    if (frameTarget != null) {
-      RenderTexture.ReleaseTemporary(frameTarget);
-      frameTarget = null;
-    }
-
     if (frameScratch != null) {
       UnityEngine.Object.Destroy(frameScratch);
       frameScratch = null;
@@ -228,11 +223,22 @@ public class PickleDriver : MonoBehaviour {
   // Software rendering has no async readback, so fall back to pulling the pixels on
   // this thread. Slower, but it is the difference between a film and nothing.
   private static void ReadFrame(RenderTexture source, Texture2D scratch, string filePath) {
-    if (!SystemInfo.supportsAsyncGPUReadback) {
+    if (readFramesOnThisThread) {
       ReadFrameSynchronously(source, scratch, filePath);
       return;
     }
 
+    try {
+      RequestFrame(source, scratch, filePath);
+    } catch (Exception ex) {
+      // latched: without it every frame pays for the same missing method
+      readFramesOnThisThread = true;
+      Log.WarnTo(PickleLog.Channel, ex, "no async readback here, so frames read on this thread");
+      ReadFrameSynchronously(source, scratch, filePath);
+    }
+  }
+
+  private static void RequestFrame(RenderTexture source, Texture2D scratch, string filePath) {
     AsyncGPUReadback.Request(source, 0, TextureFormat.RGB24, request => {
       if (request.hasError) {
         WarnFrameReadbackOnce();
@@ -276,15 +282,15 @@ public class PickleDriver : MonoBehaviour {
       int height = Mathf.RoundToInt(Screen.height * (width / (float)Screen.width));
       height -= height % 2;
 
-      if (frameTarget == null || frameTarget.width != Screen.width || frameTarget.height != Screen.height) {
-        ReleaseFrameBuffers();
-        frameTarget = RenderTexture.GetTemporary(Screen.width, Screen.height, 0);
-      }
-
-      ScreenCapture.CaptureScreenshotIntoRenderTexture(frameTarget);
-
+      // the capture the screenshot path already uses
+      Texture2D shot = ScreenCapture.CaptureScreenshotAsTexture();
       scaled = RenderTexture.GetTemporary(width, height, 0);
-      Graphics.Blit(frameTarget, scaled);
+
+      try {
+        Graphics.Blit(shot, scaled);
+      } finally {
+        UnityEngine.Object.Destroy(shot);
+      }
 
       if (frameScratch == null || frameScratch.width != width || frameScratch.height != height) {
         if (frameScratch != null) {
