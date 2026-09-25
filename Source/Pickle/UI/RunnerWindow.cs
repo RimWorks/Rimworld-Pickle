@@ -24,7 +24,7 @@ namespace RimWorks.Pickle.UI;
 /// Two-pane test runner: mod, feature and scenario tree on the left, the selected
 /// scenario's steps and failure evidence on the right.
 /// </summary>
-public class RunnerWindow : Window {
+public class RunnerWindow : PickleWindow {
   private const float PaneTopPadding = 10f;
   private const float PaneGutter = 14f;
 

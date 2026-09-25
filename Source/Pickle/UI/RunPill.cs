@@ -8,7 +8,7 @@ namespace RimWorks.Pickle.UI;
 /// Top-right pill shown while the full window is collapsed. Reads live state off the
 /// owning RunSession rather than caching, so it never goes stale.
 /// </summary>
-public class RunPill : Window {
+public class RunPill : PickleWindow {
   private const float PillWidth = 360f;
   private const float Gap = 8f;
   private const float ButtonRowHeight = 28f;

@@ -6,7 +6,7 @@ namespace RimWorks.Pickle.UI;
 
 /// <summary>Popup tag picker anchored below the button that opened it. A plain click replaces the tag
 /// filter and closes; shift-click or the multiple checkbox adds to it and stays open.</summary>
-public class RunnerTagMenu : Window {
+public class RunnerTagMenu : PickleWindow {
   private readonly RunnerWindow owner;
   private readonly Vector2 anchor;
   private Vector2 scroll;

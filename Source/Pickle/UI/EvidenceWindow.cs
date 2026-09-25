@@ -9,7 +9,7 @@ namespace RimWorks.Pickle.UI;
 
 /// <summary>Full-screen viewer for a scenario's evidence: a single screenshot, a scrubbable set of
 /// screenshots, or a film's video with playback controls.</summary>
-public class EvidenceWindow : Window {
+public class EvidenceWindow : PickleWindow {
   private readonly IReadOnlyList<string> paths;
   private readonly bool film;
   private Texture2D? image;

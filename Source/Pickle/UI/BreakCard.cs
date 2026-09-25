@@ -8,7 +8,7 @@ namespace RimWorks.Pickle.UI;
 /// Card shown when a step fails with break-on-failure armed. forcePause stops ticks
 /// without absorbing input, so the map stays inspectable.
 /// </summary>
-public class BreakCard : Window {
+public class BreakCard : PickleWindow {
   private const float CardWidth = 560f;
   private const float TitleHeight = 26f;
   private const float BreadcrumbHeight = 22f;

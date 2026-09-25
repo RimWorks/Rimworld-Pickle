@@ -1,9 +1,10 @@
+using RimWorks.Pickle.UI;
 using UnityEngine;
 using Verse;
 
 namespace RimWorks.Pickle.Runtime;
 
-internal class TagClickTestWindow : Window {
+internal class TagClickTestWindow : PickleWindow {
   public TagClickTestWindow() {
     doCloseX = true;
     doCloseButton = true;

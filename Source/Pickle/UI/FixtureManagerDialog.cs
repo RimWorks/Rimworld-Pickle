@@ -20,7 +20,7 @@ namespace RimWorks.Pickle.UI;
 /// Lists every fixture Pickle can see, grouped by the mod that owns it, and loads, renames
 /// or deletes one. Without it a recorded .rws is write-only from inside the game.
 /// </summary>
-public class FixtureManagerDialog : Window {
+public class FixtureManagerDialog : PickleWindow {
   private const float HeaderHeight = 36f;
   private const float SaveButtonWidth = 128f;
   private const float RowHeight = 46f;

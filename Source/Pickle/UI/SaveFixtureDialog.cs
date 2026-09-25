@@ -16,7 +16,7 @@ namespace RimWorks.Pickle.UI;
 /// Saves the running game into a mod's Pickle/Fixtures/. Saves to a scratch name first,
 /// then copies, so a half-written file never lands in a suite.
 /// </summary>
-public class SaveFixtureDialog : Window {
+public class SaveFixtureDialog : PickleWindow {
   private const float RowHeight = 30f;
 
   private readonly List<DiscoveredSuite> suites;
