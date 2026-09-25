@@ -17,8 +17,6 @@ namespace RimWorks.Pickle.Runtime;
 /// </summary>
 public class PickleDriver : MonoBehaviour {
   private static PickleDriver? instance;
-  private static bool warnedFrameReadback;
-  private static bool readFramesOnThisThread;
 
   private readonly ConcurrentQueue<Action> mainThreadQueue = new();
 
@@ -28,7 +26,6 @@ public class PickleDriver : MonoBehaviour {
   private readonly List<PendingWait> pendingWaits = [];
   private int frameCounter;
 
-  private Texture2D? frameScratch;
   private int mainThreadId;
 
   /// <summary>Whether a driver instance has already been created for this run.</summary>
@@ -164,14 +161,6 @@ public class PickleDriver : MonoBehaviour {
     StartCoroutine(CaptureFrameCoroutine(filePath, maxWidth));
   }
 
-  /// <summary>Releases the scratch texture the filmstrip capture reuses.</summary>
-  public void ReleaseFrameBuffers() {
-    if (frameScratch != null) {
-      UnityEngine.Object.Destroy(frameScratch);
-      frameScratch = null;
-    }
-  }
-
   /// <summary>Fails every pending wait registered with a given scope, freeing it early.</summary>
   /// <param name="scope">The scope object waits were registered with, compared by reference.</param>
   /// <param name="exception">The exception to fault each matching wait with.</param>
@@ -208,107 +197,13 @@ public class PickleDriver : MonoBehaviour {
     }
   }
 
-  // software rendering has no async readback, so a filmed run makes nothing. say it once.
-  private static void WarnFrameReadbackOnce() {
-    if (warnedFrameReadback) {
-      return;
-    }
-
-    warnedFrameReadback = true;
-    Log.WarnTo(PickleLog.Channel,
-        "the GPU refused a frame readback, so filming captured nothing. " +
-        "This is expected without a real GPU; run with -pickle-max-film-seconds=0 there.");
-  }
-
-  // Software rendering has no async readback, so fall back to pulling the pixels on
-  // this thread. Slower, but it is the difference between a film and nothing.
-  private static void ReadFrame(RenderTexture source, Texture2D scratch, string filePath) {
-    if (readFramesOnThisThread) {
-      ReadFrameSynchronously(source, scratch, filePath);
-      return;
-    }
-
-    try {
-      RequestFrame(source, scratch, filePath);
-    } catch (Exception ex) {
-      // latched: without it every frame pays for the same missing method
-      readFramesOnThisThread = true;
-      Log.WarnTo(PickleLog.Channel, ex, "no async readback here, so frames read on this thread");
-      ReadFrameSynchronously(source, scratch, filePath);
-    }
-  }
-
-  private static void RequestFrame(RenderTexture source, Texture2D scratch, string filePath) {
-    AsyncGPUReadback.Request(source, 0, TextureFormat.RGB24, request => {
-      if (request.hasError) {
-        WarnFrameReadbackOnce();
-        ReadFrameSynchronously(source, scratch, filePath);
-        return;
-      }
-
-      try {
-        scratch.LoadRawTextureData(request.GetData<byte>());
-        scratch.Apply(false);
-        File.WriteAllBytes(filePath, scratch.EncodeToJPG(75));
-      } catch (Exception ex) {
-        Log.WarnTo(PickleLog.Channel, ex, $"frame readback failed for {filePath}");
-      }
-    });
-  }
-
-  private static void ReadFrameSynchronously(RenderTexture source, Texture2D scratch, string filePath) {
-    RenderTexture? previous = RenderTexture.active;
-    try {
-      RenderTexture.active = source;
-      scratch.ReadPixels(new Rect(0, 0, scratch.width, scratch.height), 0, 0, false);
-      scratch.Apply(false);
-      File.WriteAllBytes(filePath, scratch.EncodeToJPG(75));
-    } catch (Exception ex) {
-      Log.WarnTo(PickleLog.Channel, ex, $"frame readback failed for {filePath}");
-    } finally {
-      RenderTexture.active = previous;
-    }
-  }
-
-  private System.Collections.IEnumerator CaptureFrameCoroutine(string filePath, int maxWidth) {
+  private static System.Collections.IEnumerator CaptureFrameCoroutine(string filePath, int maxWidth) {
     yield return new WaitForEndOfFrame();
 
-    RenderTexture? scaled = null;
     try {
-      int width = Mathf.Min(maxWidth, Screen.width);
-
-      // yuv420p rejects an odd width or height
-      width -= width % 2;
-      int height = Mathf.RoundToInt(Screen.height * (width / (float)Screen.width));
-      height -= height % 2;
-
-      // the capture the screenshot path already uses
-      Texture2D shot = ScreenCapture.CaptureScreenshotAsTexture();
-      scaled = RenderTexture.GetTemporary(width, height, 0);
-
-      try {
-        Graphics.Blit(shot, scaled);
-      } finally {
-        UnityEngine.Object.Destroy(shot);
-      }
-
-      if (frameScratch == null || frameScratch.width != width || frameScratch.height != height) {
-        if (frameScratch != null) {
-          UnityEngine.Object.Destroy(frameScratch);
-        }
-
-        frameScratch = new Texture2D(width, height, TextureFormat.RGB24, false);
-      }
-
-      Texture2D scratch = frameScratch;
-
-      ReadFrame(scaled, scratch, filePath);
+      FrameCapture.WriteScaledJpeg(filePath, maxWidth);
     } catch (Exception ex) {
       Log.WarnTo(PickleLog.Channel, ex, $"failed to capture frame to {filePath}");
-    } finally {
-      if (scaled != null) {
-        RenderTexture.ReleaseTemporary(scaled);
-      }
     }
   }
 
@@ -316,16 +211,7 @@ public class PickleDriver : MonoBehaviour {
     yield return new WaitForEndOfFrame();
 
     try {
-      string? dirPath = Path.GetDirectoryName(filePath);
-      if (!string.IsNullOrEmpty(dirPath) && !Directory.Exists(dirPath)) {
-        Directory.CreateDirectory(dirPath);
-      }
-
-      Texture2D screenshot = ScreenCapture.CaptureScreenshotAsTexture();
-      byte[] pngData = screenshot.EncodeToPNG();
-      UnityEngine.Object.Destroy(screenshot);
-
-      File.WriteAllBytes(filePath, pngData);
+      FrameCapture.WritePng(filePath);
     } catch (Exception ex) {
       Log.WarnTo(PickleLog.Channel, ex, $"failed to capture screenshot to {filePath}");
     }

@@ -82,7 +82,7 @@ public sealed class FilmstripRecorder {
     }
 
     PickleDriver.Instance.RemoveFrameHook(OnFrame);
-    PickleDriver.Instance.ReleaseFrameBuffers();
+    FrameCapture.Release();
     clock.Stop();
 
     if (frameIndex == 0) {
