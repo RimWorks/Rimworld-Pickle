@@ -348,6 +348,8 @@ public class RunnerWindow : PickleWindow {
     } else {
       deselectedScenarios.Add(key);
     }
+
+    RunScope = "selected";
   }
 
   /// <summary>
