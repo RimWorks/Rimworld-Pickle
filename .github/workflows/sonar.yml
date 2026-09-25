@@ -13,6 +13,8 @@ on:
 
 permissions:
   contents: read
+  # mod-ci's sonar.yml declares it: the scan restores packages from ghcr
+  packages: read
 
 concurrency:
   # github.ref is the base branch under pull_request_target, so key on the PR instead.
