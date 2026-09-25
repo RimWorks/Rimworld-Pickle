@@ -16,6 +16,8 @@ public static class WorldCameraSteps {
   private const float MaxAltitude = 1100f;
   private const float ZoomStep = 120f;
   private const float SettleSeconds = 5f;
+  private const float PlanetSeconds = 60f;
+  private const float AtAltitude = 0.5f;
 
   private static readonly FieldInfo? DesiredAltitude =
       typeof(WorldCameraDriver).GetField("desiredAltitude", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -23,10 +25,14 @@ public static class WorldCameraSteps {
   /// <summary>Opens the planet view.</summary>
   /// <param name="ctx">The running scenario's context.</param>
   /// <returns>A task that completes once the world is on screen.</returns>
+  // Showing the world queues a "GeneratingPlanet" long event, and WorldCameraDriver.Update
+  // returns on its first line for as long as one runs.
   [When("I open the world view")]
   public static async Task OpenWorldView(PickleContext ctx) {
     ctx.Require(CameraJumper.TryShowWorld(), "the world view would not open; the game has to be in play");
-    await ctx.WaitUntil(() => WorldRendererUtility.WorldRendered, SettleSeconds);
+    await ctx.WaitUntil(
+        () => WorldRendererUtility.WorldRendered && !LongEventHandler.AnyEventNowOrWaiting,
+        PlanetSeconds);
   }
 
   /// <summary>Closes the planet view and goes back to the colony.</summary>
@@ -134,14 +140,18 @@ public static class WorldCameraSteps {
     return best;
   }
 
-  private static async Task SetAltitude(PickleContext ctx, float altitude) {
+  // Waits for the camera to reach the altitude rather than to stop changing: a camera the game
+  // is not updating at all reads as stopped, which is how a zoom nobody applied looked settled.
+  private static PickleWait SetAltitude(PickleContext ctx, float altitude) {
     WorldCameraDriver camera = RequireWorldCamera(ctx);
     ctx.Require(
         DesiredAltitude != null,
         "RimWorld renamed WorldCameraDriver.desiredAltitude, so Pickle cannot zoom the world camera");
 
-    DesiredAltitude!.SetValue(camera, Mathf.Clamp(altitude, WorldCameraDriver.MinAltitude, MaxAltitude));
-    await Settle(ctx);
+    float target = Mathf.Clamp(altitude, WorldCameraDriver.MinAltitude, MaxAltitude);
+    DesiredAltitude!.SetValue(camera, target);
+
+    return ctx.WaitUntil(() => Mathf.Abs(camera.altitude - target) < AtAltitude, SettleSeconds);
   }
 
   private static PickleWait Settle(PickleContext ctx) {
