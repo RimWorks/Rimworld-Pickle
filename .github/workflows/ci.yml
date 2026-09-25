@@ -194,3 +194,29 @@ jobs:
           name: windows-report
           path: ${{ env.REPORT_DIR }}/
           if-no-files-found: warn
+
+  # a uses: job cannot hold steps, so the check run the suite used to publish lives here
+  suite-checks:
+    name: suite scenarios
+    needs: suite
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+    steps:
+      # a cancelled suite uploads nothing, and no artifact is a hard error here
+      - uses: actions/download-artifact@v7
+        continue-on-error: true
+        with:
+          pattern: pickle-report-*
+          path: reports
+
+      - uses: dorny/test-reporter@v3
+        if: always()
+        with:
+          name: suite scenarios
+          path: reports/*/junit.xml
+          reporter: java-junit
+          fail-on-error: false

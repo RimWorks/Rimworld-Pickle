@@ -184,6 +184,21 @@ public class HtmlReportWriterTests {
   }
 
   [Fact]
+  public void Two_films_from_one_folder_expand_the_strip_once() {
+    using TempFilmDir dir = new TempFilmDir(withVideo: false);
+    File.WriteAllBytes(Path.Combine(dir.Path, "0001.jpg"), [1]);
+
+    List<(string Name, string Content)> expanded =
+        [.. EvidenceAttachments.Expand([
+            ("film-frames", Path.Combine(dir.Path, "0000.jpg")),
+            ("film-frames", Path.Combine(dir.Path, "0001.jpg")),
+        ])];
+
+    Assert.Equal(Directory.GetFiles(dir.Path, "*.jpg").Length, expanded.Count);
+    Assert.Equal(["0000.jpg", "0001.jpg"], expanded.Select(a => Path.GetFileName(a.Content)));
+  }
+
+  [Fact]
   public void Payload_carries_attempts_and_earlier_failures() {
     string payload = HtmlReportWriter.BuildPayload(ReportWriterTestData.BuildFlakyRun(), "passed", null);
 

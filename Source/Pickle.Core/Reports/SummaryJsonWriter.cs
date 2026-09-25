@@ -49,8 +49,6 @@ public static class SummaryJsonWriter {
       builder.Append("\"durationMs\":").Append(scenario.DurationMs.ToString(CultureInfo.InvariantCulture)).Append(',');
       builder.Append("\"attempts\":").Append(scenario.Attempts);
 
-      // Absent, not zero. A scenario that measured nothing would otherwise read as the
-      // fastest one in the run.
       // A failing scenario carries what a CI verdict has to print, so nothing downstream needs
       // report.html to name the failure.
       if (scenario.Outcome == ScenarioOutcome.Failed) {
@@ -64,6 +62,8 @@ public static class SummaryJsonWriter {
         }
       }
 
+      // Absent, not zero. A scenario that measured nothing would otherwise read as the
+      // fastest one in the run.
       if (scenario.TickCost.HasValue) {
         (int ticks, double meanMs, double maxMs) = scenario.TickCost.Value;
         builder.Append(",\"tickCost\":{\"ticks\":").Append(ticks)

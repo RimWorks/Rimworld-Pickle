@@ -77,6 +77,11 @@ scenario is how many times it ran. Both are absent from a run that used no retri
 from `attempts`, which is always at least 1. See
 [flaky scenarios](autorun.md#flaky-scenarios).
 
+`feature`, `failureMessage` and `failingStep` on a scenario name the failure, so a CI job
+reads them instead of parsing `report.html`. All three are absent unless `outcome` is
+`Failed`. `failingStep` joins the failing step's keyword and text. It is also absent when
+no step failed, which happens when a hook or the run itself failed.
+
 | exitReason | Meaning |
 | --- | --- |
 | `passed` | Every scenario passed |
