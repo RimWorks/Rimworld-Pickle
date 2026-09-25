@@ -27,7 +27,7 @@ public static class WorldCameraSteps {
   /// <returns>A task that completes once the world is on screen.</returns>
   // Showing the world queues a "GeneratingPlanet" long event, and WorldCameraDriver.Update
   // returns on its first line for as long as one runs.
-  [When("I open the world view")]
+  [When("I open the world view", TimeoutSeconds = PlanetSeconds + 5f)]
   public static async Task OpenWorldView(PickleContext ctx) {
     ctx.Require(CameraJumper.TryShowWorld(), "the world view would not open; the game has to be in play");
     await ctx.WaitUntil(
