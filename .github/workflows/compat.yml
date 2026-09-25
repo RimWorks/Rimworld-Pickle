@@ -63,7 +63,9 @@ jobs:
     uses: RimWorks/mod-ci/.github/workflows/pickle-suite.yml@v1
     permissions:
       contents: read
-      packages: read
+      # write, not read: the reusable's game-image job declares it, and a caller is checked
+      # against every nested job whether or not the if: skips it
+      packages: write
       # the reusable reads this run's dashboard artifact through the api
       actions: read
     with:
