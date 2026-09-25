@@ -100,7 +100,7 @@ public static class MessagesNdjsonWriter {
     return $"{{\"gherkinDocument\":{{\"uri\":{uri},\"feature\":{{\"name\":{uri}}}}}}}";
   }
 
-  private static string BuildPickle(string pickleId, ScenarioResult scenario, IReadOnlyList<string> pickleStepIds) {
+  private static string BuildPickle(string pickleId, ScenarioResult scenario, List<string> pickleStepIds) {
     string steps = string.Join(
         ",",
         scenario.Steps.Select((step, i) =>

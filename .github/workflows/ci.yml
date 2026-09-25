@@ -208,6 +208,9 @@ jobs:
       actions: read
       checks: write
     steps:
+      # the reporter runs git ls-files to resolve source paths, so it needs a checkout
+      - uses: actions/checkout@v7
+
       # a cancelled suite uploads nothing, and no artifact is a hard error here
       - uses: actions/download-artifact@v7
         continue-on-error: true
