@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using RimWorks.Pickle.Core.Ui;
 using RimWorks.Pickle.Input;
 using RimWorks.Pickle.Runtime;
 using UnityEngine;
@@ -154,6 +155,55 @@ public class PickleContext {
 
     await MovePointerTo(rect.center);
     await WaitFrames(1);
+  }
+
+  /// <summary>Waits until a tagged rect has been recorded at the same place for a number of frames in a
+  /// row. Throws if the tag never appears, or never stops moving, within the time allowed.</summary>
+  /// <param name="tag">The tag a mod's <c>OnGUI</c> recorded with <see cref="PickleUI.Tag"/>.</param>
+  /// <param name="frames">How many frames in a row the rect must be identical.</param>
+  /// <param name="timeoutSeconds">How long to wait, in real time, before giving up.</param>
+  /// <returns>A task that completes once the rect has stood still.</returns>
+  // Click resolves a tag once and presses where it stood. IMGUI counts a click only when press and
+  // release land on the same control, so a control that is still being laid out (a window that opens
+  // narrow and then widens, with the button anchored to its right edge) can move between the two and
+  // the click counts for nothing. The rect Pickle stored was right at every frame; waiting is the cure.
+  public async Task WaitUntilStill(string tag, int frames = 12, float timeoutSeconds = 20f) {
+    StillnessTracker<Rect> tracker = new(frames);
+    float deadline = Time.realtimeSinceStartup + timeoutSeconds;
+
+    while (true) {
+      // Tags read during an Update are the ones OnGUI recorded on the frame before.
+      if (TagStore.TryGet(tag, out Rect rect, out bool duplicate)) {
+        if (duplicate) {
+          TagInteractor.TryResolve(tag, out _, out string? ambiguity);
+          throw new InvalidOperationException(ambiguity ?? $"tag '{tag}' is ambiguous");
+        }
+
+        tracker.Observe(rect);
+      } else {
+        tracker.Observe(null);
+      }
+
+      if (tracker.HasStoodStill) {
+        return;
+      }
+
+      if (Time.realtimeSinceStartup >= deadline) {
+        break;
+      }
+
+      await WaitFrames(1);
+    }
+
+    if (!tracker.EverSeen) {
+      throw new InvalidOperationException(
+          $"{TagInteractor.DescribeMiss(tag)}. It was not recorded in {timeoutSeconds:0.##}s, so there is nothing to wait for");
+    }
+
+    Assert(
+        false,
+        $"tag '{tag}' never stood still for {frames} frames in a row within {timeoutSeconds:0.##}s; last seen at "
+            + $"{tracker.LastSeen}. A click on a control that is still moving can be lost between press and release.");
   }
 
   /// <summary>Sends a key press through the active input backend.</summary>

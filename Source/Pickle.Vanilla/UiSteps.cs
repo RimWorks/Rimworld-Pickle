@@ -57,6 +57,27 @@ public class UiSteps {
     await ctx.Click($"btn:{label}");
   }
 
+  /// <summary>Waits until a button has been drawn at the same place for a dozen frames in a row.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="label">The button's label.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
+  // A click that lands while the layout is still settling can be lost between press and release. A
+  // dozen frames is a fifth of a second at 60 fps: a judgement about layouts that settle, not a
+  // measurement of every one.
+  [When("I wait until button {string} stands still", TimeoutSeconds = 35f)]
+  public async Task WaitUntilButtonStandsStill(PickleContext ctx, string label) {
+    await ctx.WaitUntilStill($"btn:{label}");
+  }
+
+  /// <summary>Waits until a tagged widget has been drawn at the same place for a dozen frames in a row.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="tag">The tag the target element was registered under.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
+  [When("I wait until tag {string} stands still", TimeoutSeconds = 35f)]
+  public async Task WaitUntilTagStandsStill(PickleContext ctx, string tag) {
+    await ctx.WaitUntilStill(tag);
+  }
+
   /// <summary>Presses a key.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="key">The key to press.</param>

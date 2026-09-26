@@ -545,6 +545,8 @@ into a tile, so Pickle scans the grid for the closest one.
 | `I click {string}` | Clicks a tagged widget |
 | `I click button {string}` | Clicks a vanilla button by label. Pickle tags those for you |
 | `I click gizmo {string}` | Runs a gizmo on the current selection |
+| `I wait until button {string} stands still` | Waits until a button has been drawn at the same place for 12 frames in a row, so a click does not land on a layout still settling |
+| `I wait until tag {string} stands still` | The same wait for a widget registered under a tag |
 | `I hover {string}` | Moves the pointer onto a tagged widget |
 | `I press key {string}` | Sends a real key through XTEST, so `Input.GetKeyDown` sees it. Accepts `Escape`, `Return`, `Space`, `Tab`, `Delete`, `Backspace`, a letter, or a digit |
 | `I select {string}` | Selects a pawn or thing by name |
@@ -566,6 +568,15 @@ Pickle injects both at the OS level: XTEST through `xdotool` on Linux, `SendInpu
 Windows. Linux also needs a real X display. macOS has no backend, so those four steps
 throw there. Every other step here works anywhere.
 See [running tests](running.md).
+
+A click counts only when the press and the release land on the same control. A window that
+is still laying itself out can move a button between the two, for instance a window that
+opens narrow and then widens with the button anchored to its right edge. The rect Pickle
+recorded was right at every frame and the click still counts for nothing. Put
+`I wait until button "Save" stands still` before the click in that case. It waits until the
+rect has been identical for 12 frames in a row, and fails with the tag and the last rect it
+saw when the button never appears, or never stops moving, within 20 seconds. Twelve frames
+is a fifth of a second at 60 fps: a judgement about layouts that settle, not a measurement.
 
 Vanilla warns constantly, so there is no blanket `no warnings were logged`. Every warning
 step names a substring, and a warning never fails a scenario on its own the way an error
