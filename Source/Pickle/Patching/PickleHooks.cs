@@ -1,6 +1,7 @@
 using System;
 using RimWorks.Pickle.Autorun;
 using RimWorks.Pickle.Input;
+using RimWorks.Pickle.Runtime;
 using RimWorks.Pickle.UI;
 using UnityEngine;
 using Verse;
@@ -48,7 +49,7 @@ public static class PickleHooks {
   /// <param name="window">The window about to be added.</param>
   /// <returns><c>false</c> to drop the window instead of adding it.</returns>
   public static bool ShouldAddWindow(Window window) {
-    return AutorunDialogSuppression.ShouldAdd(window);
+    return AutorunDialogSuppression.ShouldAdd(window) && WindowSuppression.ShouldAdd(window);
   }
 
   /// <summary>Runs before RimWorld applies XML patches, recording which mod owns each patch operation.</summary>

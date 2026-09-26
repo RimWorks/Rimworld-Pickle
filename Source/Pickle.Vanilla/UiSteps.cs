@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using RimWorks.Pickle.Evidence;
+using RimWorks.Pickle.Runtime;
 using RimWorks.Pickle.UI;
 using RimWorld;
 using Verse;
@@ -146,6 +147,38 @@ public class UiSteps {
     foreach (Window window in toClose) {
       Find.WindowStack.TryRemove(window, doCloseSound: false);
     }
+  }
+
+  /// <summary>Closes every window the runner does not own and drops every one that opens afterwards, the scenario's own included, until the scenario ends.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
+  // Closing once is not enough on a real load order: a log viewer that tails errors, or a mod
+  // that reopens its notice, is back on the next frame and sits over the button a click step is
+  // aiming at. The miss then reads as "the window never opened", which blames the wrong mod.
+  [Given("the screen is clear")]
+  public async Task ScreenIsClear(PickleContext ctx) {
+    WindowSuppression.Begin();
+
+    foreach (Window window in Find.WindowStack.Windows.Where(w => !WindowSuppression.IsOwn(w)).ToList()) {
+      Find.WindowStack.TryRemove(window, doCloseSound: false);
+    }
+
+    await ctx.WaitFrames(2);
+  }
+
+  /// <summary>Lets the game open its own windows again, undoing <c>the screen is clear</c>.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  [When("windows are allowed to open again")]
+  public void AllowWindows(PickleContext ctx) {
+    WindowSuppression.End();
+  }
+
+  /// <summary>Lifts window suppression at the end of every scenario.</summary>
+  // A scenario that dies between the two steps would otherwise leave the player's game unable
+  // to open anything at all, which is a far worse failure than the one being tested.
+  [AfterScenario]
+  public void ReleaseWindowSuppression() {
+    WindowSuppression.End();
   }
 
   /// <summary>Asserts the inspect pane's label contains a substring.</summary>
