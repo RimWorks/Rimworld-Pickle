@@ -18,6 +18,14 @@ Feature: ui steps
     Then window "MainTabWindow_Research" is closed
     Then no errors were logged
 
+  Scenario: a research tab is opened by def name and lists its project
+    When I open the research tab "Main"
+    Then window "MainTabWindow_Research" is open
+    And the research window is on the tab "Main"
+    And the research window lists the project "Stonecutting"
+    When I close all dialogs
+    Then no errors were logged
+
   @timeout:60
   Scenario: a filmstrip follows a colonist through a whole order
     Given the save "test-colony" is loaded

@@ -549,6 +549,9 @@ into a tile, so Pickle scans the grid for the closest one.
 | `I press key {string}` | Sends a real key through XTEST, so `Input.GetKeyDown` sees it. Accepts `Escape`, `Return`, `Space`, `Tab`, `Delete`, `Backspace`, a letter, or a digit |
 | `I select {string}` | Selects a pawn or thing by name |
 | `I open the {string} tab` | Opens a main tab by def name or label |
+| `I open the research tab {string}` | Opens the research window and selects one of its tabs by def name |
+| `the research window is on the tab {string}` | Checks the selected tab, and that it would draw its projects |
+| `the research window lists the project {string}` | Checks a project is listed on the selected tab |
 | `I close all dialogs` | Closes every open window |
 | `window {string} is open` | Checks a window type is open |
 | `window {string} is closed` | Checks a window type is closed |
@@ -566,6 +569,12 @@ Pickle injects both at the OS level: XTEST through `xdotool` on Linux, `SendInpu
 Windows. Linux also needs a real X display. macOS has no backend, so those four steps
 throw there. Every other step here works anywhere.
 See [running tests](running.md).
+
+The research window draws its tabs as tab records, not as buttons, so `I click button` never
+finds one. `I open the research tab` runs the tab's own click action instead, and takes the
+`ResearchTabDef` name, so it works in any language. That is how a mod that adds a research
+tab checks its projects sit inside it. The two checks read what the window would draw, the
+selected tab and its listed projects, rather than the picture of it.
 
 Vanilla warns constantly, so there is no blanket `no warnings were logged`. Every warning
 step names a substring, and a warning never fails a scenario on its own the way an error
