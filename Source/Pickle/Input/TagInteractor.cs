@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using UnityEngine;
+using Verse;
 
 namespace RimWorks.Pickle.Input;
 
@@ -27,6 +28,12 @@ internal static class TagInteractor {
   }
 
   internal static string DescribeMiss(string tag) {
+    if (TagStore.HeldAtAnotherScale(tag)) {
+      return $"tag '{tag}' was last drawn at another interface scale, and nothing redrew it at "
+          + $"{Prefs.UIScale:0.##}. Let a frame pass after changing the scale, so the widget is "
+          + "measured where it now sits.";
+    }
+
     string[] knownTags = [.. TagStore.KnownTags.OrderBy(t => t)];
     string tagList = knownTags.Length == 0 ? "no tags recorded this frame" : string.Join(", ", knownTags);
     return $"tag '{tag}' not found; known tags: {tagList}";
