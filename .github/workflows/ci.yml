@@ -74,6 +74,12 @@ jobs:
     with:
       args: --config lychee.toml --no-progress README.md 'Docs/**/*.md'
 
+  package-deps:
+    uses: RimWorks/mod-ci/.github/workflows/package-deps.yml@v1
+    with:
+      project: Source/Pickle.Ref/Pickle.Ref.csproj
+      dotnet-version: 10.0.x
+
   game-image:
     name: rimworld 1.6 image
     uses: ./.github/workflows/game-image.yml
