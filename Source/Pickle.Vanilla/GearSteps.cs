@@ -125,6 +125,58 @@ public class GearSteps {
         $"pawn '{nickname}' apparel should cover '{groupDefName}'; {DescribeWorn(pawn)}");
   }
 
+  /// <summary>
+  /// Asserts a worn apparel def is drawn from a texture path. The game appends the pawn's body type
+  /// to the apparel's worn texture, so this shows which body type the pawn is really drawn with.
+  /// Reading it initializes the pawn's render tree, as drawing would.
+  /// </summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="nickname">The pawn to check.</param>
+  /// <param name="defName">The worn apparel def.</param>
+  /// <param name="texturePath">The texture path, such as <c>Things/Pawn/Humanlike/Apparel/ShirtBasic/ShirtBasic_Fat</c>.</param>
+  [Then("{string} apparel {string} is drawn from {string}")]
+  public void AssertApparelDrawnFrom(PickleContext ctx, string nickname, string defName, string texturePath) {
+    Pawn pawn = PawnLookup.RequireLiving(nickname);
+    ThingDef def = DefLookup.Require<ThingDef>(defName);
+
+    pawn.Drawer.renderer.renderTree.EnsureInitialized(PawnRenderFlags.None);
+    List<string> drawn = [.. DrawnNodes(pawn.Drawer.renderer.renderTree.rootNode)
+        .Where(n => n.apparel?.def == def)
+        .Select(n => n.PrimaryGraphic?.path ?? "(no graphic)")];
+
+    ctx.Assert(
+        drawn.Contains(texturePath),
+        $"pawn '{nickname}' apparel '{defName}' should be drawn from '{texturePath}'; it is drawn from " +
+        $"{(drawn.Count == 0 ? "nothing" : string.Join(", ", drawn.Select(d => $"'{d}'")))}. " +
+        DescribeWhyNotDrawn(pawn, def));
+  }
+
+  // A worn apparel with an empty worn graphic path has no render node at all, and so does an apparel
+  // that is not worn, so the failure has to say which of the two it is.
+  private static string DescribeWhyNotDrawn(Pawn pawn, ThingDef def) {
+    Apparel? worn = pawn.apparel?.WornApparel.FirstOrDefault(a => a.def == def);
+    if (worn == null) {
+      return $"The pawn is not wearing it; {DescribeWorn(pawn)}";
+    }
+
+    return $"It is worn, with body type {pawn.story?.bodyType?.defName ?? "(none)"} and worn graphic path " +
+        $"'{worn.WornGraphicPath}'";
+  }
+
+  private static IEnumerable<PawnRenderNode> DrawnNodes(PawnRenderNode? node) {
+    if (node == null) {
+      yield break;
+    }
+
+    yield return node;
+
+    foreach (PawnRenderNode child in node.children ?? []) {
+      foreach (PawnRenderNode descendant in DrawnNodes(child)) {
+        yield return descendant;
+      }
+    }
+  }
+
   private static void EquipWith(PickleContext ctx, string nickname, string defName, string? stuffDefName) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     ctx.Require(pawn.equipment != null, $"pawn '{nickname}' has no equipment tracker");
