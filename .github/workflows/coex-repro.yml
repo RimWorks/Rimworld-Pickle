@@ -127,7 +127,8 @@ jobs:
           ( for _ in $(seq 1 600); do
               gp="$(pgrep -x RimWorldLinux | head -1)"
               if [[ -n "$gp" ]]; then
-                sudo -n tr '\0' '\n' < "/proc/$gp/environ" | grep -c '^GC_DISABLE_INCREMENTAL=1$' \
+                sudo -n cat "/proc/$gp/environ" | tr '\0' '\n' \
+                  | grep -c '^GC_DISABLE_INCREMENTAL=1$' \
                   > "$RUNNER_TEMP/envproof" 2>/dev/null || true
                 break
               fi
