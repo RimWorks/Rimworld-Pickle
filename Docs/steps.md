@@ -553,6 +553,8 @@ into a tile, so Pickle scans the grid for the closest one.
 | `window {string} is open` | Checks a window type is open |
 | `window {string} is closed` | Checks a window type is closed |
 | `the inspect pane shows {string}` | Checks the selected thing's label |
+| `I open the {string} inspect tab` | Opens an inspect tab on the selected thing, by tab type name or label key |
+| `the {string} inspect tab is open` | Checks which inspect tab the pane has open |
 | `no errors were logged` | Fails if the game logged an error during the scenario |
 | `a warning matching {string} was logged` | Checks at least one warning contains the text |
 | `no warning matching {string} was logged` | Checks no warning contains the text |
@@ -566,6 +568,14 @@ Pickle injects both at the OS level: XTEST through `xdotool` on Linux, `SendInpu
 Windows. Linux also needs a real X display. macOS has no backend, so those four steps
 throw there. Every other step here works anywhere.
 See [running tests](running.md).
+
+The two inspect tab steps are the pane below the main tabs, not the main tabs
+themselves. They need exactly one thing selected, because that selection is what
+decides which tabs exist. Name a tab by its type name, such as `ITab_Pawn_Gear`, or
+by its label key, such as `TabGear`. The short form of either works too, such as
+`Gear`. All three are identifiers, so a scenario keeps working under a language mod.
+The label a player reads never matches. A name that fits two tabs fails and asks for
+the full type name.
 
 Vanilla warns constantly, so there is no blanket `no warnings were logged`. Every warning
 step names a substring, and a warning never fails a scenario on its own the way an error

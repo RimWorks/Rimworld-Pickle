@@ -160,6 +160,47 @@ public class UiSteps {
         $"inspect pane should show '{expectedSubstring}'; actually showing: {actualLabel}");
   }
 
+  /// <summary>Opens an inspect tab on the selected thing, naming it by type or label key.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="tabName">The tab's type name, its label key, or the short form of either.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
+  // Named by type or label key, never by the translated label a player reads, so a scenario
+  // written here still passes under a language mod. OpenTab switches the main tabs root to
+  // Inspect on its own and toggles only a closed tab, so reopening an open tab is a no-op.
+  [When("I open the {string} inspect tab")]
+  public async Task OpenInspectTab(PickleContext ctx, string tabName) {
+    List<InspectTabBase> tabs = RequireInspectTabs(ctx);
+    InspectTabBase tab = RequireInspectTab(tabs, tabName);
+
+    ctx.Require(
+        tab.IsVisible && !tab.Hidden,
+        $"inspect tab '{tabName}' is on the selection but hidden, so no player could open it. " +
+        $"available tabs: {DescribeInspectTabs(tabs)}");
+
+    InspectPaneUtility.OpenTab(tab.GetType());
+    await ctx.WaitFrames(2);
+
+    ctx.Assert(
+        InspectPane().OpenTabType == tab.GetType(),
+        $"inspect tab '{tabName}' should be open; open tab: {DescribeOpenInspectTab()}");
+  }
+
+  /// <summary>Asserts the named inspect tab is the one currently open.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="tabName">The tab's type name, its label key, or the short form of either.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
+  // Waits the way 'window is open' does: a tab opened by a real click lands a frame or two
+  // after the click, and asserting straight away would race it.
+  [Then("the {string} inspect tab is open")]
+  public async Task AssertInspectTabOpen(PickleContext ctx, string tabName) {
+    List<InspectTabBase> tabs = RequireInspectTabs(ctx);
+    InspectTabBase tab = RequireInspectTab(tabs, tabName);
+
+    await ctx.AssertEventually(
+        () => InspectPane().OpenTabType == tab.GetType(),
+        () => $"inspect tab '{tabName}' should be open; open tab: {DescribeOpenInspectTab()}");
+  }
+
   /// <summary>Asserts no error has been logged since <see cref="LogWatch"/> was armed.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   [Then("no errors were logged")]
@@ -363,6 +404,90 @@ public class UiSteps {
         .Select(c => c.LabelCap)
         .Where(l => !string.IsNullOrEmpty(l))
         .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)];
+
+    return labels.Count == 0 ? Nothing : string.Join(", ", labels);
+  }
+
+  private static MainTabWindow_Inspect InspectPane() {
+    return (MainTabWindow_Inspect)MainButtonDefOf.Inspect.TabWindow;
+  }
+
+  // CurTabs is null for anything but a single selected thing, and null again while
+  // screenshot mode is on, which hides the whole pane. Both read as "no tabs" here, so
+  // the requirement names what is selected rather than leaving an author with a null.
+  private static List<InspectTabBase> RequireInspectTabs(PickleContext ctx) {
+    IEnumerable<InspectTabBase>? tabs = InspectPane().CurTabs;
+    ctx.Require(
+        tabs != null,
+        "no inspect tabs are available; the pane needs exactly one thing selected. " +
+        $"selected: {DescribeSelection()}");
+
+    List<InspectTabBase> list = [.. tabs!];
+    ctx.Require(list.Count > 0, $"'{DescribeSelection()}' has no inspect tabs at all");
+
+    return list;
+  }
+
+  // Three passes, widening only when the narrower one finds nothing: the exact type name,
+  // then the exact label key, then the short form of either. A tie inside one pass is an
+  // author's ambiguity, not a pick Pickle should make for them.
+  private static InspectTabBase RequireInspectTab(List<InspectTabBase> tabs, string name) {
+    foreach (Func<InspectTabBase, bool> match in InspectTabMatchers(name)) {
+      List<InspectTabBase> hits = [.. tabs.Where(match)];
+
+      if (hits.Count == 1) {
+        return hits[0];
+      }
+
+      if (hits.Count > 1) {
+        throw new InvalidOperationException(
+            $"'{name}' matches {hits.Count} inspect tabs: {DescribeInspectTabs(hits)}. " +
+            "name one by its full type name");
+      }
+    }
+
+    throw new InvalidOperationException(
+        $"no inspect tab matches '{name}' on the current selection. " +
+        $"available tabs: {DescribeInspectTabs(tabs)}");
+  }
+
+  private static IEnumerable<Func<InspectTabBase, bool>> InspectTabMatchers(string name) {
+    yield return t => SameName(t.GetType().Name, name) || SameName(t.GetType().FullName, name);
+    yield return t => SameName(t.labelKey, name);
+
+    // "Gear" for ITab_Pawn_Gear or the TabGear label key. Both are identifiers, so this
+    // stays a shorthand for a type or a key and never matches the label a player sees.
+    yield return t => t.GetType().Name.EndsWith($"_{name}", StringComparison.OrdinalIgnoreCase)
+        || SameName(t.labelKey, $"Tab{name}");
+  }
+
+  private static bool SameName(string? actual, string expected) {
+    return string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase);
+  }
+
+  private static string DescribeInspectTabs(IEnumerable<InspectTabBase> tabs) {
+    List<string> described = [.. tabs
+        .Select(DescribeInspectTab)
+        .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)];
+
+    return described.Count == 0 ? Nothing : string.Join(", ", described);
+  }
+
+  private static string DescribeInspectTab(InspectTabBase tab) {
+    string name = tab.GetType().Name;
+    string label = tab.labelKey == null ? name : $"{name} ('{tab.labelKey}')";
+
+    return tab.IsVisible && !tab.Hidden ? label : $"{label} [hidden]";
+  }
+
+  private static string DescribeOpenInspectTab() {
+    return InspectPane().OpenTabType?.Name ?? Nothing;
+  }
+
+  private static string DescribeSelection() {
+    List<string> labels = [.. Find.Selector.SelectedObjectsListForReading
+        .Select(o => o is Thing t ? t.LabelCap : o.GetType().Name)
+        .Where(l => !string.IsNullOrEmpty(l))];
 
     return labels.Count == 0 ? Nothing : string.Join(", ", labels);
   }
