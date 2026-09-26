@@ -38,15 +38,8 @@ jobs:
       fail-fast: false
       max-parallel: 20
       matrix:
-        label: [both-1, both-2, both-3, both-4, both-5, both-6, both-7, both-8, both-9, both-10, both-11,
-          both-12, both-13, both-14, both-15, both-16, both-17, both-18, both-19, both-20, both-21, both-22,
-          both-23, both-24, con-1, con-2, con-3, con-4, con-5, con-6, con-7, con-8, con-9, con-10, con-11,
-          con-12, con-13, con-14, con-15, con-16, con-17, con-18, con-19, con-20, con-21, con-22, con-23,
-          con-24, con-25, con-26, con-27, con-28, con-29, con-30, con-31, con-32, con-33, con-34, con-35,
-          con-36, con-37, con-38, con-39, con-40, har-1, har-2, har-3, har-4, har-5, har-6, har-7, har-8,
-          har-9, har-10, har-11, har-12, har-13, har-14, har-15, har-16, har-17, har-18, har-19, har-20,
-          har-21, har-22, har-23, har-24, har-25, har-26, har-27, har-28, har-29, har-30, har-31, har-32,
-          har-33, har-34, har-35, har-36, har-37, har-38, har-39, har-40]
+        label: [gcoff-1, gcoff-2, gcoff-3, gcoff-4, gcoff-5, gcoff-6, gcoff-7, gcoff-8, gcoff-9, gcoff-10, gcoff-11, gcoff-12, gcoff-13, gcoff-14, gcoff-15, gcoff-16, gcoff-17, gcoff-18, gcoff-19, gcoff-20, gcoff-21, gcoff-22, gcoff-23, gcoff-24, gcoff-25, gcoff-26, gcoff-27, gcoff-28, gcoff-29, gcoff-30, gcoff-31, gcoff-32, gcoff-33, gcoff-34, gcoff-35, gcoff-36, gcoff-37, gcoff-38, gcoff-39, gcoff-40, gcoff-41, gcoff-42, gcoff-43, gcoff-44, gcoff-45, gcoff-46, gcoff-47, gcoff-48, gcoff-49, gcoff-50, gcoff-51, gcoff-52, gcoff-53, gcoff-54, gcoff-55, gcoff-56, gcoff-57, gcoff-58, gcoff-59, gcoff-60, gcoff-61, gcoff-62,
+                ctl-1, ctl-2, ctl-3, ctl-4, ctl-5, ctl-6, ctl-7, ctl-8, ctl-9, ctl-10, ctl-11, ctl-12, ctl-13, ctl-14, ctl-15, ctl-16, ctl-17, ctl-18, ctl-19, ctl-20, ctl-21, ctl-22, ctl-23, ctl-24, ctl-25, ctl-26, ctl-27, ctl-28, ctl-29, ctl-30, ctl-31, ctl-32, ctl-33, ctl-34, ctl-35, ctl-36, ctl-37, ctl-38, ctl-39, ctl-40]
     env:
       REPORT_DIR: ${{ github.workspace }}/pickle-reports
       MODS_DIR: /tmp/stage/mods
@@ -89,10 +82,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           case "$ARM" in
-            both) backend=both ;;
-            con)  backend=concord ;;
-            har)  backend=harmony ;;
-            *) echo "::error::arm '$ARM' is not both, con or har"; exit 1 ;;
+            gcoff|ctl) backend=both ;;
+            *) echo "::error::arm '$ARM' is not gcoff or ctl"; exit 1 ;;
           esac
           .mod-ci/.github/actions/stage-mods/stage-mods.sh "$backend" "$MODS_DIR" "$CONFIG_DIR"
 
@@ -105,21 +96,17 @@ jobs:
       - name: Check the staging matches the arm
         run: |
           fail=0
-          case "$ARM" in
-            both)
-              [[ "$STAGED_HARMONY_DLLS" -gt 0 ]] || { echo "::error::both staged no 0Harmony.dll"; fail=1; }
-              [[ "$STAGED_CONCORD_DLLS" -gt 0 ]] || { echo "::error::both staged no Concord dll"; fail=1; }
-              ;;
-            con)
-              [[ "$STAGED_HARMONY_DLLS" == 0 ]] || { echo "::error::concord staged $STAGED_HARMONY_DLLS 0Harmony.dll, so Harmony is present"; fail=1; }
-              [[ "$STAGED_CONCORD_DLLS" -gt 0 ]] || { echo "::error::concord staged no Concord dll"; fail=1; }
-              ;;
-            har)
-              [[ "$STAGED_HARMONY_DLLS" -gt 0 ]] || { echo "::error::harmony staged no 0Harmony.dll"; fail=1; }
-              [[ "$STAGED_CONCORD_DLLS" == 0 ]] || { echo "::error::harmony staged $STAGED_CONCORD_DLLS Concord dll, so Concord is present"; fail=1; }
-              ;;
-          esac
+          [[ "$STAGED_HARMONY_DLLS" -gt 0 ]] || { echo "::error::staged no 0Harmony.dll"; fail=1; }
+          [[ "$STAGED_CONCORD_DLLS" -gt 0 ]] || { echo "::error::staged no Concord dll"; fail=1; }
           exit "$fail"
+
+      - name: Turn incremental marking off
+        if: startsWith(matrix.label, 'gcoff-')
+        run: |
+          cp .mod-ci/.github/actions/pickle-run/run-suite.sh "$RUNNER_TEMP/run-suite.sh"
+          sed -i 's|^docker run --rm --name "pickle-suite\${SET_NAME:+-\$SET_NAME}" \\|&\n  -e GC_DISABLE_INCREMENTAL=1 \\|' \
+            "$RUNNER_TEMP/run-suite.sh"
+          grep -n 'GC_DISABLE_INCREMENTAL' "$RUNNER_TEMP/run-suite.sh"
 
       - name: Run the suite behind the catcher
         env:
@@ -133,8 +120,21 @@ jobs:
           sudo -n .github/coex/catch.sh "$REPORT_DIR/Player.log" "$RUNNER_TEMP/cdump" < /dev/null &
           echo "catcher armed"
 
-          .mod-ci/.github/actions/pickle-run/run-suite.sh \
-            "$GAME_IMAGE" "$MODS_DIR" "$CONFIG_DIR" "$REPORT_DIR" || echo "suite exit $?"
+          runner=.mod-ci/.github/actions/pickle-run/run-suite.sh
+          [[ -f "$RUNNER_TEMP/run-suite.sh" ]] && runner="$RUNNER_TEMP/run-suite.sh"
+          echo "runner=$runner"
+
+          ( for _ in $(seq 1 600); do
+              gp="$(pgrep -x RimWorldLinux | head -1)"
+              if [[ -n "$gp" ]]; then
+                sudo -n tr '\0' '\n' < "/proc/$gp/environ" | grep -c '^GC_DISABLE_INCREMENTAL=1$' \
+                  > "$RUNNER_TEMP/envproof" 2>/dev/null || true
+                break
+              fi
+              sleep 0.5
+            done ) &
+
+          "$runner" "$GAME_IMAGE" "$MODS_DIR" "$CONFIG_DIR" "$REPORT_DIR" || echo "suite exit $?"
 
           # a fired catcher kills the game to get here, so it is still coring right now
           if grep -q STOPPED "$RUNNER_TEMP/cdump/catch.log" 2>/dev/null; then
@@ -166,20 +166,17 @@ jobs:
           echo "arm=$ARM bridge=$bridge coex=$coex concord=$concord harmony=$harmony idle=$idle nobridge=$nobridge anyconcord=$anyconcord segv=$segv fatal=$fatal"
 
           fail=0
+          [[ "$bridge" == 2 ]] || { echo "::error::bridge-active is $bridge, not 2, void"; fail=1; }
+          [[ "$idle" -ge 1 ]] || { echo "::error::no 'idle: Harmony' line, void"; fail=1; }
+
+          proof=$(cat "$RUNNER_TEMP/envproof" 2>/dev/null || echo missing)
+          echo "envproof=$proof"
           case "$ARM" in
-            both)
-              [[ "$bridge" == 2 ]] || { echo "::error::bridge-active is $bridge, not 2, void"; fail=1; }
-              [[ "$idle" -ge 1 ]] || { echo "::error::no 'idle: Harmony' line, the two libraries never coexisted, void"; fail=1; }
+            gcoff)
+              [[ "$proof" == 1 ]] || { echo "::error::GC_DISABLE_INCREMENTAL not in the game process environ (got '$proof'), void"; fail=1; }
               ;;
-            con)
-              [[ "$concord" -ge 1 ]] || { echo "::error::no 'patched via Concord' line, Concord never patched, void"; fail=1; }
-              [[ "$bridge" == 0 ]] || { echo "::error::bridge-active is $bridge, not 0, void"; fail=1; }
-              [[ "$nobridge" -ge 1 ]] || { echo "::error::Concord never reported Harmony absent, so 0Harmony was reachable, void"; fail=1; }
-              [[ "$harmony" == 0 ]] || { echo "::error::a 'patched via Harmony' line in a concord leg, void"; fail=1; }
-              ;;
-            har)
-              [[ "$harmony" -ge 1 ]] || { echo "::error::no 'patched via Harmony' line, Harmony never patched, void"; fail=1; }
-              [[ "$anyconcord" == 0 ]] || { echo "::error::$anyconcord lines mention Concord in a harmony leg, void"; fail=1; }
+            ctl)
+              [[ "$proof" == 0 ]] || { echo "::error::a control leg had GC_DISABLE_INCREMENTAL set (got '$proof'), void"; fail=1; }
               ;;
           esac
 
@@ -229,9 +226,9 @@ jobs:
 
       - name: Count what each arm actually reported
         run: |
-          declare -A expected=([both]=24 [con]=40 [har]=40)
+          declare -A expected=([gcoff]=62 [ctl]=40)
           fail=0
-          for arm in both con har; do
+          for arm in gcoff ctl; do
             got=$(find legs -name Player.log -path "*/coex-$arm-*" | wc -l)
             segv=$(grep -rl 'signo:11' legs --include=Player.log 2>/dev/null | grep -c "/coex-$arm-" || true)
             echo "$arm: $got of ${expected[$arm]} legs reported, $segv segv" | tee -a "$GITHUB_STEP_SUMMARY"
