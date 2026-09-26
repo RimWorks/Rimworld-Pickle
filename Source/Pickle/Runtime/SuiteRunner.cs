@@ -20,6 +20,10 @@ namespace RimWorks.Pickle.Runtime;
 
 /// <summary>Discovers every suite, runs their scenarios, and publishes progress to the dashboard.</summary>
 public static class SuiteRunner {
+  // A game runs one suite at a time - the runner assumes it everywhere else too - so the
+  // "logged once" flag is per class rather than threaded through every call. Run() clears it.
+  private static bool snapshotFailureLogged;
+
   /// <summary>Builds the step environment, runs every matching scenario, and logs the outcome.</summary>
   /// <param name="filter">A tag or name filter applied before running, or <c>null</c> to run everything.</param>
   /// <param name="seed">The random seed handed to the run session.</param>
@@ -41,8 +45,9 @@ public static class SuiteRunner {
       PickleHttpServer.ActiveSession = session;
 
       Dictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> published = new();
-      void PublishSnapshot() =>
-          PickleHttpServer.Publish(RunnerSnapshot.Build(parsedFeatures, published, session, true));
+
+      snapshotFailureLogged = false;
+      void PublishSnapshot() => PublishSnapshotSafely(parsedFeatures, published, session);
       session.OnProgress = PublishSnapshot;
       PublishSnapshot();
 
@@ -138,5 +143,30 @@ public static class SuiteRunner {
     }
 
     return assemblies;
+  }
+
+  /// <summary>Publishes a dashboard snapshot, and never lets its failure end the run.</summary>
+  /// <remarks>
+  /// The dashboard is a view of a run, not a part of it, so nothing it does may end one. A
+  /// snapshot builds from live game state and can meet that state mid-change: translating a label
+  /// while the game holds no active language threw here, and the exception travelled out through
+  /// OnProgress, ended the run in "infrastructure-error", and was reported against whichever
+  /// scenario happened to be running. A browser that misses a frame costs nothing; a run that dies
+  /// costs the whole suite. Only the first failure is logged, since the cause repeats every frame.
+  /// </remarks>
+  private static void PublishSnapshotSafely(
+      List<(DiscoveredSuite Suite, FeaturePlan Plan)> parsedFeatures,
+      IReadOnlyDictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> published,
+      RunSession session) {
+    try {
+      PickleHttpServer.Publish(RunnerSnapshot.Build(parsedFeatures, published, session, true));
+    } catch (Exception ex) {
+      if (snapshotFailureLogged) {
+        return;
+      }
+
+      snapshotFailureLogged = true;
+      Log.WarnTo(PickleLog.Channel, ex, "dashboard snapshot failed, the run continues without it");
+    }
   }
 }
