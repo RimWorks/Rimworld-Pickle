@@ -1,0 +1,243 @@
+name: coex repro
+
+# throwaway: 104 boots across three arms, hunting the boehm segv that only fires on a runner.
+# every leg carries a catcher that cores the game on a real segv. delete once the answer is known.
+
+on:
+  push:
+    branches: [ci/coex-arms]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coex-repro-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GAME_IMAGE: ghcr.io/rimworks/rimworld-game-runnable:latest-version-1.6.4633
+
+jobs:
+  dashboard:
+    uses: RimWorks/mod-ci/.github/workflows/node-build.yml@v1
+    with:
+      working-directory: Dashboard
+      lint: false
+      artifact-name: dashboard-dist
+
+  leg:
+    name: ${{ matrix.label }}
+    needs: dashboard
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        label: [both-1, both-2, both-3, both-4, both-5, both-6, both-7, both-8, both-9, both-10, both-11,
+          both-12, both-13, both-14, both-15, both-16, both-17, both-18, both-19, both-20, both-21, both-22,
+          both-23, both-24, con-1, con-2, con-3, con-4, con-5, con-6, con-7, con-8, con-9, con-10, con-11,
+          con-12, con-13, con-14, con-15, con-16, con-17, con-18, con-19, con-20, con-21, con-22, con-23,
+          con-24, con-25, con-26, con-27, con-28, con-29, con-30, con-31, con-32, con-33, con-34, con-35,
+          con-36, con-37, con-38, con-39, con-40, har-1, har-2, har-3, har-4, har-5, har-6, har-7, har-8,
+          har-9, har-10, har-11, har-12, har-13, har-14, har-15, har-16, har-17, har-18, har-19, har-20,
+          har-21, har-22, har-23, har-24, har-25, har-26, har-27, har-28, har-29, har-30, har-31, har-32,
+          har-33, har-34, har-35, har-36, har-37, har-38, har-39, har-40]
+    env:
+      REPORT_DIR: ${{ github.workspace }}/pickle-reports
+      MODS_DIR: /tmp/stage/mods
+      CONFIG_DIR: /tmp/stage/config
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to ghcr
+        run: echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Name the arm this leg runs
+        env:
+          label: ${{ matrix.label }}
+        run: echo "ARM=${label%%-*}" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - uses: ./.github/actions/build-mod
+
+      - uses: actions/checkout@v7
+        with:
+          repository: RimWorks/mod-ci
+          ref: v1
+          path: .mod-ci
+
+      - name: Install the capture tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gdb zstd
+          gcore --help > /dev/null && echo "gcore ok"
+          df -h / | tail -1
+
+      - name: Stage the mods and config
+        env:
+          MOD_NAME: Pickle
+          MOD_PACKAGE_ID: rimworks.pickle
+          PICKLE_VERSION: self
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          case "$ARM" in
+            both) backend=both ;;
+            con)  backend=concord ;;
+            har)  backend=harmony ;;
+            *) echo "::error::arm '$ARM' is not both, con or har"; exit 1 ;;
+          esac
+          .mod-ci/.github/actions/stage-mods/stage-mods.sh "$backend" "$MODS_DIR" "$CONFIG_DIR"
+
+          hdll=$(find "$MODS_DIR" -name '0Harmony.dll' | wc -l)
+          cdll=$(find "$MODS_DIR" -iname 'Concord*.dll' | wc -l)
+          echo "staged-on-disk 0Harmony=$hdll Concord=$cdll"
+          echo "STAGED_HARMONY_DLLS=$hdll" >> "$GITHUB_ENV"
+          echo "STAGED_CONCORD_DLLS=$cdll" >> "$GITHUB_ENV"
+
+      - name: Check the staging matches the arm
+        run: |
+          fail=0
+          case "$ARM" in
+            both)
+              [[ "$STAGED_HARMONY_DLLS" -gt 0 ]] || { echo "::error::both staged no 0Harmony.dll"; fail=1; }
+              [[ "$STAGED_CONCORD_DLLS" -gt 0 ]] || { echo "::error::both staged no Concord dll"; fail=1; }
+              ;;
+            con)
+              [[ "$STAGED_HARMONY_DLLS" == 0 ]] || { echo "::error::concord staged $STAGED_HARMONY_DLLS 0Harmony.dll, so Harmony is present"; fail=1; }
+              [[ "$STAGED_CONCORD_DLLS" -gt 0 ]] || { echo "::error::concord staged no Concord dll"; fail=1; }
+              ;;
+            har)
+              [[ "$STAGED_HARMONY_DLLS" -gt 0 ]] || { echo "::error::harmony staged no 0Harmony.dll"; fail=1; }
+              [[ "$STAGED_CONCORD_DLLS" == 0 ]] || { echo "::error::harmony staged $STAGED_CONCORD_DLLS Concord dll, so Concord is present"; fail=1; }
+              ;;
+          esac
+          exit "$fail"
+
+      - name: Run the suite behind the catcher
+        env:
+          SET_NAME: ${{ matrix.label }}
+          UNFILTERED: 'true'
+          FILM_SECONDS: '0'
+          RUN_TIMEOUT: '25'
+        run: |
+          mkdir -p "$REPORT_DIR" "$RUNNER_TEMP/cdump"
+
+          sudo -n .github/coex/catch.sh "$REPORT_DIR/Player.log" "$RUNNER_TEMP/cdump" < /dev/null &
+          echo "catcher armed"
+
+          .mod-ci/.github/actions/pickle-run/run-suite.sh \
+            "$GAME_IMAGE" "$MODS_DIR" "$CONFIG_DIR" "$REPORT_DIR" || echo "suite exit $?"
+
+          # a fired catcher kills the game to get here, so it is still coring right now
+          if grep -q STOPPED "$RUNNER_TEMP/cdump/catch.log" 2>/dev/null; then
+            echo "catcher fired, waiting for the core"
+            for _ in $(seq 1 300); do
+              grep -q DONE "$RUNNER_TEMP/cdump/catch.log" && break
+              sleep 1
+            done
+          fi
+          sudo -n pkill -f 'coex/catch.sh' 2>/dev/null || true
+          cat "$RUNNER_TEMP/cdump/catch.log" 2>/dev/null || echo "no catch.log"
+          df -h / | tail -1
+
+      - name: Check the leg ran the arm it claims
+        if: always()
+        run: |
+          log="$REPORT_DIR/Player.log"
+          [[ -f "$log" ]] || { echo "::error::no Player.log, void"; exit 1; }
+
+          bridge=$(grep -c 'bridge-active' "$log" || true)
+          coex=$(grep -c 'Concord\.Coex' "$log" || true)
+          concord=$(grep -c 'patched via Concord' "$log" || true)
+          harmony=$(grep -c 'patched via Harmony' "$log" || true)
+          idle=$(grep -c 'idle: Harmony' "$log" || true)
+          nobridge=$(grep -c 'Harmony not present; bridge cannot be loaded' "$log" || true)
+          anyconcord=$(grep -ci 'concord' "$log" || true)
+          segv=$(grep -c 'signo:11' "$log" || true)
+          fatal=$(grep -c 'Caught fatal signal' "$log" || true)
+          echo "arm=$ARM bridge=$bridge coex=$coex concord=$concord harmony=$harmony idle=$idle nobridge=$nobridge anyconcord=$anyconcord segv=$segv fatal=$fatal"
+
+          fail=0
+          case "$ARM" in
+            both)
+              [[ "$bridge" == 2 ]] || { echo "::error::bridge-active is $bridge, not 2, void"; fail=1; }
+              [[ "$idle" -ge 1 ]] || { echo "::error::no 'idle: Harmony' line, the two libraries never coexisted, void"; fail=1; }
+              ;;
+            con)
+              [[ "$concord" -ge 1 ]] || { echo "::error::no 'patched via Concord' line, Concord never patched, void"; fail=1; }
+              [[ "$bridge" == 0 ]] || { echo "::error::bridge-active is $bridge, not 0, void"; fail=1; }
+              [[ "$nobridge" -ge 1 ]] || { echo "::error::Concord never reported Harmony absent, so 0Harmony was reachable, void"; fail=1; }
+              [[ "$harmony" == 0 ]] || { echo "::error::a 'patched via Harmony' line in a concord leg, void"; fail=1; }
+              ;;
+            har)
+              [[ "$harmony" -ge 1 ]] || { echo "::error::no 'patched via Harmony' line, Harmony never patched, void"; fail=1; }
+              [[ "$anyconcord" == 0 ]] || { echo "::error::$anyconcord lines mention Concord in a harmony leg, void"; fail=1; }
+              ;;
+          esac
+
+          {
+            echo "### ${{ matrix.label }}"
+            echo ""
+            echo "arm=$ARM segv=$segv fatal=$fatal bridge=$bridge coex=$coex"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$fail"
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coex-${{ matrix.label }}
+          path: ${{ env.REPORT_DIR }}/
+          if-no-files-found: warn
+
+      - name: Make the core readable
+        if: always()
+        run: sudo -n chmod -R a+rX "$RUNNER_TEMP/cdump" || true
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: core-${{ matrix.label }}
+          # never the raw core: gcore writes it sparse at 19 GB apparent
+          path: |
+            ${{ runner.temp }}/cdump/*.zst
+            ${{ runner.temp }}/cdump/catch.log
+            ${{ runner.temp }}/cdump/maps.txt
+          if-no-files-found: ignore
+          compression-level: 0
+
+  tally:
+    needs: leg
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: coex-*
+          path: legs
+
+      - name: Count what each arm actually reported
+        run: |
+          declare -A expected=([both]=24 [con]=40 [har]=40)
+          fail=0
+          for arm in both con har; do
+            got=$(find legs -name Player.log -path "*/coex-$arm-*" | wc -l)
+            segv=$(grep -rl 'signo:11' legs --include=Player.log 2>/dev/null | grep -c "/coex-$arm-" || true)
+            echo "$arm: $got of ${expected[$arm]} legs reported, $segv segv" | tee -a "$GITHUB_STEP_SUMMARY"
+            if [[ "$got" != "${expected[$arm]}" ]]; then
+              echo "::error::$arm produced $got legs, not ${expected[$arm]}, so this run is void"
+              fail=1
+            fi
+          done
+          exit "$fail"
