@@ -62,19 +62,19 @@ concurrency:
 jobs:
   dashboard:
     name: dashboard
-    uses: RimWorks/mod-ci/.github/workflows/node-build.yml@v1
+    uses: RimWorks/mod-ci/.github/workflows/node-build.yml@v2
     with:
       working-directory: Dashboard
       lint: true
       artifact-name: dashboard-dist
 
   prose:
-    uses: RimWorks/mod-ci/.github/workflows/prose.yml@v1
+    uses: RimWorks/mod-ci/.github/workflows/prose.yml@v2
     with:
       extra-command: python3 .github/scripts/check-step-docs.py
 
   links:
-    uses: RimWorks/mod-ci/.github/workflows/links.yml@v1
+    uses: RimWorks/mod-ci/.github/workflows/links.yml@v2
     with:
       args: --config lychee.toml --no-progress README.md 'Docs/**/*.md'
 
@@ -84,7 +84,7 @@ jobs:
       contents: read
       # stage-game-refs pulls the image from ghcr
       packages: read
-    uses: RimWorks/mod-ci/.github/workflows/package-deps.yml@v1
+    uses: RimWorks/mod-ci/.github/workflows/package-deps.yml@v2
     with:
       project: Source/Pickle.Ref/Pickle.Ref.csproj
       dotnet-version: 10.0.x
@@ -101,6 +101,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    with:
+      artifact-prefix: ci-image-ref
     secrets:
       STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
       STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
@@ -165,7 +167,7 @@ jobs:
       # against every nested job whether or not the if: skips it
       packages: write
       actions: read
-    uses: RimWorks/mod-ci/.github/workflows/pickle-suite.yml@v1
+    uses: RimWorks/mod-ci/.github/workflows/pickle-suite.yml@v2
     secrets:
       DOCBIN_TOKEN: ${{ secrets.DOCBIN_TOKEN }}
     with:
@@ -220,7 +222,7 @@ jobs:
 
       # the pickle-run action, not a second pickle-suite.yml call: two calls in one run collide on
       # the reusable's merged-report artifact and each merge swallows the other call's legs
-      - uses: RimWorks/mod-ci/.github/actions/pickle-run@v1
+      - uses: RimWorks/mod-ci/.github/actions/pickle-run@v2
         with:
           game-image: ${{ fromJSON(needs.game-image.outputs.windows-image-refs)['1.6'] }}
           mod-name: Pickle

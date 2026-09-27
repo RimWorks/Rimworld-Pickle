@@ -72,19 +72,19 @@ jobs:
         with:
           user: aequasi
 
-      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v1
+      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v2
         id: refs-15
         with:
           image: ${{ fromJSON(needs.ci.outputs.image-refs)['1.5'] }}
           dest: ${{ runner.temp }}/game-1.5
 
-      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v1
+      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v2
         id: refs-16
         with:
           image: ${{ fromJSON(needs.ci.outputs.image-refs)['1.6'] }}
           dest: ${{ runner.temp }}/game-1.6
 
-      - uses: RimWorks/mod-ci/.github/actions/steam-login@v1
+      - uses: RimWorks/mod-ci/.github/actions/steam-login@v2
         with:
           steam-config-vdf-b64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
 
@@ -103,7 +103,7 @@ jobs:
           GAME_MANAGED_1_6: ${{ steps.refs-16.outputs.managed-dir }}
         run: ./node_modules/.bin/semantic-release
 
-      - uses: RimWorks/mod-ci/.github/actions/discord-release@v1
+      - uses: RimWorks/mod-ci/.github/actions/discord-release@v2
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           mod-name: Pickle

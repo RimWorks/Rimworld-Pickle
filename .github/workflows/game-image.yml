@@ -4,6 +4,10 @@ name: game image
 on:
   workflow_call:
     inputs:
+      artifact-prefix:
+        description: Names the per-leg ref artifacts. Two calls in one run must not share it.
+        type: string
+        required: true
       force:
         description: Rebuild even when the Steam buildid has not moved.
         type: boolean
@@ -35,11 +39,12 @@ permissions:
 jobs:
   image:
     name: rimworld images
-    uses: RimWorks/mod-ci/.github/workflows/game-image.yml@v1
+    uses: RimWorks/mod-ci/.github/workflows/game-image.yml@v2
     permissions:
       contents: read
       packages: write
     with:
+      artifact-prefix: ${{ inputs.artifact-prefix || 'scheduled-image-ref' }}
       # one image name is enough: game-image.yml tags it latest-<branch-slug>
       branches: |
         1.5=version-1.5
