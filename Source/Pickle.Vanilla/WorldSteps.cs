@@ -82,9 +82,8 @@ public class WorldSteps {
         cell.InBounds(map),
         $"cell ({x}, {z}) is outside the map, which is {map.Size.x} by {map.Size.z}");
 
-    Faction? faction = kind.defaultFactionDef == null
-        ? null
-        : Find.FactionManager.FirstFactionOfDef(kind.defaultFactionDef);
+    FactionDef? factionDef = GameCompat.DefaultFaction(kind);
+    Faction? faction = factionDef == null ? null : Find.FactionManager.FirstFactionOfDef(factionDef);
     Pawn pawn = PawnGenerator.GeneratePawn(kind, faction);
     GenSpawn.Spawn(pawn, cell, map);
   }

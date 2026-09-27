@@ -13,9 +13,24 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  images:
+    name: rimworld images
+    uses: ./.github/workflows/game-image.yml
+    permissions:
+      contents: read
+      packages: write
+    secrets:
+      STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+      STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
+
   verify:
     name: verify against current RimWorld, then republish
     runs-on: ubuntu-latest
+    needs: images
+    permissions:
+      contents: read
+      # stage-game-refs pulls the images from ghcr
+      packages: read
     steps:
       - uses: actions/checkout@v7
         with:
@@ -40,18 +55,45 @@ jobs:
       - name: Build dashboard
         run: npm --prefix Dashboard run build
 
+      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v1
+        id: refs-15
+        with:
+          image: ${{ fromJSON(needs.images.outputs.image-refs)['1.5'] }}
+          dest: ${{ runner.temp }}/game-1.5
+
+      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v1
+        id: refs-16
+        with:
+          image: ${{ fromJSON(needs.images.outputs.image-refs)['1.6'] }}
+          dest: ${{ runner.temp }}/game-1.6
+
+      # GameManagedDir so dotnet test evaluates the props without hard-erroring, and the per
+      # version names so the build loop below and release.config.mjs read the same variables
+      - name: Name the staged directories
+        env:
+          MANAGED_15: ${{ steps.refs-15.outputs.managed-dir }}
+          MANAGED_16: ${{ steps.refs-16.outputs.managed-dir }}
+        run: |
+          {
+            echo "GAME_MANAGED_1_5=$MANAGED_15"
+            echo "GAME_MANAGED_1_6=$MANAGED_16"
+            echo "GameManagedDir=$MANAGED_16"
+          } >> "$GITHUB_ENV"
+
       - name: dotnet restore
         run: dotnet restore Pickle.slnx
 
       - name: Record resolved RimWorld version
         run: |
-          version=$(dotnet list Pickle.slnx package \
-            | awk '/Krafs.Rimworld.Ref/ {print $NF; exit}')
-          echo "RIMWORLD_REF=${version:-unknown}" >> "$GITHUB_ENV"
-          echo "resolved RimWorld ref: ${version:-unknown}"
+          version=$(cat "${{ steps.refs-16.outputs.managed-dir }}/Version.txt")
+          echo "RIMWORLD_REF=$version" >> "$GITHUB_ENV"
+          echo "resolved RimWorld ref: $version"
 
+      # the republish uploads the working tree, so every version the mod claims needs a folder
       - name: dotnet build
-        run: dotnet build Pickle.slnx -c Release --nologo --no-restore
+        run: |
+          npx build-mod Pickle.slnx --nologo --no-restore
+          npx verify-ship-list .
 
       - name: dotnet test
         run: |
@@ -63,6 +105,7 @@ jobs:
 
       - uses: RimWorks/mod-ci/.github/actions/steam-republish@v1
         with:
+          solution: Pickle.slnx
           workshop-id: ${{ vars.WORKSHOP_ID }}
           steam-username: ${{ secrets.STEAM_USERNAME }}
           steam-config-vdf-b64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}

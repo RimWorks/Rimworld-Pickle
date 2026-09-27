@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using RimWorks.Pickle.Runtime;
 using RimWorld;
-using RimWorld.Planet;
 using UnityEngine;
 using Verse;
 
@@ -14,7 +13,7 @@ namespace RimWorks.Pickle.Vanilla;
 /// </summary>
 [PickleSteps]
 public static class CameraSteps {
-  // RootSize is half the visible height in cells, so smaller is closer in.
+  // ZoomRootSize is half the visible height in cells, so smaller is closer in.
   private const float CloseSize = 12f;
   private const float FarSize = 50f;
   private const float ZoomStep = 8f;
@@ -79,7 +78,7 @@ public static class CameraSteps {
 
     // The hook outlives the step, so it rechecks rather than trusting the guard above.
     followHook = () => {
-      if (followed is { Spawned: true } && !WorldRendererUtility.WorldRendered) {
+      if (followed is { Spawned: true } && !GameCompat.WorldRendered) {
         Find.CameraDriver.JumpToCurrentMapLoc(followed.DrawPos);
       }
     };
@@ -100,7 +99,7 @@ public static class CameraSteps {
   /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I zoom in")]
   public static async Task ZoomIn(PickleContext ctx) {
-    await SetSize(ctx, Find.CameraDriver.RootSize - ZoomStep);
+    await SetSize(ctx, Find.CameraDriver.ZoomRootSize - ZoomStep);
   }
 
   /// <summary>Zooms out one step.</summary>
@@ -108,7 +107,7 @@ public static class CameraSteps {
   /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [When("I zoom out")]
   public static async Task ZoomOut(PickleContext ctx) {
-    await SetSize(ctx, Find.CameraDriver.RootSize + ZoomStep);
+    await SetSize(ctx, Find.CameraDriver.ZoomRootSize + ZoomStep);
   }
 
   /// <summary>Zooms all the way in.</summary>
@@ -148,7 +147,7 @@ public static class CameraSteps {
     RequireMapView(ctx);
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     ctx.Assert(
-        Find.CameraDriver.InViewOf(pawn),
+        GameCompat.InViewOf(Find.CameraDriver, pawn),
         $"pawn '{nickname}' at {pawn.Position} is outside the view {Find.CameraDriver.CurrentViewRect}");
   }
 
@@ -164,7 +163,7 @@ public static class CameraSteps {
 
   private static async Task SetSize(PickleContext ctx, float size) {
     RequireMapView(ctx);
-    Find.CameraDriver.SetRootSize(Mathf.Clamp(size, CloseSize, FarSize));
+    GameCompat.SetCameraSize(Find.CameraDriver, Mathf.Clamp(size, CloseSize, FarSize));
     await ctx.WaitFrames(1);
   }
 
@@ -179,7 +178,7 @@ public static class CameraSteps {
   // step here passes while moving nothing the player can see.
   private static void RequireMapView(PickleContext ctx) {
     ctx.Require(
-        !WorldRendererUtility.WorldRendered,
+        !GameCompat.WorldRendered,
         "the world is on screen, so these steps drive a camera nobody is looking at; "
             + "close the world view, or use a world-camera step");
   }

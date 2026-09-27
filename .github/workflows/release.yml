@@ -28,10 +28,13 @@ jobs:
   sonar:
     permissions:
       contents: read
-      packages: read
+      # write: the scan needs staged assemblies, so sonar.yml builds a game image first
+      packages: write
     uses: ./.github/workflows/sonar.yml
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+      STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
 
   release:
     name: semantic-release
@@ -42,6 +45,8 @@ jobs:
       issues: write
       pull-requests: write
       id-token: write
+      # stage-game-refs pulls the images from ghcr
+      packages: read
     steps:
       - uses: actions/checkout@v7
         with:
@@ -67,6 +72,18 @@ jobs:
         with:
           user: aequasi
 
+      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v1
+        id: refs-15
+        with:
+          image: ${{ fromJSON(needs.ci.outputs.image-refs)['1.5'] }}
+          dest: ${{ runner.temp }}/game-1.5
+
+      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v1
+        id: refs-16
+        with:
+          image: ${{ fromJSON(needs.ci.outputs.image-refs)['1.6'] }}
+          dest: ${{ runner.temp }}/game-1.6
+
       - uses: RimWorks/mod-ci/.github/actions/steam-login@v1
         with:
           steam-config-vdf-b64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
@@ -81,6 +98,9 @@ jobs:
           NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
           WORKSHOP_ID: ${{ vars.WORKSHOP_ID }}
           STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          # release.config.mjs builds one leg per version and reads these by name
+          GAME_MANAGED_1_5: ${{ steps.refs-15.outputs.managed-dir }}
+          GAME_MANAGED_1_6: ${{ steps.refs-16.outputs.managed-dir }}
         run: ./node_modules/.bin/semantic-release
 
       - uses: RimWorks/mod-ci/.github/actions/discord-release@v1

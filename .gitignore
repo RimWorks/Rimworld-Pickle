@@ -1,14 +1,12 @@
 bin/
 obj/
+**/Assemblies/
 .idea/
 .vs/
-Assemblies/
 node_modules/
 Dashboard/dist/
 *.user
 Styles/Google/
-Harmony/Assemblies/
-Concord/Assemblies/
 artifacts/
 Pickle-*.zip
 .sonarqube/

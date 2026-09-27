@@ -10,11 +10,17 @@ on:
     secrets:
       SONAR_TOKEN:
         required: true
+      # the image job below needs them, and a caller has to hand them down
+      STEAM_USERNAME:
+        required: false
+      STEAM_CONFIG_VDF_B64:
+        required: false
 
 permissions:
   contents: read
-  # mod-ci's sonar.yml declares it: the scan restores packages from ghcr
-  packages: read
+  # write, not read: the image job pushes to ghcr, and a caller is checked against every
+  # nested job
+  packages: write
 
 concurrency:
   # github.ref is the base branch under pull_request_target, so key on the PR instead.
@@ -22,9 +28,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # the scan compiles the solution, so it needs staged assemblies like any other build
+  game-image:
+    name: rimworld 1.6 image
+    uses: ./.github/workflows/game-image.yml
+    permissions:
+      contents: read
+      packages: write
+    secrets:
+      STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+      STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
+
   analyze:
+    needs: game-image
+    permissions:
+      contents: read
+      # stage-game-refs pulls the image from ghcr
+      packages: read
     uses: RimWorks/mod-ci/.github/workflows/sonar.yml@v1
     with:
+      game-image: ${{ fromJSON(needs.game-image.outputs.image-refs)['1.6'] }}
       solution: Pickle.slnx
       project-key: RimWorks_Rimworld-Pickle
       exclusions: Dashboard/dist/**,Dashboard/node_modules/**,Styles/**,artifacts/**,**/bin/**,**/obj/**

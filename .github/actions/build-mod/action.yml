@@ -1,7 +1,16 @@
 name: build the mod
-description: Restores the dashboard bundles and builds Pickle in Release. Needs a checkout first.
+description: >
+  Stages the game assemblies, restores the dashboard bundles and builds Pickle in Release. Needs
+  a checkout first, and the calling job needs "packages: read" so the image can be pulled.
 
 inputs:
+  game-image:
+    description: Game image to compile against, as produced by game-image.yml.
+    required: true
+  game-version:
+    description: RimWorld version to build. Has to match the image.
+    required: false
+    default: '1.6'
   dashboard-artifact:
     description: Artifact holding the built dashboard bundles.
     required: false
@@ -14,6 +23,21 @@ runs:
       with:
         dotnet-version: 10.0.x
 
+    - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v1
+      id: refs
+      with:
+        image: ${{ inputs.game-image }}
+
+    # GITHUB_ENV, not -p: on the build line. dotnet test and dotnet format evaluate the props
+    # again on their own, and without this they fall back to the local cache path and hard-error.
+    - name: Point msbuild at this version and its staged assemblies
+      shell: bash
+      run: |
+        {
+          echo "GameVersion=${{ inputs.game-version }}"
+          echo "GameManagedDir=${{ steps.refs.outputs.managed-dir }}"
+        } >> "$GITHUB_ENV"
+
     - uses: actions/download-artifact@v7
       with:
         name: ${{ inputs.dashboard-artifact }}
@@ -21,4 +45,4 @@ runs:
 
     - name: dotnet build
       shell: bash
-      run: dotnet build Pickle.slnx -c Release
+      run: dotnet build Pickle.slnx -c Release -p:GameVersion=${{ inputs.game-version }}

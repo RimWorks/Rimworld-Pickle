@@ -69,7 +69,7 @@ jobs:
       # the reusable reads this run's dashboard artifact through the api
       actions: read
     with:
-      game-image: ${{ needs.game-image.outputs.image-ref }}
+      game-image: ${{ fromJSON(needs.game-image.outputs.image-refs)['1.6'] }}
       mod-name: Pickle
       mod-package-id: rimworks.pickle
       # the checkout is Pickle, so no release is staged over it

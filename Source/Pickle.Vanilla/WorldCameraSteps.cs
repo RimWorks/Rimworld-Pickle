@@ -31,7 +31,7 @@ public static class WorldCameraSteps {
   public static async Task OpenWorldView(PickleContext ctx) {
     ctx.Require(CameraJumper.TryShowWorld(), "the world view would not open; the game has to be in play");
     await ctx.WaitUntil(
-        () => WorldRendererUtility.WorldRendered && !LongEventHandler.AnyEventNowOrWaiting,
+        () => GameCompat.WorldRendered && !LongEventHandler.AnyEventNowOrWaiting,
         PlanetSeconds);
   }
 
@@ -41,7 +41,7 @@ public static class WorldCameraSteps {
   [When("I close the world view")]
   public static async Task CloseWorldView(PickleContext ctx) {
     CameraJumper.TryHideWorld();
-    await ctx.WaitUntil(() => !WorldRendererUtility.WorldRendered, SettleSeconds);
+    await ctx.WaitUntil(() => !GameCompat.WorldRendered, SettleSeconds);
   }
 
   /// <summary>Jumps the planet camera to a tile and selects that tile's layer.</summary>
@@ -173,7 +173,7 @@ public static class WorldCameraSteps {
 
   private static WorldCameraDriver RequireWorldCamera(PickleContext ctx) {
     ctx.Require(
-        WorldRendererUtility.WorldRendered,
+        GameCompat.WorldRendered,
         "the world map is not on screen, so these steps move a camera nobody is looking at; "
             + "open the world view, or use a colony camera step");
 

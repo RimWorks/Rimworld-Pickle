@@ -28,6 +28,10 @@ on:
         required: false
       DOCBIN_TOKEN:
         required: false
+    outputs:
+      image-refs:
+        description: JSON map of game version to the image this run built, for staging refs.
+        value: ${{ jobs.game-image.outputs.image-refs }}
   workflow_dispatch:
     inputs:
       live-dashboard:
@@ -75,13 +79,24 @@ jobs:
       args: --config lychee.toml --no-progress README.md 'Docs/**/*.md'
 
   package-deps:
+    needs: game-image
+    permissions:
+      contents: read
+      # stage-game-refs pulls the image from ghcr
+      packages: read
     uses: RimWorks/mod-ci/.github/workflows/package-deps.yml@v1
     with:
       project: Source/Pickle.Ref/Pickle.Ref.csproj
       dotnet-version: 10.0.x
+      game-image: ${{ fromJSON(needs.game-image.outputs.image-refs)['1.6'] }}
+      # Krafs is gone but stays named: the check costs nothing and it is what catches it coming back
+      reference-packages: |
+        Krafs.Rimworld.Ref
+        Concord.Ref
+        Microsoft.NETFramework.ReferenceAssemblies
 
   game-image:
-    name: rimworld 1.6 image
+    name: rimworld images
     uses: ./.github/workflows/game-image.yml
     permissions:
       contents: read
@@ -90,17 +105,39 @@ jobs:
       STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
       STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
 
+  build-15:
+    name: build 1.5
+    needs: [dashboard, game-image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # stage-game-refs pulls the image from ghcr
+      packages: read
+    steps:
+      - uses: actions/checkout@v7
+
+      # compile only: the tests, the format check and the suite all run on the 1.6 leg
+      - uses: ./.github/actions/build-mod
+        with:
+          game-image: ${{ fromJSON(needs.game-image.outputs.image-refs)['1.5'] }}
+          game-version: '1.5'
+
   build:
     name: build and test
-    needs: dashboard
+    needs: [dashboard, game-image]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       checks: write
+      # stage-game-refs pulls the image from ghcr
+      packages: read
     steps:
       - uses: actions/checkout@v7
 
       - uses: ./.github/actions/build-mod
+        with:
+          game-image: ${{ fromJSON(needs.game-image.outputs.image-refs)['1.6'] }}
+          game-version: '1.6'
 
       - name: Run tests
         run: |
@@ -139,7 +176,7 @@ jobs:
       # Pickle's own features are the suite, so there is no filter to fall back to
       unfiltered: true
       suite-filter: ${{ inputs.suite-filter }}
-      game-image: ${{ needs.game-image.outputs.image-ref }}
+      game-image: ${{ fromJSON(needs.game-image.outputs.image-refs)['1.6'] }}
       backends: ${{ inputs.backend != ''
         && format('["{0}"]', inputs.backend)
         || (github.event_name == 'pull_request'
@@ -159,7 +196,7 @@ jobs:
     name: suite (windows)
     needs: [dashboard, game-image]
     # mod-ci's game-image.yml downloads the linux depot, so this leg runs on the ref built here
-    if: needs.game-image.outputs.windows-image-ref != ''
+    if: needs.game-image.outputs.windows-image-refs != '{}'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -176,13 +213,16 @@ jobs:
         with:
           node-version: '22'
 
+      # the linux ref, not windows-image-ref: stage-game-refs reads RimWorldLinux_Data/Managed
       - uses: ./.github/actions/build-mod
+        with:
+          game-image: ${{ fromJSON(needs.game-image.outputs.image-refs)['1.6'] }}
 
       # the pickle-run action, not a second pickle-suite.yml call: two calls in one run collide on
       # the reusable's merged-report artifact and each merge swallows the other call's legs
       - uses: RimWorks/mod-ci/.github/actions/pickle-run@v1
         with:
-          game-image: ${{ needs.game-image.outputs.windows-image-ref }}
+          game-image: ${{ fromJSON(needs.game-image.outputs.windows-image-refs)['1.6'] }}
           mod-name: Pickle
           mod-package-id: rimworks.pickle
           pickle-version: self

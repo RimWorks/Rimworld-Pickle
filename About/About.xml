@@ -5,6 +5,7 @@
   <author>RimWorks</author>
   <url>https://github.com/RimWorks/Rimworld-Pickle</url>
   <supportedVersions>
+    <li>1.5</li>
     <li>1.6</li>
   </supportedVersions>
   <description>Mod testing framework. Write automated tests for your RimWorld mod and run them inside the game. Pickle reads Gherkin scenarios and plays them against a live session: they click the real UI, wait on real ticks, and assert against the running simulation.

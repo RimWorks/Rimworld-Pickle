@@ -97,7 +97,7 @@ public static class DevModeSteps {
   }
 
   private static string SuggestNames(string name) {
-    string prefix = name.Length < 3 ? name : name[..3];
+    string prefix = name.Length < 3 ? name : name.Substring(0, 3);
     string[] near = [.. AllActions()
         .Where(a => a.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
         .Select(a => $"{a.Category}/{a.Name}")

@@ -121,7 +121,7 @@ public class GearSteps {
     BodyPartGroupDef group = DefLookup.Require<BodyPartGroupDef>(groupDefName);
 
     ctx.Assert(
-        pawn.apparel?.BodyPartGroupIsCovered(group, null) == true,
+        pawn.apparel != null && GameCompat.ApparelCovers(pawn.apparel, group),
         $"pawn '{nickname}' apparel should cover '{groupDefName}'; {DescribeWorn(pawn)}");
   }
 

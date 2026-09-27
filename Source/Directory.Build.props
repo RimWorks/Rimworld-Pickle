@@ -10,15 +10,28 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <!-- gamecrate stages the game's own assemblies here. When they are present the projects
-       compile against them, otherwise they fall back to the Krafs reference package. -->
+  <!-- These are compile-time inputs, so they are declared here and never reached through
+       node_modules: that holds release tools only, and CI compiles without npm ci.
+       mod-ci keeps the reference copy at msbuild/GameVersion.props. -->
   <PropertyGroup>
+    <GameVersion Condition="'$(GameVersion)' == ''">1.6</GameVersion>
+
     <GamecrateCache Condition="'$(GamecrateCache)' == '' And '$(XDG_CACHE_HOME)' != ''">$(XDG_CACHE_HOME)</GamecrateCache>
     <GamecrateCache Condition="'$(GamecrateCache)' == ''">$([System.IO.Path]::Combine($([System.Environment]::GetFolderPath(SpecialFolder.UserProfile)), '.cache'))</GamecrateCache>
-    <GamecrateRefs Condition="'$(GamecrateRefs)' == ''">$([System.IO.Path]::Combine($(GamecrateCache), 'gamecrate', 'refs', 'current', 'rimworld'))</GamecrateRefs>
+    <!-- CI stages the assemblies itself, so its path wins over the local gamecrate cache. -->
+    <GamecrateRefs Condition="'$(GamecrateRefs)' == '' And '$(GameManagedDir)' != ''">$(GameManagedDir)</GamecrateRefs>
+    <GamecrateRefs Condition="'$(GamecrateRefs)' == ''">$([System.IO.Path]::Combine($(GamecrateCache), 'gamecrate', 'refs', 'version', 'rimworld', $(GameVersion)))</GamecrateRefs>
+
     <HasGameRefs>false</HasGameRefs>
     <HasGameRefs Condition="Exists('$(GamecrateRefs)/Assembly-CSharp.dll')">true</HasGameRefs>
+
+    <DefineConstants>$(DefineConstants);RW_$(GameVersion.Replace('.','_'))</DefineConstants>
   </PropertyGroup>
+
+  <!-- refs/current moves on every extraction, so only the versioned path is ever named -->
+  <Target Name="RequireGameRefs" BeforeTargets="ResolveAssemblyReferences" Condition="'$(HasGameRefs)' != 'true'">
+    <Error Text="no rimworld $(GameVersion) assemblies at $(GamecrateRefs). run: gamecrate steam build rimworld --beta version-$(GameVersion)" />
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="SonarAnalyzer.CSharp" Version="10.34.*" PrivateAssets="all" />

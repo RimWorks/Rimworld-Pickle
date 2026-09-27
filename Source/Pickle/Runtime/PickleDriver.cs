@@ -88,8 +88,14 @@ public class PickleDriver : MonoBehaviour {
 
     // Watch mode waits on the game's own tick loop, and a save loads paused, so the wait
     // would sit there until the step timed out. ForcePaused is not ours to override.
+#if RW_1_5
+    // 1.5 has no TickManager.ForcePaused, so name the two forced pauses it does have
+    bool forcePaused = (Find.WindowStack?.WindowsForcePause ?? false) || LongEventHandler.ForcePause;
+#else
+    bool forcePaused = Find.TickManager.ForcePaused;
+#endif
     if (PickleRunMode.Current != PickleRunMode.Mode.Fast
-        && Find.TickManager.Paused && !Find.TickManager.ForcePaused) {
+        && Find.TickManager.Paused && !forcePaused) {
       Find.TickManager.CurTimeSpeed = TimeSpeed.Normal;
     }
 

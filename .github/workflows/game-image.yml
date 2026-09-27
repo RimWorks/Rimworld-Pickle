@@ -14,12 +14,12 @@ on:
       STEAM_CONFIG_VDF_B64:
         required: false
     outputs:
-      image-ref:
-        description: Image ref the suite and build jobs should pull.
-        value: ${{ jobs.image.outputs.image-ref }}
-      windows-image-ref:
-        description: Image ref the Windows suite should pull.
-        value: ${{ jobs.image.outputs.windows-image-ref }}
+      image-refs:
+        description: JSON map of game version to image ref, for the suite and build jobs.
+        value: ${{ jobs.image.outputs.image-refs }}
+      windows-image-refs:
+        description: The same map for the Windows images.
+        value: ${{ jobs.image.outputs.windows-image-refs }}
   workflow_dispatch:
     inputs:
       force:
@@ -34,13 +34,16 @@ permissions:
 
 jobs:
   image:
-    name: rimworld 1.6 image
+    name: rimworld images
     uses: RimWorks/mod-ci/.github/workflows/game-image.yml@v1
     permissions:
       contents: read
       packages: write
     with:
-      branch: version-1.6.4633
+      # one image name is enough: game-image.yml tags it latest-<branch-slug>
+      branches: |
+        1.5=version-1.5
+        1.6=version-1.6.4633
       image: ghcr.io/${{ github.repository_owner }}/rimworld-game-runnable
       windows: true
       force: ${{ inputs.force || false }}
