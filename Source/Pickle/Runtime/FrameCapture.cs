@@ -2,11 +2,13 @@ using System;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Verse;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
 /// <summary>Turns what is on screen into a file. The caller owns the frame timing.</summary>
+[StaticConstructorOnStartup]
 internal static class FrameCapture {
   private static bool warnedReadback;
   private static bool readOnThisThread;
