@@ -47,6 +47,24 @@ public class ConcordBackend : IPatchBackend {
     PickleHooks.AfterButtonText(rect, label);
   }
 
+  /// <summary>Tail injection on <see cref="Widgets.ButtonInvisible"/> that reports a click a step asked for.</summary>
+  /// <param name="butRect">The rect the button was drawn in.</param>
+  /// <param name="control">Carries the button's own answer, raised to <c>true</c> for a requested click.</param>
+  public static void AfterButtonInvisible(Rect butRect, ControlHandle<bool> control) {
+    if (!control.ReturnValue && PickleHooks.ShouldReportClick(butRect)) {
+      control.ReturnValue = true;
+    }
+  }
+
+  /// <summary>Tail injection on <see cref="Mouse.IsOver"/> that reports the pointer over a hovered rect.</summary>
+  /// <param name="rect">The rect being tested.</param>
+  /// <param name="control">Carries whether the real pointer is over it, raised to <c>true</c> for a hover step.</param>
+  public static void AfterIsOver(Rect rect, ControlHandle<bool> control) {
+    if (!control.ReturnValue && PickleHooks.ShouldReportHover(rect)) {
+      control.ReturnValue = true;
+    }
+  }
+
   /// <summary>Head injection on <see cref="WindowStack.Add"/> that can drop a window autorun wants suppressed.</summary>
   /// <param name="window">The window about to be added.</param>
   /// <returns><see cref="Control.Cancel"/> to skip adding the window, <see cref="Control.Continue"/> to let it through.</returns>
@@ -118,6 +136,16 @@ public class ConcordBackend : IPatchBackend {
             nameof(Widgets.ButtonText),
             [typeof(Rect), typeof(string), typeof(bool), typeof(bool), typeof(Color), typeof(bool), typeof(TextAnchor?)]),
         Injection(nameof(AfterButtonText)),
+        At.Tail);
+
+    Patcher.Patch(
+        typeof(Widgets).GetMethod(nameof(Widgets.ButtonInvisible)),
+        Injection(nameof(AfterButtonInvisible)),
+        At.Tail);
+
+    Patcher.Patch(
+        typeof(Mouse).GetMethod(nameof(Mouse.IsOver)),
+        Injection(nameof(AfterIsOver)),
         At.Tail);
 
     Patcher.Patch(

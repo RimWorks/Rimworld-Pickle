@@ -117,52 +117,47 @@ public class PickleContext {
         $"PickleContext.Get<{typeof(T).Name}>: no value of type {typeof(T).Name} has been set.");
   }
 
-  /// <summary>Waits for a tagged rect to appear, moves the pointer onto it, and clicks. Throws if
-  /// the tag never resolves.</summary>
+  /// <summary>Waits for a tagged rect to appear and clicks it. Throws if the tag never resolves, or
+  /// if nothing at that rect is clickable.</summary>
   /// <param name="tag">The tag a mod's <c>OnGUI</c> recorded with <see cref="PickleUI.Tag"/>.</param>
-  /// <returns>A task that completes once the tag resolves and the click has been dispatched.</returns>
+  /// <returns>A task that completes once the click has been taken by a widget.</returns>
   public async Task Click(string tag) {
+    Rect rect = await ResolveTag(tag);
+
+    InteractionRequest.ArmClick(rect);
     try {
-      await WaitUntil(() => TagInteractor.TryResolve(tag, out _, out _), 5f);
+      await WaitUntil(() => InteractionRequest.ClickFired, 2f);
     } catch (TimeoutException) {
-      throw new InvalidOperationException(TagInteractor.DescribeMiss(tag));
+      InteractionRequest.Clear();
+      throw new InvalidOperationException(
+          $"tag '{tag}' resolved to {rect} but no button there took the click; "
+          + "the element has to route through Widgets.ButtonInvisible for a click step to reach it");
     }
 
-    if (!TagInteractor.TryResolve(tag, out Rect rect, out string? error)) {
-      throw new InvalidOperationException(error ?? "Failed to resolve tag");
-    }
-
-    await MovePointerTo(rect.center);
-    InputBackends.Current.Click(rect.center);
     await WaitFrames(2);
   }
 
-  /// <summary>Waits for a tagged rect to appear and moves the pointer onto it, without clicking.
+  /// <summary>Waits for a tagged rect to appear and holds the pointer over it, without clicking.
   /// Throws if the tag never resolves.</summary>
   /// <param name="tag">The tag a mod's <c>OnGUI</c> recorded with <see cref="PickleUI.Tag"/>.</param>
-  /// <returns>A task that completes once the tag resolves and the pointer has been moved onto it.</returns>
+  /// <returns>A task that completes once the rect reports the pointer as over it.</returns>
   public async Task Hover(string tag) {
-    try {
-      await WaitUntil(() => TagInteractor.TryResolve(tag, out _, out _), 5f);
-    } catch (TimeoutException) {
-      throw new InvalidOperationException(TagInteractor.DescribeMiss(tag));
-    }
+    Rect rect = await ResolveTag(tag);
 
-    if (!TagInteractor.TryResolve(tag, out Rect rect, out string? error)) {
-      throw new InvalidOperationException(error ?? "Failed to resolve tag");
-    }
-
-    await MovePointerTo(rect.center);
+    InteractionRequest.SetHover(rect);
     await WaitFrames(1);
   }
 
-  /// <summary>Sends a key press through the active input backend.</summary>
+  /// <summary>Presses a key, delivering it into the game's own OnGUI pass.</summary>
   /// <param name="key">The key to press.</param>
   /// <returns>A task that completes two frames after the key is sent, so the game has processed it.</returns>
   public async Task PressKey(string key) {
-    InputBackends.EnsureAvailable();
-    InputBackends.Current.Key(key);
+    EventSynth.RequestKeyEvent(EventSynth.Mechanism.UIRootReinvoke, KeyNames.Parse(key));
     await WaitFrames(2);
+
+    if (EventSynth.TryTakeFailure(out Exception? failure)) {
+      throw new InvalidOperationException($"key '{key}' could not be delivered", failure);
+    }
   }
 
   /// <summary>Attaches a named blob of content to this scenario's report.</summary>
@@ -172,27 +167,17 @@ public class PickleContext {
     attachments.Add((name, content));
   }
 
-  // An unfocused window is the one state where the OS moves the cursor and the game never
-  // reads it, so focus is recorded beside both readings rather than guessed from them.
-  private static string DescribePointer(string lead, Vector2 guiPoint) {
-    return $"{lead} {guiPoint}: the OS reports {InputBackends.Current.GetMouseLocation()}, "
-        + $"the game reads {Verse.UI.MousePositionOnUIInverted}, focused={Application.isFocused}";
-  }
-
-  // The OS cursor moving is not the same as the game seeing it move: a click sent before
-  // Unity has read the new position lands with the pointer still where it was and
-  // activates nothing, which is silent. Three pixels covers the rounding SendInput's
-  // 0-65535 grid costs.
-  private async Task MovePointerTo(Vector2 guiPoint) {
-    InputBackends.EnsureAvailable();
-    InputBackends.Current.MoveTo(guiPoint);
-
+  private async Task<Rect> ResolveTag(string tag) {
     try {
-      await WaitUntil(() => (Verse.UI.MousePositionOnUIInverted - guiPoint).sqrMagnitude <= 9f, 2f);
+      await WaitUntil(() => TagInteractor.TryResolve(tag, out _, out _), 5f);
     } catch (TimeoutException) {
-      throw new InvalidOperationException(DescribePointer("the pointer never reached", guiPoint));
+      throw new InvalidOperationException(TagInteractor.DescribeMiss(tag));
     }
 
-    Log.InfoTo(PickleLog.Channel, $"{DescribePointer("pointer at", guiPoint)}");
+    if (!TagInteractor.TryResolve(tag, out Rect rect, out string? error)) {
+      throw new InvalidOperationException(error ?? "Failed to resolve tag");
+    }
+
+    return rect;
   }
 }

@@ -91,8 +91,6 @@ public static class FilmEncoder {
     return lines.Length == 0 ? string.Empty : lines[lines.Length - 1].Trim();
   }
 
-  // Walks PATH rather than passing a bare name to the process launcher, matching how
-  // XdoInput resolves its binary.
   private static string ResolveFfmpeg() {
     if (probed) {
       return cachedFfmpeg ?? string.Empty;

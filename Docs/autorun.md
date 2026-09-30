@@ -199,5 +199,5 @@ Upload `report.html` as an artifact. A reviewer can open it without a server and
 each failing step with its screenshot.
 
 RimWorld needs a display, even headless. Run it under Xvfb, or in a container that
-provides one. Clicks need a real X server, so use Xvfb rather than a null display when
-your scenarios click.
+provides one. Clicking scenarios need nothing more: Pickle drives the UI at the widget,
+not through the X server.

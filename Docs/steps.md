@@ -546,7 +546,7 @@ into a tile, so Pickle scans the grid for the closest one.
 | `I click button {string}` | Clicks a vanilla button by label. Pickle tags those for you |
 | `I click gizmo {string}` | Runs a gizmo on the current selection |
 | `I hover {string}` | Moves the pointer onto a tagged widget |
-| `I press key {string}` | Sends a real key through XTEST, so `Input.GetKeyDown` sees it. Accepts `Escape`, `Return`, `Space`, `Tab`, `Delete`, `Backspace`, a letter, or a digit |
+| `I press key {string}` | Sends a key into the game's `OnGUI` pass, so `Event.current` sees it. Accepts `Escape`, `Return`, `Space`, `Tab`, `Delete`, `Backspace`, a letter, or a digit |
 | `I select {string}` | Selects a pawn or thing by name |
 | `I open the {string} tab` | Opens a main tab by def name or label |
 | `I close all dialogs` | Closes every open window |
@@ -560,11 +560,11 @@ into a tile, so Pickle scans the grid for the closest one.
 | `no warnings from mod {string}` | Checks no warning is attributed to a mod |
 | `I take a screenshot {string}` | Captures a screenshot and attaches it to the report |
 
-`I click`, `I click button`, `I hover` and `I press key` need real OS input. RimWorld
-drops synthetic pointer events, and `Input.GetKeyDown` never sees a synthetic key event.
-Pickle injects both at the OS level: XTEST through `xdotool` on Linux, `SendInput` on
-Windows. Linux also needs a real X display. macOS has no backend, so those four steps
-throw there. Every other step here works anywhere.
+No step here moves the real pointer, so none need a display or a focused window. The click
+and hover steps make the widget at the target rect report the event itself, which covers
+anything built on `Widgets.ButtonInvisible`. A widget that does its own `Event.current` hit
+test is out of reach, and the step fails naming the rect it resolved. `I press key` goes
+into the game's `OnGUI` pass, so code polling `Input.GetKeyDown` never sees it.
 See [running tests](running.md).
 
 Vanilla warns constantly, so there is no blanket `no warnings were logged`. Every warning

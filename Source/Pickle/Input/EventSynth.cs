@@ -8,11 +8,10 @@ using Log = RimWorks.RimLogging.Log;
 namespace RimWorks.Pickle.Input;
 
 /// <summary>
-/// Key events reach the UI by reinvoking UIRootOnGUI. Clicks cannot: GUI.Window
-/// dispatches content through a native InternalCall, so the input backend drives real OS input.
+/// Delivers a key event to the UI by reinvoking UIRootOnGUI with the event on the stack.
+/// Clicks do not come through here; they are taken at the widget instead.
 /// </summary>
 public static class EventSynth {
-  // Used to also carry ClickDown/ClickUp, arming a two-pass MouseDown-then-MouseUp
   private static PendingKind? pendingKind;
   private static PendingAction? pendingAction;
   private static KeyCode pendingKeyCode;
@@ -20,8 +19,6 @@ public static class EventSynth {
   private static Exception? lastFailure;
 
   /// <summary>Which entry point reinvokes to deliver a synthesized key event.</summary>
-  // EventQueue used to be a third mechanism, tried for clicks only. Clicks no longer
-  // go through any of these (see InputBackends); this enum now exists for RequestKeyEvent.
   public enum Mechanism {
     /// <summary>Reinvokes <c>Find.UIRoot.UIRootOnGUI</c>.</summary>
     UIRootReinvoke,
@@ -35,8 +32,6 @@ public static class EventSynth {
     WindowStackReinvoke,
   }
 
-  // Clicks no longer arm this at all, see InputBackends. Key is single-shot and consumed
-  // in one pass, so no hotControl handshake is involved.
   private enum PendingAction {
     Key,
   }
@@ -50,19 +45,6 @@ public static class EventSynth {
     canAutoOpenField?.SetValue(null, false);
 
     Find.WindowStack.TryRemoveAssignableFromType(typeof(EditWindow_Log), doCloseSound: false);
-  }
-
-  /// <summary>Clicks at a screen point through the active <see cref="InputBackends"/> backend.</summary>
-  /// <param name="screenPoint">The point to click, in GUI space.</param>
-  // Clicks go through real X11 input, not the mechanisms below. Failures still route
-  // through lastFailure/TryTakeFailure, so a click never silently does nothing.
-  public static void RequestClick(Vector2 screenPoint) {
-    lastFailure = null;
-    try {
-      InputBackends.Current.Click(screenPoint);
-    } catch (Exception ex) {
-      lastFailure = ex;
-    }
   }
 
   /// <summary>Arms a key event to be delivered on the next matching OnGUI reinvoke.</summary>

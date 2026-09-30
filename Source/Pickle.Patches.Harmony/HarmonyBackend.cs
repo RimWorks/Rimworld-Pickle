@@ -45,6 +45,24 @@ public class HarmonyBackend : IPatchBackend {
     PickleHooks.AfterButtonText(rect, label);
   }
 
+  /// <summary>Postfix on <see cref="Widgets.ButtonInvisible"/> that reports a click a step asked for.</summary>
+  /// <param name="butRect">The rect the button was drawn in.</param>
+  /// <param name="__result">The button's own answer, raised to <c>true</c> for a requested click.</param>
+  public static void ButtonInvisiblePostfix(Rect butRect, ref bool __result) {
+    if (!__result && PickleHooks.ShouldReportClick(butRect)) {
+      __result = true;
+    }
+  }
+
+  /// <summary>Postfix on <see cref="Mouse.IsOver"/> that reports the pointer over a hovered rect.</summary>
+  /// <param name="rect">The rect being tested.</param>
+  /// <param name="__result">Whether the real pointer is over it, raised to <c>true</c> for a hover step.</param>
+  public static void IsOverPostfix(Rect rect, ref bool __result) {
+    if (!__result && PickleHooks.ShouldReportHover(rect)) {
+      __result = true;
+    }
+  }
+
   /// <summary>Prefix on <see cref="WindowStack.Add"/> that can drop a window autorun wants suppressed.</summary>
   /// <param name="window">The window about to be added.</param>
   /// <returns><c>false</c> to skip adding the window, <c>true</c> to let it through.</returns>
@@ -105,6 +123,14 @@ public class HarmonyBackend : IPatchBackend {
             nameof(Widgets.ButtonText),
             [typeof(Rect), typeof(string), typeof(bool), typeof(bool), typeof(Color), typeof(bool), typeof(TextAnchor?)]),
         postfix: Handler(nameof(ButtonTextPostfix)));
+
+    harmony.Patch(
+        typeof(Widgets).GetMethod(nameof(Widgets.ButtonInvisible)),
+        postfix: Handler(nameof(ButtonInvisiblePostfix)));
+
+    harmony.Patch(
+        typeof(Mouse).GetMethod(nameof(Mouse.IsOver)),
+        postfix: Handler(nameof(IsOverPostfix)));
 
     harmony.Patch(
         typeof(WindowStack).GetMethod(nameof(WindowStack.Add)),

@@ -225,7 +225,10 @@ same for every step in it, and the attribute wins where both apply.
 Tag a widget with `PickleUI.Tag("my-button", rect)` inside your own drawing code.
 Pickle tags vanilla buttons by label, as `btn:Research`.
 
-Clicks and key presses both need real OS input. RimWorld drops synthetic pointer
-events, and `Input.GetKeyDown` never sees a synthetic key event. Pickle injects both
-at the OS level: XTEST through `xdotool` on Linux, `SendInput` on Windows. Linux also
-needs a real X display. macOS has no backend, so these three calls throw there.
+None of these move the real pointer, so no display or window focus is needed. `ctx.Click`
+makes the widget at the tagged rect report the click itself, which covers anything built on
+`Widgets.ButtonInvisible`. A widget that does its own `Event.current` hit test is out of
+reach, and `ctx.Click` throws naming the rect it resolved.
+
+`ctx.PressKey` delivers the key into the game's `OnGUI` pass, where RimWorld reads its key
+bindings. Code polling `Input.GetKeyDown` never sees it.

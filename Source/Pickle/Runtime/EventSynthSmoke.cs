@@ -1,17 +1,15 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using RimWorks.Pickle.Input;
-using UnityEngine;
+using RimWorld;
 using Verse;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
 /// <summary>
-/// Proves synthetic key and click input against a real dialog: a key event closes it through
-/// the UIRootOnGUI reinvoke path, then a click closes it through the real OS input backend.
+/// Proves key and click input against a real vanilla dialog: a key event closes it through the
+/// UIRootOnGUI reinvoke, then a click on its OK button closes it through the widget patch.
 /// </summary>
 public static class EventSynthSmoke {
   /// <summary>Queues the smoke on the loading long event, so it runs once the game is ready for windows.</summary>
@@ -24,109 +22,68 @@ public static class EventSynthSmoke {
     try {
       PickleDriver driver = PickleDriver.Instance;
 
-      // EditWindow_Log auto-opens on any error in dev mode and eats clicks meant for the
-      // dialog. Suppress it before spawning anything.
       EventSynth.SuppressDebugLogAutoOpen();
+      TagStore.SessionActive = true;
 
-      Log.InfoTo(PickleLog.Channel, "event synth debug UIScale={UIScale}", [Prefs.UIScale]);
-      Log.InfoTo(PickleLog.Channel, "event synth debug xdotoolAvailable={XdotoolAvailable}", [InputBackends.Available]);
-
-      // One KeyDown(Escape) closes a default Dialog_MessageBox in a single pass, so this
-      // proves the UIRootOnGUI reinvoke works without involving a rect or hotControl.
-      Dialog_MessageBox keyTestDialog = new Dialog_MessageBox("pickle synth test (key)");
-      Find.WindowStack.Add(keyTestDialog);
-      await driver.WaitFrames(2);
-
-      EventSynth.RequestKeyEvent(EventSynth.Mechanism.UIRootReinvoke, KeyCode.Escape);
-      await driver.WaitFrames(2);
-
-      bool keyClosed = !Find.WindowStack.IsOpen<Dialog_MessageBox>();
-      Log.InfoTo(PickleLog.Channel, "event synth key event: {Result}", [keyClosed ? "dialog closed" : "dialog still open"]);
-
-      if (!keyClosed) {
-        keyTestDialog.Close(false);
-        await driver.WaitFrames(1);
-      }
-
-      // Click sub-check: real OS input via the selected backend, aimed at the
-      // button rect captured live off Widgets.ButtonText.
-      Dialog_MessageBox dialog = new Dialog_MessageBox("pickle synth test");
-      Find.WindowStack.Add(dialog);
-      await driver.WaitFrames(2);
-
-      LogWindowStack(dialog);
-      Vector2 target = ButtonCenter(dialog);
-      EventSynth.RequestClick(target);
-      await driver.WaitFrames(4);
-
-      if (EventSynth.TryTakeFailure(out Exception? failure)) {
-        LogWindowStack(dialog);
-        Log.ErrorTo(PickleLog.Channel, "event synth smoke failed: click threw: {Failure}", [failure]);
+      if (!await EscapeClosesDialog(driver)) {
+        TagStore.SessionActive = false;
         return;
       }
 
-      bool closed = !Find.WindowStack.IsOpen<Dialog_MessageBox>();
-      Log.InfoTo(PickleLog.Channel, "event synth click: {Result}", [closed ? "dialog closed" : "dialog still open"]);
-
-      if (!closed) {
-        LogWindowStack(dialog);
-        Log.ErrorTo(PickleLog.Channel,
-            "event synth smoke failed: click did not close the dialog. "
-            + "target={Target} pointerNow=[{PointerNow}]",
-            [InputBackends.ToScreen(target), InputBackends.Current.GetMouseLocation()]);
+      if (!await ClickOnOkClosesDialog(driver)) {
+        TagStore.SessionActive = false;
         return;
       }
 
+      TagStore.SessionActive = false;
       Log.InfoTo(PickleLog.Channel, "event synth smoke passed");
     } catch (Exception ex) {
+      TagStore.SessionActive = false;
       Log.ErrorTo(PickleLog.Channel, ex, "event synth smoke failed with exception");
     }
   }
 
-  // WindowStack.Windows runs bottom to top, per GetWindowAt. Logged around the click
-  // so the log shows what could have intercepted it.
-  private static void LogWindowStack(Dialog_MessageBox dialog) {
-    IList<Window> windows = Find.WindowStack.Windows;
-    string stack = string.Join(", ", windows.Select(w => w.GetType().Name));
-    bool dialogTopmost = windows.Count > 0 && windows[windows.Count - 1] == dialog;
+  private static async Task<bool> EscapeClosesDialog(PickleDriver driver) {
+    Dialog_MessageBox dialog = new Dialog_MessageBox("pickle synth test (key)");
+    Find.WindowStack.Add(dialog);
+    await driver.WaitFrames(2);
 
-    Log.InfoTo(PickleLog.Channel,
-        "event synth debug windowstack=[{Stack}] (index 0 = bottom, last = topmost)",
-        [stack]);
-    Log.InfoTo(PickleLog.Channel, "event synth debug dialog topmost={Topmost}", [dialogTopmost]);
+    PickleContext ctx = new PickleContext();
+    await ctx.PressKey("Escape");
 
-    Vector2 target = ButtonCenter(dialog);
-    foreach (Window window in windows) {
-      bool covers = window.windowRect.Contains(target);
-      Log.InfoTo(PickleLog.Channel,
-          "event synth debug window {Window} layer={Layer} rect={Rect} coversTarget={CoversTarget}",
-          [window.GetType().Name, window.layer, window.windowRect, covers]);
+    if (Find.WindowStack.IsOpen<Dialog_MessageBox>()) {
+      Log.ErrorTo(PickleLog.Channel, "event synth smoke failed: Escape did not close the dialog");
+      dialog.Close(false);
+      await driver.WaitFrames(1);
+      return false;
     }
 
-    Window? windowAtTarget = Find.WindowStack.GetWindowAt(target);
-    Log.InfoTo(PickleLog.Channel,
-        "event synth debug target={Target} windowAtTarget={WindowAtTarget} isDialog={IsDialog}",
-        [target, windowAtTarget?.GetType().Name ?? "none", windowAtTarget == dialog]);
+    return true;
   }
 
-  // Get button center from TagStore, which was populated by WidgetCapture.ButtonTextPostfix
-  // when the button was drawn. Falls back to hand-derived rect math if the tag is not found.
-  private static Vector2 ButtonCenter(Dialog_MessageBox dialog) {
-    Rect windowRect = dialog.windowRect;
-    Vector2 computed = new Vector2(windowRect.x + 476f, windowRect.y + 424.5f);
+  private static async Task<bool> ClickOnOkClosesDialog(PickleDriver driver) {
+    Dialog_MessageBox dialog = new Dialog_MessageBox("pickle synth test");
+    Find.WindowStack.Add(dialog);
+    await driver.WaitFrames(2);
 
-    bool found = TagStore.TryGet("btn:OK", out Rect capturedRect, out bool duplicate);
-    if (found && !duplicate) {
-      Log.InfoTo(PickleLog.Channel,
-          "event synth debug windowRect={WindowRect} capturedRect={CapturedRect}",
-          [windowRect, capturedRect]);
-      return capturedRect.center;
+    PickleContext ctx = new PickleContext();
+
+    try {
+      await ctx.Click("btn:OK");
+    } catch (InvalidOperationException ex) {
+      Log.ErrorTo(PickleLog.Channel, ex, "event synth smoke failed: click on 'btn:OK' threw");
+      dialog.Close(false);
+      await driver.WaitFrames(1);
+      return false;
     }
 
-    Log.InfoTo(PickleLog.Channel,
-        "event synth debug windowRect={WindowRect} computedCenter={ComputedCenter} "
-        + "capturedFound={CapturedFound} capturedDuplicate={CapturedDuplicate}",
-        [windowRect, computed, found, duplicate]);
-    return computed;
+    if (Find.WindowStack.IsOpen<Dialog_MessageBox>()) {
+      Log.ErrorTo(PickleLog.Channel, "event synth smoke failed: the click did not close the dialog");
+      dialog.Close(false);
+      await driver.WaitFrames(1);
+      return false;
+    }
+
+    return true;
   }
 }

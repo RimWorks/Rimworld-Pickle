@@ -42,6 +42,20 @@ public static class PickleHooks {
     WidgetCapture.AfterButtonText(rect, label);
   }
 
+  /// <summary>Whether a button at this rect should report a click, because a step asked for one.</summary>
+  /// <param name="rect">The rect the button occupies.</param>
+  /// <returns><c>true</c> to make the button report that it was clicked.</returns>
+  public static bool ShouldReportClick(Rect rect) {
+    return InteractionRequest.TakeClick(rect);
+  }
+
+  /// <summary>Whether a rect should report the pointer as over it, because a step hovered it.</summary>
+  /// <param name="rect">The rect being tested.</param>
+  /// <returns><c>true</c> to make the rect report the pointer as over it.</returns>
+  public static bool ShouldReportHover(Rect rect) {
+    return InteractionRequest.IsHovered(rect);
+  }
+
   /// <summary>
   /// False drops the window. Autorun suppresses windows opened while a fixture loads.
   /// </summary>
