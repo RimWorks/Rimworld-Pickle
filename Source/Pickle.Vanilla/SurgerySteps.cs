@@ -13,28 +13,30 @@ public class SurgerySteps {
   /// <param name="ctx">The running scenario's context.</param>
   /// <param name="nickname">The pawn to check.</param>
   /// <param name="partLabel">The body part expected to be missing.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} is missing {string}")]
-  public void AssertMissing(PickleContext ctx, string nickname, string partLabel) {
+  public async Task AssertMissing(PickleContext ctx, string nickname, string partLabel) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     BodyPartRecord part = BodyPartLookup.Require(pawn, partLabel);
 
-    ctx.Assert(
-        pawn.health.hediffSet.PartIsMissing(part),
-        $"pawn '{nickname}' should be missing '{partLabel}'; {BodyPartLookup.Describe(pawn)}");
+    await ctx.AssertEventually(
+        () => pawn.health.hediffSet.PartIsMissing(part),
+        () => $"pawn '{nickname}' should be missing '{partLabel}'; {BodyPartLookup.Describe(pawn)}");
   }
 
   /// <summary>Asserts a pawn still has a body part.</summary>
   /// <param name="ctx">The running scenario's context.</param>
   /// <param name="nickname">The pawn to check.</param>
   /// <param name="partLabel">The body part expected to still be present.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} is not missing {string}")]
-  public void AssertNotMissing(PickleContext ctx, string nickname, string partLabel) {
+  public async Task AssertNotMissing(PickleContext ctx, string nickname, string partLabel) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     BodyPartRecord part = BodyPartLookup.Require(pawn, partLabel);
 
-    ctx.Assert(
-        !pawn.health.hediffSet.PartIsMissing(part),
-        $"pawn '{nickname}' should still have '{partLabel}'; {BodyPartLookup.Describe(pawn)}");
+    await ctx.AssertEventually(
+        () => !pawn.health.hediffSet.PartIsMissing(part),
+        () => $"pawn '{nickname}' should still have '{partLabel}'; {BodyPartLookup.Describe(pawn)}");
   }
 
   /// <summary>Asserts a pawn carries a hediff on a specific body part.</summary>
@@ -42,15 +44,17 @@ public class SurgerySteps {
   /// <param name="nickname">The pawn to check.</param>
   /// <param name="hediffDefName">The hediff expected on the part.</param>
   /// <param name="partLabel">The body part to check.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
+  // A surgery drops its bill when the surgeon finishes, but the hediff lands a tick later.
   [Then("{string} has hediff {string} on {string}")]
-  public void AssertHediffOnPart(PickleContext ctx, string nickname, string hediffDefName, string partLabel) {
+  public async Task AssertHediffOnPart(PickleContext ctx, string nickname, string hediffDefName, string partLabel) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     HediffDef def = DefLookup.Require<HediffDef>(hediffDefName);
     BodyPartRecord part = BodyPartLookup.Require(pawn, partLabel);
 
-    ctx.Assert(
-        pawn.health.hediffSet.HasHediff(def, part, mustBeVisible: false),
-        $"pawn '{nickname}' should have '{hediffDefName}' on '{partLabel}'; {DescribePlacedHediffs(pawn)}");
+    await ctx.AssertEventually(
+        () => pawn.health.hediffSet.HasHediff(def, part, mustBeVisible: false),
+        () => $"pawn '{nickname}' should have '{hediffDefName}' on '{partLabel}'; {DescribePlacedHediffs(pawn)}");
   }
 
   /// <summary>Asserts a pawn carries no hediff on a specific body part.</summary>
@@ -58,29 +62,31 @@ public class SurgerySteps {
   /// <param name="nickname">The pawn to check.</param>
   /// <param name="hediffDefName">The hediff that must be absent from the part.</param>
   /// <param name="partLabel">The body part to check.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} has no hediff {string} on {string}")]
-  public void AssertNoHediffOnPart(PickleContext ctx, string nickname, string hediffDefName, string partLabel) {
+  public async Task AssertNoHediffOnPart(PickleContext ctx, string nickname, string hediffDefName, string partLabel) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     HediffDef def = DefLookup.Require<HediffDef>(hediffDefName);
     BodyPartRecord part = BodyPartLookup.Require(pawn, partLabel);
 
-    ctx.Assert(
-        !pawn.health.hediffSet.HasHediff(def, part, mustBeVisible: false),
-        $"pawn '{nickname}' should have no '{hediffDefName}' on '{partLabel}'; {DescribePlacedHediffs(pawn)}");
+    await ctx.AssertEventually(
+        () => !pawn.health.hediffSet.HasHediff(def, part, mustBeVisible: false),
+        () => $"pawn '{nickname}' should have no '{hediffDefName}' on '{partLabel}'; {DescribePlacedHediffs(pawn)}");
   }
 
   /// <summary>Asserts the number of surgery bills queued on a pawn.</summary>
   /// <param name="ctx">The running scenario's context.</param>
   /// <param name="nickname">The pawn to check.</param>
   /// <param name="expected">The expected number of queued bills.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} has {int} surgeries queued")]
-  public void AssertSurgeryCount(PickleContext ctx, string nickname, int expected) {
+  public async Task AssertSurgeryCount(PickleContext ctx, string nickname, int expected) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
-    int actual = pawn.health.surgeryBills?.Count ?? 0;
 
-    ctx.Assert(
-        actual == expected,
-        $"pawn '{nickname}' should have {expected} surgeries queued; has {actual}. {DescribeSurgeries(pawn)}");
+    await ctx.AssertEventually(
+        () => (pawn.health.surgeryBills?.Count ?? 0) == expected,
+        () => $"pawn '{nickname}' should have {expected} surgeries queued; "
+            + $"has {pawn.health.surgeryBills?.Count ?? 0}. {DescribeSurgeries(pawn)}");
   }
 
   /// <summary>Adds a hediff to a pawn's body part directly, skipping whatever would normally cause it.</summary>

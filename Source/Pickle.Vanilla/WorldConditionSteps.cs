@@ -129,9 +129,10 @@ public class WorldConditionSteps {
   /// <param name="x">The cell's x coordinate.</param>
   /// <param name="z">The cell's z coordinate.</param>
   /// <param name="bound">The lower bound, exclusive.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("the temperature at \\({int}, {int}\\) is above {int}")]
-  public void AssertCellTempAbove(PickleContext ctx, int x, int z, int bound) {
-    AssertCellTemp(ctx, x, z, actual => actual > bound, $"should be above {bound}");
+  public async Task AssertCellTempAbove(PickleContext ctx, int x, int z, int bound) {
+    await AssertCellTemp(ctx, x, z, actual => actual > bound, $"should be above {bound}");
   }
 
   /// <summary>Asserts a cell's temperature is below a bound.</summary>
@@ -139,47 +140,50 @@ public class WorldConditionSteps {
   /// <param name="x">The cell's x coordinate.</param>
   /// <param name="z">The cell's z coordinate.</param>
   /// <param name="bound">The upper bound, exclusive.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("the temperature at \\({int}, {int}\\) is below {int}")]
-  public void AssertCellTempBelow(PickleContext ctx, int x, int z, int bound) {
-    AssertCellTemp(ctx, x, z, actual => actual < bound, $"should be below {bound}");
+  public async Task AssertCellTempBelow(PickleContext ctx, int x, int z, int bound) {
+    await AssertCellTemp(ctx, x, z, actual => actual < bound, $"should be below {bound}");
   }
 
   /// <summary>Asserts the map's outdoor temperature is above a bound.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="bound">The lower bound, exclusive.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("the outdoor temperature is above {int}")]
-  public void AssertOutdoorAbove(PickleContext ctx, int bound) {
-    AssertOutdoorTemp(ctx, actual => actual > bound, $"should be above {bound}");
+  public async Task AssertOutdoorAbove(PickleContext ctx, int bound) {
+    await AssertOutdoorTemp(ctx, actual => actual > bound, $"should be above {bound}");
   }
 
   /// <summary>Asserts the map's outdoor temperature is below a bound.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="bound">The upper bound, exclusive.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("the outdoor temperature is below {int}")]
-  public void AssertOutdoorBelow(PickleContext ctx, int bound) {
-    AssertOutdoorTemp(ctx, actual => actual < bound, $"should be below {bound}");
+  public async Task AssertOutdoorBelow(PickleContext ctx, int bound) {
+    await AssertOutdoorTemp(ctx, actual => actual < bound, $"should be below {bound}");
   }
 
-  private static void AssertCellTemp(PickleContext ctx, int x, int z, Func<float, bool> holds, string wanted) {
+  private static async Task AssertCellTemp(
+      PickleContext ctx, int x, int z, Func<float, bool> holds, string wanted) {
     Map map = MapLookup.RequireMap(ctx);
     IntVec3 cell = new IntVec3(x, 0, z);
     MapLookup.RequireInBounds(ctx, map, cell);
 
-    float actual = GenTemperature.GetTemperatureForCell(cell, map);
-    ctx.Assert(
-        holds(actual),
-        $"the temperature at ({x}, {z}) {wanted}; it is {actual:F1}C. " +
-        $"outdoors is {map.mapTemperature.OutdoorTemp:F1}C, roofed={cell.Roofed(map)}");
+    await ctx.AssertEventually(
+        () => holds(GenTemperature.GetTemperatureForCell(cell, map)),
+        () => $"the temperature at ({x}, {z}) {wanted}; " +
+            $"it is {GenTemperature.GetTemperatureForCell(cell, map):F1}C. " +
+            $"outdoors is {map.mapTemperature.OutdoorTemp:F1}C, roofed={cell.Roofed(map)}");
   }
 
-  private static void AssertOutdoorTemp(PickleContext ctx, Func<float, bool> holds, string wanted) {
+  private static async Task AssertOutdoorTemp(PickleContext ctx, Func<float, bool> holds, string wanted) {
     Map map = MapLookup.RequireMap(ctx);
-    float actual = map.mapTemperature.OutdoorTemp;
 
-    ctx.Assert(
-        holds(actual),
-        $"the outdoor temperature {wanted}; it is {actual:F1}C. " +
-        $"the seasonal average is {map.mapTemperature.SeasonalTemp:F1}C. {DescribeDate(map)}");
+    await ctx.AssertEventually(
+        () => holds(map.mapTemperature.OutdoorTemp),
+        () => $"the outdoor temperature {wanted}; it is {map.mapTemperature.OutdoorTemp:F1}C. " +
+            $"the seasonal average is {map.mapTemperature.SeasonalTemp:F1}C. {DescribeDate(map)}");
   }
 
   private static Season RequireSeason(string seasonName) {

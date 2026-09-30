@@ -42,12 +42,14 @@ public class MapSteps {
   /// <param name="ctx">The running step's context.</param>
   /// <param name="expected">The stack count the map should hold.</param>
   /// <param name="defName">The thing def to count.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{int} {string} exist")]
-  public void AssertThingCount(PickleContext ctx, int expected, string defName) {
+  public async Task AssertThingCount(PickleContext ctx, int expected, string defName) {
     ThingDef def = DefLookup.Require<ThingDef>(defName);
     Map map = MapLookup.RequireMap(ctx);
-    int actual = map.listerThings.ThingsOfDef(def).Sum(t => t.stackCount);
-    ctx.Assert(actual == expected, $"expected {expected} {defName}; found {actual}");
+    await ctx.AssertEventually(
+        () => map.listerThings.ThingsOfDef(def).Sum(t => t.stackCount) == expected,
+        () => $"expected {expected} {defName}; found {map.listerThings.ThingsOfDef(def).Sum(t => t.stackCount)}");
   }
 
   /// <summary>Checks a cell holds a thing of the def. The failure lists everything the cell really holds.</summary>
@@ -55,16 +57,17 @@ public class MapSteps {
   /// <param name="defName">The thing def to look for.</param>
   /// <param name="x">The cell's x coordinate.</param>
   /// <param name="z">The cell's z coordinate.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("a {string} is at \\({int}, {int}\\)")]
-  public void AssertThingAtCell(PickleContext ctx, string defName, int x, int z) {
+  public async Task AssertThingAtCell(PickleContext ctx, string defName, int x, int z) {
     ThingDef def = DefLookup.Require<ThingDef>(defName);
     Map map = MapLookup.RequireMap(ctx);
     IntVec3 cell = new IntVec3(x, 0, z);
     MapLookup.RequireInBounds(ctx, map, cell);
 
-    ctx.Assert(
-        cell.GetThingList(map).Any(t => t.def == def),
-        $"expected a {defName} at ({x}, {z}); cell holds: {MapLookup.DescribeCell(map, cell)}");
+    await ctx.AssertEventually(
+        () => cell.GetThingList(map).Any(t => t.def == def),
+        () => $"expected a {defName} at ({x}, {z}); cell holds: {MapLookup.DescribeCell(map, cell)}");
   }
 
   /// <summary>Checks a cell holds nothing of the def.</summary>
@@ -130,14 +133,17 @@ public class MapSteps {
   /// <param name="ctx">The running step's context.</param>
   /// <param name="expected">The stack count the stockpile should hold.</param>
   /// <param name="defName">The thing def to count.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("the stockpile holds {int} {string}")]
-  public void AssertStockpileHolds(PickleContext ctx, int expected, string defName) {
+  public async Task AssertStockpileHolds(PickleContext ctx, int expected, string defName) {
     ThingDef def = DefLookup.Require<ThingDef>(defName);
     Map map = MapLookup.RequireMap(ctx);
     Zone_Stockpile? stockpile = map.zoneManager.AllZones.OfType<Zone_Stockpile>().FirstOrDefault();
     ctx.Require(stockpile != null, "the map has no stockpile zone");
 
-    int actual = stockpile!.AllContainedThings.Where(t => t.def == def).Sum(t => t.stackCount);
-    ctx.Assert(actual == expected, $"stockpile should hold {expected} {defName}; holds {actual}");
+    await ctx.AssertEventually(
+        () => stockpile!.AllContainedThings.Where(t => t.def == def).Sum(t => t.stackCount) == expected,
+        () => $"stockpile should hold {expected} {defName}; holds "
+            + $"{stockpile!.AllContainedThings.Where(t => t.def == def).Sum(t => t.stackCount)}");
   }
 }

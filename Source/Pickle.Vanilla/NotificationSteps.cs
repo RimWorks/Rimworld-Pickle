@@ -34,11 +34,12 @@ public class NotificationSteps {
   /// <summary>Asserts no active alert's label contains a substring.</summary>
   /// <param name="ctx">The running scenario's context.</param>
   /// <param name="labelSubstring">Text no active alert's label should contain.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("alert {string} is not active")]
-  public void AssertAlertInactive(PickleContext ctx, string labelSubstring) {
-    ctx.Assert(
-        !ActiveAlerts().Any(a => Matches(a, labelSubstring)),
-        $"alert '{labelSubstring}' should not be active; active alerts: {DescribeAlerts()}");
+  public async Task AssertAlertInactive(PickleContext ctx, string labelSubstring) {
+    await ctx.AssertEventually(
+        () => !ActiveAlerts().Any(a => Matches(a, labelSubstring)),
+        () => $"alert '{labelSubstring}' should not be active; active alerts: {DescribeAlerts()}");
   }
 
   /// <summary>Waits for a live toast message containing a substring to appear.</summary>

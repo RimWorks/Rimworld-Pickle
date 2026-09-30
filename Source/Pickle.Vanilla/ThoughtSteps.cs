@@ -32,15 +32,16 @@ public class ThoughtSteps {
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="nickname">The pawn's nickname.</param>
   /// <param name="thoughtDefName">The thought def that should be absent.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} has no thought {string}")]
-  public void AssertNoThought(PickleContext ctx, string nickname, string thoughtDefName) {
+  public async Task AssertNoThought(PickleContext ctx, string nickname, string thoughtDefName) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     ThoughtDef def = DefLookup.Require<ThoughtDef>(thoughtDefName);
     RequireThoughts(ctx, pawn, nickname);
 
-    ctx.Assert(
-        !HasThought(pawn, def),
-        $"pawn '{nickname}' should not have thought '{thoughtDefName}'; {DescribeThoughts(pawn)}");
+    await ctx.AssertEventually(
+        () => !HasThought(pawn, def),
+        () => $"pawn '{nickname}' should not have thought '{thoughtDefName}'; {DescribeThoughts(pawn)}");
   }
 
   /// <summary>Asserts the summed mood offset of a mood thought matches an expected value, within tolerance.</summary>
@@ -48,8 +49,9 @@ public class ThoughtSteps {
   /// <param name="nickname">The pawn's nickname.</param>
   /// <param name="thoughtDefName">The mood thought def to read.</param>
   /// <param name="expected">The expected mood offset.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} thought {string} mood offset is {float}")]
-  public void AssertMoodOffset(PickleContext ctx, string nickname, string thoughtDefName, float expected) {
+  public async Task AssertMoodOffset(PickleContext ctx, string nickname, string thoughtDefName, float expected) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     ThoughtDef def = DefLookup.Require<ThoughtDef>(thoughtDefName);
     RequireThoughts(ctx, pawn, nickname);
@@ -60,11 +62,11 @@ public class ThoughtSteps {
         $"pawn '{nickname}' carries no mood thought '{thoughtDefName}'. a social thought moves " +
         $"opinion rather than mood, so read it with 'opinion of'. {DescribeThoughts(pawn)}");
 
-    float actual = found.Sum(t => t.MoodOffset());
-    ctx.Assert(
-        StatTolerance.IsNear(actual, expected),
-        $"pawn '{nickname}' thought '{thoughtDefName}' should offset mood by {expected} " +
-        $"within {StatTolerance.For(expected)}; actual {actual}. {DescribeThoughts(pawn)}");
+    await ctx.AssertEventually(
+        () => StatTolerance.IsNear(MoodThoughtsOf(pawn, def).Sum(t => t.MoodOffset()), expected),
+        () => $"pawn '{nickname}' thought '{thoughtDefName}' should offset mood by {expected} " +
+            $"within {StatTolerance.For(expected)}; " +
+            $"actual {MoodThoughtsOf(pawn, def).Sum(t => t.MoodOffset())}. {DescribeThoughts(pawn)}");
   }
 
   /// <summary>Gives a pawn a mood thought.</summary>
@@ -94,9 +96,10 @@ public class ThoughtSteps {
   /// <param name="nickname">The pawn whose opinion is read.</param>
   /// <param name="otherNickname">The pawn the opinion is of.</param>
   /// <param name="expected">The expected opinion value.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} opinion of {string} is {int}")]
-  public void AssertOpinion(PickleContext ctx, string nickname, string otherNickname, int expected) {
-    AssertOpinionThat(ctx, nickname, otherNickname, actual => actual == expected, $"should be {expected}");
+  public async Task AssertOpinion(PickleContext ctx, string nickname, string otherNickname, int expected) {
+    await AssertOpinionThat(ctx, nickname, otherNickname, actual => actual == expected, $"should be {expected}");
   }
 
   /// <summary>Records one pawn's current opinion of another, for a later "rose" comparison.</summary>
@@ -118,19 +121,18 @@ public class ThoughtSteps {
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="nickname">The pawn whose opinion is read.</param>
   /// <param name="otherNickname">The pawn the opinion is of.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} opinion of {string} rose")]
-  public void AssertOpinionRose(PickleContext ctx, string nickname, string otherNickname) {
+  public async Task AssertOpinionRose(PickleContext ctx, string nickname, string otherNickname) {
     RememberedOpinion before = RequireRemembered(ctx, nickname, otherNickname);
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     Pawn other = PawnLookup.RequireLiving(otherNickname);
 
-    int actual = pawn.relations!.OpinionOf(other);
-    bool rose = actual > before.Value;
-
-    ctx.Assert(
-        rose,
-        rose ? null : $"'{nickname}' opinion of '{otherNickname}' should have risen from " +
-            $"{before.Value}; actual {actual}. {pawn.relations.OpinionExplanation(other)}");
+    await ctx.AssertEventually(
+        () => pawn.relations!.OpinionOf(other) > before.Value,
+        () => $"'{nickname}' opinion of '{otherNickname}' should have risen from " +
+            $"{before.Value}; actual {pawn.relations!.OpinionOf(other)}. " +
+            $"{pawn.relations.OpinionExplanation(other)}");
   }
 
   /// <summary>Asserts one pawn's opinion of another is above a bound.</summary>
@@ -138,9 +140,10 @@ public class ThoughtSteps {
   /// <param name="nickname">The pawn whose opinion is read.</param>
   /// <param name="otherNickname">The pawn the opinion is of.</param>
   /// <param name="bound">The lower bound, exclusive.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} opinion of {string} is above {int}")]
-  public void AssertOpinionAbove(PickleContext ctx, string nickname, string otherNickname, int bound) {
-    AssertOpinionThat(ctx, nickname, otherNickname, actual => actual > bound, $"should be above {bound}");
+  public async Task AssertOpinionAbove(PickleContext ctx, string nickname, string otherNickname, int bound) {
+    await AssertOpinionThat(ctx, nickname, otherNickname, actual => actual > bound, $"should be above {bound}");
   }
 
   /// <summary>Asserts one pawn's opinion of another is below a bound.</summary>
@@ -148,9 +151,10 @@ public class ThoughtSteps {
   /// <param name="nickname">The pawn whose opinion is read.</param>
   /// <param name="otherNickname">The pawn the opinion is of.</param>
   /// <param name="bound">The upper bound, exclusive.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} opinion of {string} is below {int}")]
-  public void AssertOpinionBelow(PickleContext ctx, string nickname, string otherNickname, int bound) {
-    AssertOpinionThat(ctx, nickname, otherNickname, actual => actual < bound, $"should be below {bound}");
+  public async Task AssertOpinionBelow(PickleContext ctx, string nickname, string otherNickname, int bound) {
+    await AssertOpinionThat(ctx, nickname, otherNickname, actual => actual < bound, $"should be below {bound}");
   }
 
   /// <summary>Asserts a relation def holds between two pawns.</summary>
@@ -210,18 +214,18 @@ public class ThoughtSteps {
             $"drops a memory silently. {DescribeThoughts(pawn)}");
   }
 
-  private static void AssertOpinionThat(
+  private static async Task AssertOpinionThat(
       PickleContext ctx, string nickname, string otherNickname, Func<int, bool> holds, string wanted) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     Pawn other = PawnLookup.RequireLiving(otherNickname);
 
     ctx.Require(pawn.relations != null, $"pawn '{nickname}' has no relations tracker");
-    int actual = pawn.relations!.OpinionOf(other);
 
-    ctx.Assert(
-        holds(actual),
-        $"'{nickname}' opinion of '{otherNickname}' {wanted}; actual {actual}. " +
-        $"{pawn.relations.OpinionExplanation(other)}");
+    await ctx.AssertEventually(
+        () => holds(pawn.relations!.OpinionOf(other)),
+        () => $"'{nickname}' opinion of '{otherNickname}' {wanted}; " +
+            $"actual {pawn.relations!.OpinionOf(other)}. " +
+            $"{pawn.relations.OpinionExplanation(other)}");
   }
 
   private static void RequireThoughts(PickleContext ctx, Pawn pawn, string nickname) {

@@ -38,14 +38,15 @@ public class BillSteps {
   /// <param name="ctx">The running scenario's context.</param>
   /// <param name="benchDefName">The workbench def to check.</param>
   /// <param name="expected">The bill count expected.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("the {string} has {int} bills")]
-  public void AssertBillCount(PickleContext ctx, string benchDefName, int expected) {
+  public async Task AssertBillCount(PickleContext ctx, string benchDefName, int expected) {
     IBillGiver bench = RequireBench(ctx, benchDefName);
-    int actual = bench.BillStack?.Count ?? 0;
 
-    ctx.Assert(
-        actual == expected,
-        $"the {benchDefName} should have {expected} bills; has {actual}. {DescribeBills(bench)}");
+    await ctx.AssertEventually(
+        () => (bench.BillStack?.Count ?? 0) == expected,
+        () => $"the {benchDefName} should have {expected} bills; " +
+            $"has {bench.BillStack?.Count ?? 0}. {DescribeBills(bench)}");
   }
 
   /// <summary>Sets a pawn's priority for a work type, turning manual priorities on first since the game

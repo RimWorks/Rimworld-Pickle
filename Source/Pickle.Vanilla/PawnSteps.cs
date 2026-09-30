@@ -29,62 +29,67 @@ public class PawnSteps {
   /// <summary>Asserts a pawn is not downed and needs no tending.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="nickname">The pawn's nickname.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} is healthy")]
-  public void AssertHealthy(PickleContext ctx, string nickname) {
+  public async Task AssertHealthy(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
-    ctx.Assert(
-        !pawn.Downed && !pawn.health.HasHediffsNeedingTend(),
-        $"pawn '{nickname}' should be healthy; {DescribeHealth(pawn)}");
+    await ctx.AssertEventually(
+        () => !pawn.Downed && !pawn.health.HasHediffsNeedingTend(),
+        () => $"pawn '{nickname}' should be healthy; {DescribeHealth(pawn)}");
   }
 
   /// <summary>Asserts a pawn carries a hediff with the given def.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="nickname">The pawn's nickname.</param>
   /// <param name="hediffDefName">The hediff def to look for.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} has hediff {string}")]
-  public void AssertHediff(PickleContext ctx, string nickname, string hediffDefName) {
+  public async Task AssertHediff(PickleContext ctx, string nickname, string hediffDefName) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     HediffDef def = DefLookup.Require<HediffDef>(hediffDefName);
-    ctx.Assert(
-        pawn.health.hediffSet.HasHediff(def),
-        $"pawn '{nickname}' should have hediff '{hediffDefName}'; {DescribeHealth(pawn)}");
+    await ctx.AssertEventually(
+        () => pawn.health.hediffSet.HasHediff(def),
+        () => $"pawn '{nickname}' should have hediff '{hediffDefName}'; {DescribeHealth(pawn)}");
   }
 
   /// <summary>Asserts a pawn's overall health is above a percentage.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="nickname">The pawn's nickname.</param>
   /// <param name="percent">The lower bound, exclusive, as a whole percent.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} health is above {int} percent")]
-  public void AssertHealthAbove(PickleContext ctx, string nickname, int percent) {
+  public async Task AssertHealthAbove(PickleContext ctx, string nickname, int percent) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
-    float actual = pawn.health.summaryHealth.SummaryHealthPercent * 100f;
-    ctx.Assert(
-        actual > percent,
-        $"pawn '{nickname}' health should be above {percent}%; actual {actual:F0}%");
+    await ctx.AssertEventually(
+        () => pawn.health.summaryHealth.SummaryHealthPercent * 100f > percent,
+        () => $"pawn '{nickname}' health should be above {percent}%; "
+            + $"actual {pawn.health.summaryHealth.SummaryHealthPercent * 100f:F0}%");
   }
 
   /// <summary>Asserts a pawn carries no hediffs at all.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="nickname">The pawn's nickname.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} has no hediffs")]
-  public void AssertNoHediffs(PickleContext ctx, string nickname) {
+  public async Task AssertNoHediffs(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
-    ctx.Assert(
-        pawn.health.hediffSet.hediffs.Count == 0,
-        $"pawn '{nickname}' should carry no hediffs; {DescribeHealth(pawn)}");
+    await ctx.AssertEventually(
+        () => pawn.health.hediffSet.hediffs.Count == 0,
+        () => $"pawn '{nickname}' should carry no hediffs; {DescribeHealth(pawn)}");
   }
 
   /// <summary>Asserts a pawn does not carry a hediff with the given def.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="nickname">The pawn's nickname.</param>
   /// <param name="hediffDefName">The hediff def that should be absent.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} has no hediff {string}")]
-  public void AssertNoHediff(PickleContext ctx, string nickname, string hediffDefName) {
+  public async Task AssertNoHediff(PickleContext ctx, string nickname, string hediffDefName) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     HediffDef def = DefLookup.Require<HediffDef>(hediffDefName);
-    ctx.Assert(
-        !pawn.health.hediffSet.HasHediff(def),
-        $"pawn '{nickname}' should not have hediff '{hediffDefName}'; {DescribeHealth(pawn)}");
+    await ctx.AssertEventually(
+        () => !pawn.health.hediffSet.HasHediff(def),
+        () => $"pawn '{nickname}' should not have hediff '{hediffDefName}'; {DescribeHealth(pawn)}");
   }
 
   /// <summary>Removes every hediff from a pawn, curing it outright.</summary>
@@ -237,14 +242,15 @@ public class PawnSteps {
   /// <param name="nickname">The pawn's nickname.</param>
   /// <param name="needDefName">The need def to read.</param>
   /// <param name="percent">The upper bound, exclusive, as a whole percent.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} needs {string} is below {int} percent")]
-  public void AssertNeedBelow(PickleContext ctx, string nickname, string needDefName, int percent) {
+  public async Task AssertNeedBelow(PickleContext ctx, string nickname, string needDefName, int percent) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     Need need = RequireNeed(pawn, needDefName);
-    float actual = need.CurLevelPercentage * 100f;
-    ctx.Assert(
-        actual < percent,
-        $"pawn '{nickname}' need '{needDefName}' should be below {percent}%; actual {actual:F0}%");
+    await ctx.AssertEventually(
+        () => need.CurLevelPercentage * 100f < percent,
+        () => $"pawn '{nickname}' need '{needDefName}' should be below {percent}%; "
+            + $"actual {need.CurLevelPercentage * 100f:F0}%");
   }
 
   /// <summary>Sets a pawn's need to a percentage.</summary>
@@ -322,25 +328,27 @@ public class PawnSteps {
   /// <param name="nickname">The pawn's nickname.</param>
   /// <param name="count">The expected stack count.</param>
   /// <param name="defName">The thing def to count.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} is carrying {int} {string}")]
-  public void AssertCarrying(PickleContext ctx, string nickname, int count, string defName) {
+  public async Task AssertCarrying(PickleContext ctx, string nickname, int count, string defName) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     ThingDef def = DefLookup.Require<ThingDef>(defName);
-    int actual = CountHeld(pawn, def);
-    ctx.Assert(
-        actual == count,
-        $"pawn '{nickname}' should carry {count} {defName}; actual {actual}. holding: {DescribeHeld(pawn)}");
+    await ctx.AssertEventually(
+        () => CountHeld(pawn, def) == count,
+        () => $"pawn '{nickname}' should carry {count} {defName}; "
+            + $"actual {CountHeld(pawn, def)}. holding: {DescribeHeld(pawn)}");
   }
 
   /// <summary>Asserts a pawn carries nothing, either in hand or in its inventory.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="nickname">The pawn's nickname.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} is carrying nothing")]
-  public void AssertCarryingNothing(PickleContext ctx, string nickname) {
+  public async Task AssertCarryingNothing(PickleContext ctx, string nickname) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
-    ctx.Assert(
-        pawn.carryTracker?.CarriedThing == null && (pawn.inventory?.innerContainer.Count ?? 0) == 0,
-        $"pawn '{nickname}' should carry nothing; holding: {DescribeHeld(pawn)}");
+    await ctx.AssertEventually(
+        () => pawn.carryTracker?.CarriedThing == null && (pawn.inventory?.innerContainer.Count ?? 0) == 0,
+        () => $"pawn '{nickname}' should carry nothing; holding: {DescribeHeld(pawn)}");
   }
 
   private static Need RequireNeed(Pawn pawn, string needDefName) {

@@ -125,25 +125,27 @@ public class SimSteps {
   /// <summary>Asserts a pawn is dead. Looks the pawn up among the living or the dead, since a living-only lookup would miss it.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="nickname">The pawn's nickname.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} is dead")]
-  public void AssertDead(PickleContext ctx, string nickname) {
+  public async Task AssertDead(PickleContext ctx, string nickname) {
     Map map = RequireMap(ctx);
     Pawn pawn = PawnLookup.RequireLivingOrDead(nickname, map);
-    ctx.Assert(pawn.Dead, $"pawn '{nickname}' should be dead; actual state: {PawnState.Describe(pawn)}");
+    await ctx.AssertEventually(
+        () => pawn.Dead,
+        () => $"pawn '{nickname}' should be dead; actual state: {PawnState.Describe(pawn)}");
   }
 
   /// <summary>Asserts a letter whose label contains a substring has arrived.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="labelSubstring">The substring the letter's label should contain.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("a letter {string} has arrived")]
-  public void AssertLetterArrived(PickleContext ctx, string labelSubstring) {
-    List<Letter> letters = Find.LetterStack.LettersListForReading;
-    bool found = letters.Any(letter =>
-        letter.Label.ToString().IndexOf(labelSubstring, StringComparison.OrdinalIgnoreCase) >= 0);
-
-    ctx.Assert(
-        found,
-        $"no letter containing '{labelSubstring}' has arrived; current letters: {DescribeLetters(letters)}");
+  public async Task AssertLetterArrived(PickleContext ctx, string labelSubstring) {
+    await ctx.AssertEventually(
+        () => Find.LetterStack.LettersListForReading.Any(letter =>
+            letter.Label.ToString().IndexOf(labelSubstring, StringComparison.OrdinalIgnoreCase) >= 0),
+        () => $"no letter containing '{labelSubstring}' has arrived; "
+            + $"current letters: {DescribeLetters(Find.LetterStack.LettersListForReading)}");
   }
 
   private static void ExecuteIncident(PickleContext ctx, string defName, int? points) {

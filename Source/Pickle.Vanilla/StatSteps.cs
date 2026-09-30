@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using RimWorld;
 using Verse;
 
@@ -16,10 +17,11 @@ public class StatSteps {
   /// <param name="nickname">The pawn to check.</param>
   /// <param name="statDefName">The stat to read.</param>
   /// <param name="expected">The value expected.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} stat {string} is {float}")]
-  public void AssertPawnStat(PickleContext ctx, string nickname, string statDefName, float expected) {
+  public async Task AssertPawnStat(PickleContext ctx, string nickname, string statDefName, float expected) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
-    AssertNear(ctx, pawn, $"pawn '{nickname}'", statDefName, expected);
+    await AssertNear(ctx, pawn, $"pawn '{nickname}'", statDefName, expected);
   }
 
   /// <summary>Asserts a pawn's stat value is above a threshold.</summary>
@@ -27,10 +29,12 @@ public class StatSteps {
   /// <param name="nickname">The pawn to check.</param>
   /// <param name="statDefName">The stat to read.</param>
   /// <param name="threshold">The value the stat must exceed.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} stat {string} is above {float}")]
-  public void AssertPawnStatAbove(PickleContext ctx, string nickname, string statDefName, float threshold) {
+  public async Task AssertPawnStatAbove(
+      PickleContext ctx, string nickname, string statDefName, float threshold) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
-    AssertCompared(ctx, pawn, $"pawn '{nickname}'", statDefName, actual => actual > threshold, $"above {threshold}");
+    await AssertCompared(ctx, pawn, $"pawn '{nickname}'", statDefName, actual => actual > threshold, $"above {threshold}");
   }
 
   /// <summary>Asserts a pawn's stat value is below a threshold.</summary>
@@ -38,10 +42,12 @@ public class StatSteps {
   /// <param name="nickname">The pawn to check.</param>
   /// <param name="statDefName">The stat to read.</param>
   /// <param name="threshold">The value the stat must fall under.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("{string} stat {string} is below {float}")]
-  public void AssertPawnStatBelow(PickleContext ctx, string nickname, string statDefName, float threshold) {
+  public async Task AssertPawnStatBelow(
+      PickleContext ctx, string nickname, string statDefName, float threshold) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
-    AssertCompared(ctx, pawn, $"pawn '{nickname}'", statDefName, actual => actual < threshold, $"below {threshold}");
+    await AssertCompared(ctx, pawn, $"pawn '{nickname}'", statDefName, actual => actual < threshold, $"below {threshold}");
   }
 
   /// <summary>Asserts a stat value on a thing at a cell is near an expected number, within <c>StatTolerance</c>.</summary>
@@ -51,32 +57,35 @@ public class StatSteps {
   /// <param name="z">The cell's z coordinate.</param>
   /// <param name="statDefName">The stat to read.</param>
   /// <param name="expected">The value expected.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("the {string} at \\({int}, {int}\\) stat {string} is {float}")]
-  public void AssertThingStat(PickleContext ctx, string defName, int x, int z, string statDefName, float expected) {
+  public async Task AssertThingStat(
+      PickleContext ctx, string defName, int x, int z, string statDefName, float expected) {
     ThingDef def = DefLookup.Require<ThingDef>(defName);
     Map map = MapLookup.RequireMap(ctx);
     Thing thing = MapLookup.RequireThingAt(ctx, map, new IntVec3(x, 0, z), def);
 
-    AssertNear(ctx, thing, $"the {defName} at ({x}, {z})", statDefName, expected);
+    await AssertNear(ctx, thing, $"the {defName} at ({x}, {z})", statDefName, expected);
   }
 
-  private static void AssertNear(
+  private static async Task AssertNear(
       PickleContext ctx, Thing thing, string subject, string statDefName, float expected) {
     StatDef stat = DefLookup.Require<StatDef>(statDefName);
-    float actual = thing.GetStatValue(stat);
     float tolerance = StatTolerance.For(expected);
-    bool passed = StatTolerance.IsNear(actual, expected);
 
-    ctx.Assert(passed, passed ? null : Describe(ctx, thing, subject, stat, actual, $"{expected} within {tolerance:G3}"));
+    await ctx.AssertEventually(
+        () => StatTolerance.IsNear(thing.GetStatValue(stat), expected),
+        () => Describe(
+            ctx, thing, subject, stat, thing.GetStatValue(stat), $"{expected} within {tolerance:G3}"));
   }
 
-  private static void AssertCompared(
+  private static async Task AssertCompared(
       PickleContext ctx, Thing thing, string subject, string statDefName, Func<float, bool> test, string expectation) {
     StatDef stat = DefLookup.Require<StatDef>(statDefName);
-    float actual = thing.GetStatValue(stat);
-    bool passed = test(actual);
 
-    ctx.Assert(passed, passed ? null : Describe(ctx, thing, subject, stat, actual, expectation));
+    await ctx.AssertEventually(
+        () => test(thing.GetStatValue(stat)),
+        () => Describe(ctx, thing, subject, stat, thing.GetStatValue(stat), expectation));
   }
 
   private static string Describe(

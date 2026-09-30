@@ -172,12 +172,12 @@ public class UiSteps {
   /// <summary>Asserts at least one warning matching a substring was logged.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="substring">The substring to look for, case insensitive.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
   [Then("a warning matching {string} was logged")]
-  public void AssertWarningLogged(PickleContext ctx, string substring) {
-    List<string> matches = WarningsMatching(substring);
-    ctx.Assert(
-        matches.Count > 0,
-        matches.Count > 0 ? null : $"expected a warning matching '{substring}'; logged: {DescribeWarnings()}");
+  public async Task AssertWarningLogged(PickleContext ctx, string substring) {
+    await ctx.AssertEventually(
+        () => WarningsMatching(substring).Count > 0,
+        () => $"expected a warning matching '{substring}'; logged: {DescribeWarnings()}");
   }
 
   /// <summary>Asserts no warning matching a substring was logged. Vanilla warns constantly,
