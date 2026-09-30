@@ -106,7 +106,6 @@ builds without them, and the dashboard serves a placeholder.
 | --- | --- |
 | [Quickstarts](https://github.com/RimWorks/Rimworld-Quickstarts) | Boot straight into a configured colony from the dev quicktest menu, and run it as a CI smoke test |
 | [RimLogging](https://github.com/RimWorks/rimworld-logging-framework) | Structured logging, an in-game log viewer, and one-click bug report sharing |
-| [RimObs](https://github.com/RimWorks/rimworld-observability-collector) | Performance profiler and telemetry that finds which mod is eating your TPS |
 
 ## License
 
