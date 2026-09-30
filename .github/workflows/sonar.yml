@@ -47,7 +47,7 @@ jobs:
       contents: read
       # stage-game-refs pulls the image from ghcr
       packages: read
-    uses: RimWorks/mod-ci/.github/workflows/sonar.yml@v2
+    uses: RimWorks/mod-ci/.github/workflows/sonar.yml@v3
     with:
       game-image: ${{ fromJSON(needs.game-image.outputs.image-refs)['1.6'] }}
       solution: Pickle.slnx
