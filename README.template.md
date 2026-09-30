@@ -54,4 +54,3 @@ Source and documentation: https://github.com/RimWorks/Rimworld-Pickle
 
 - [Quickstarts](https://steamcommunity.com/sharedfiles/filedetails/?id=3793646067): boot straight into a configured colony from the dev quicktest menu.
 - [RimLogging](https://steamcommunity.com/sharedfiles/filedetails/?id=3733484696): structured log viewer and one-click bug report sharing.
-- [RimObs](https://steamcommunity.com/sharedfiles/filedetails/?id=3733585062): performance profiler that finds which mod is eating your TPS.
