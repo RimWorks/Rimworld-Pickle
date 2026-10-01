@@ -57,6 +57,22 @@ public class UiSteps {
     await ctx.Click($"btn:{label}");
   }
 
+  /// <summary>Clicks a button by the translation key its label comes from.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="key">The translation key of the button's label.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
+  // Buttons are captured under the label the game drew, which is the player's language. A
+  // scenario that spells the label out only runs on the language it was written in.
+  [When("I click button keyed {string}")]
+  public async Task ClickButtonKeyed(PickleContext ctx, string key) {
+    ctx.Require(
+        key.CanTranslate(),
+        $"no translation is loaded for '{key}', so no label can be built from it. "
+            + $"active language: {LanguageDatabase.activeLanguage?.FriendlyNameEnglish ?? Nothing}");
+
+    await ctx.Click($"btn:{key.Translate()}");
+  }
+
   /// <summary>Presses a key.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="key">The key to press.</param>
