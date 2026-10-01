@@ -73,7 +73,7 @@ public class UiSteps {
         $"no translation is loaded for '{key}', so no label can be built from it. "
             + $"active language: {LanguageDatabase.activeLanguage?.FriendlyNameEnglish ?? Nothing}");
 
-    await ctx.Click($"btn:{key.Translate()}");
+    await this.ClickButton(ctx, key.Translate());
   }
 
   /// <summary>Changes the interface scale the way the Options page does, for the scenario only.</summary>
@@ -237,14 +237,6 @@ public class UiSteps {
     WindowSuppression.End();
   }
 
-  /// <summary>Lifts window suppression at the end of every scenario.</summary>
-  // A scenario that dies between the two steps would otherwise leave the player's game unable
-  // to open anything at all, which is a far worse failure than the one being tested.
-  [AfterScenario]
-  public void ReleaseWindowSuppression() {
-    WindowSuppression.End();
-  }
-
   /// <summary>Asserts the inspect pane's label contains a substring.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="expectedSubstring">The substring the label should contain.</param>
@@ -269,10 +261,13 @@ public class UiSteps {
     List<InspectTabBase> tabs = RequireInspectTabs(ctx);
     InspectTabBase tab = RequireInspectTab(tabs, tabName);
 
+    bool openable = tab.IsVisible && !tab.Hidden;
     ctx.Require(
-        tab.IsVisible && !tab.Hidden,
-        $"inspect tab '{tabName}' is on the selection but hidden, so no player could open it. " +
-        $"available tabs: {DescribeInspectTabs(tabs)}");
+        openable,
+        openable
+            ? string.Empty
+            : $"inspect tab '{tabName}' is on the selection but hidden, so no player could open it. "
+                + $"available tabs: {DescribeInspectTabs(tabs)}");
 
     InspectPaneUtility.OpenTab(tab.GetType());
     await ctx.WaitFrames(2);
@@ -382,7 +377,7 @@ public class UiSteps {
 
   /// <summary>Asserts no warning attributed to a mod was logged.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
-  /// <param name="modName">The mod's display name, as RimLogging attributes it.</param>
+  /// <param name="modName">The mod's name or packageId, as every other mod step takes it.</param>
   [Then("no warnings from mod {string}")]
   public void AssertNoWarningsFromMod(PickleContext ctx, string modName) {
     ModContentPack? mod = ModLookup.Find(modName);
@@ -393,17 +388,16 @@ public class UiSteps {
     RequireWarningsNotDropped(ctx);
 
     // RimLogging attributes an entry to the mod's display name, while every neighbouring step
-    // takes a name OR a packageId. Comparing the argument straight against the attribution made
-    // a packageId pass the requirement above and then match nothing at all, so the step asserted
-    // nothing and reported green. Compare against the resolved mod instead: both forms work, and
-    // the one people reach for first - the packageId, which is what @requires: and
-    // `mod ... is loaded` take - stops being a silent no-op.
+    // takes a name or a packageId. So resolve first and compare against the resolved name.
     List<string> matches = [.. LogWatch.WarningsSinceArmed
         .Where(w => string.Equals(w.Mod, mod!.Name, StringComparison.OrdinalIgnoreCase))
         .Select(w => w.Message)];
     ctx.Assert(
         matches.Count == 0,
-        $"expected no warnings from mod '{modName}'; got {matches.Count}: {string.Join(" | ", matches)}");
+        matches.Count == 0
+            ? string.Empty
+            : $"expected no warnings attributed to '{mod!.Name}'; got {matches.Count}: "
+                + $"{string.Join(" | ", matches)}. warnings seen from: {DescribeObservedMods()}");
   }
 
   /// <summary>Captures the current frame to a file and attaches it to the report.</summary>
@@ -553,10 +547,14 @@ public class UiSteps {
     return (MainTabWindow_Inspect)MainButtonDefOf.Inspect.TabWindow;
   }
 
-  // CurTabs is null for anything but a single selected thing, and null again while
-  // screenshot mode is on, which hides the whole pane. Both read as "no tabs" here, so
-  // the requirement names what is selected rather than leaving an author with a null.
+  // The map guard runs first because CurTabs reaches Find.Selector through
+  // ((UIRoot_Play)UIRoot).mapUI, which is an InvalidCastException at the main menu rather
+  // than a null. Past that, CurTabs is null for anything but a single selected thing, and
+  // null again while screenshot mode hides the pane. Both read as "no tabs" here, so the
+  // requirement names what is selected rather than leaving an author with a null.
   private static List<InspectTabBase> RequireInspectTabs(PickleContext ctx) {
+    RequireMap(ctx);
+
     IEnumerable<InspectTabBase>? tabs = InspectPane().CurTabs;
     ctx.Require(
         tabs != null,

@@ -22,7 +22,6 @@ namespace RimWorks.Pickle.Runtime;
 public static class SuiteRunner {
   // A game runs one suite at a time - the runner assumes it everywhere else too - so the
   // "logged once" flag is per class rather than threaded through every call. Run() clears it.
-  private static bool snapshotFailureLogged;
 
   /// <summary>Builds the step environment, runs every matching scenario, and logs the outcome.</summary>
   /// <param name="filter">A tag or name filter applied before running, or <c>null</c> to run everything.</param>
@@ -46,7 +45,6 @@ public static class SuiteRunner {
 
       Dictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> published = new();
 
-      snapshotFailureLogged = false;
       void PublishSnapshot() => PublishSnapshotSafely(parsedFeatures, published, session);
       session.OnProgress = PublishSnapshot;
       PublishSnapshot();
@@ -158,15 +156,7 @@ public static class SuiteRunner {
       List<(DiscoveredSuite Suite, FeaturePlan Plan)> parsedFeatures,
       IReadOnlyDictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> published,
       RunSession session) {
-    try {
-      PickleHttpServer.Publish(RunnerSnapshot.Build(parsedFeatures, published, session, true));
-    } catch (Exception ex) {
-      if (snapshotFailureLogged) {
-        return;
-      }
-
-      snapshotFailureLogged = true;
-      Log.WarnTo(PickleLog.Channel, ex, "dashboard snapshot failed, the run continues without it");
-    }
+    PickleHttpServer.PublishSafely(
+        () => RunnerSnapshot.Build(parsedFeatures, published, session, true));
   }
 }

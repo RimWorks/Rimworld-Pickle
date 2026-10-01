@@ -139,7 +139,7 @@ public class GearSteps {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
     ThingDef def = DefLookup.Require<ThingDef>(defName);
 
-    pawn.Drawer.renderer.renderTree.EnsureInitialized(PawnRenderFlags.None);
+    pawn.Drawer.renderer.EnsureGraphicsInitialized();
     List<string> drawn = [.. DrawnNodes(pawn.Drawer.renderer.renderTree.rootNode)
         .Where(n => n.apparel?.def == def)
         .Select(n => n.PrimaryGraphic?.path ?? "(no graphic)")];

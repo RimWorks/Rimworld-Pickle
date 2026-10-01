@@ -122,17 +122,19 @@ public class ColonistSteps {
   /// <param name="bodyTypeDefName">The body type def to set, case insensitive, such as <c>Fat</c>.</param>
   [Given("{string} body type is {word}")]
   public void SetBodyType(PickleContext ctx, string nickname, string bodyTypeDefName) {
-    Pawn pawn = PawnLookup.RequireLiving(nickname);
-    ctx.Require(pawn.story != null, $"pawn '{nickname}' has no story, so it has no body type");
+    Pawn pawn = RequireStoried(ctx, nickname);
 
     List<BodyTypeDef> all = DefDatabase<BodyTypeDef>.AllDefsListForReading;
     BodyTypeDef? bodyType = all.FirstOrDefault(
         b => string.Equals(b.defName, bodyTypeDefName, StringComparison.OrdinalIgnoreCase));
     ctx.Require(
         bodyType != null,
-        $"no body type '{bodyTypeDefName}'; the body types are {string.Join(", ", all.Select(b => b.defName))}");
+        bodyType != null
+            ? string.Empty
+            : $"no body type '{bodyTypeDefName}'; the body types are "
+                + $"{string.Join(", ", all.Select(b => b.defName))}");
 
-    pawn.story!.bodyType = bodyType!;
+    pawn.story.bodyType = bodyType!;
     pawn.Drawer.renderer.SetAllGraphicsDirty();
   }
 
@@ -146,7 +148,7 @@ public class ColonistSteps {
   [Then("{string} body is drawn from {string}")]
   public void AssertBodyDrawnFrom(PickleContext ctx, string nickname, string texturePath) {
     Pawn pawn = PawnLookup.RequireLiving(nickname);
-    pawn.Drawer.renderer.renderTree.EnsureInitialized(PawnRenderFlags.None);
+    pawn.Drawer.renderer.EnsureGraphicsInitialized();
     string? drawn = pawn.Drawer.renderer.BodyGraphic?.path;
 
     ctx.Assert(

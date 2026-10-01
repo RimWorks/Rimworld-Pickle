@@ -16,6 +16,11 @@ public class LanguageSteps {
   /// "No active language! Cannot translate from key" while it lasts. A scenario asserting straight
   /// after the call reads the old language on a slow machine, so the wait belongs here rather than
   /// in every suite that needs it.
+  /// <para>
+  /// The reload empties <c>LanguageDatabase.languages</c> and builds fresh <c>LoadedLanguage</c>
+  /// instances, so the one picked here is gone by the time it finishes. The wait compares
+  /// <c>folderName</c> for that reason; comparing the instance never becomes true.
+  /// </para>
   /// </remarks>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="folderName">The language folder, by prefix: English, French, German.</param>
@@ -34,12 +39,13 @@ public class LanguageSteps {
         language != null,
         $"no language matching '{folderName}'. installed: {string.Join(", ", all.Select(l => l.folderName))}");
 
+    string target = language!.folderName;
     LanguageDatabase.SelectLanguage(language);
-    await ctx.WaitUntil(() => LanguageDatabase.activeLanguage == language, 35f);
-    ctx.Assert(
-        LanguageDatabase.activeLanguage == language,
-        $"the language did not become '{language!.folderName}' within 35s; it is " +
-        $"'{LanguageDatabase.activeLanguage?.folderName ?? "none at all"}'");
+    await ctx.AssertEventually(
+        () => LanguageDatabase.activeLanguage?.folderName == target,
+        () => $"the language did not become '{target}' within 35s; it is " +
+            $"'{LanguageDatabase.activeLanguage?.folderName ?? "none at all"}'",
+        35f);
   }
 
   /// <summary>Asserts which language is active.</summary>
