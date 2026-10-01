@@ -26,3 +26,12 @@ Feature: gear steps
     When I equip "Vanish" with "Gun_Autopistol"
     And I destroy the gear of "Vanish"
     Then "Vanish" is wielding nothing
+
+  Scenario: apparel is drawn from the texture of the body type the pawn was given
+    Given a colonist "Tailored" exists
+    And "Tailored" gender is female
+    And "Tailored" body type is Fat
+    When I dress "Tailored" in "Apparel_BasicShirt"
+    Then "Tailored" apparel "Apparel_BasicShirt" is drawn from "Things/Pawn/Humanlike/Apparel/ShirtBasic/ShirtBasic_Fat"
+    When "Tailored" body type is Hulk
+    Then "Tailored" apparel "Apparel_BasicShirt" is drawn from "Things/Pawn/Humanlike/Apparel/ShirtBasic/ShirtBasic_Hulk"
