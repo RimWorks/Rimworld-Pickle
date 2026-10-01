@@ -567,6 +567,9 @@ into a tile, so Pickle scans the grid for the closest one.
 | `I press key {string}` | Sends a key into the game's `OnGUI` pass, so `Event.current` sees it. Accepts `Escape`, `Return`, `Space`, `Tab`, `Delete`, `Backspace`, a letter, or a digit |
 | `I select {string}` | Selects a pawn or thing by name |
 | `I open the {string} tab` | Opens a main tab by def name or label |
+| `I open the research tab {string}` | Opens the research window and selects one of its tabs by def name |
+| `the research window is on the tab {string}` | Checks the selected tab, and that it would draw its projects |
+| `the research window lists the project {string}` | Checks a project is listed on the selected tab |
 | `I close all dialogs` | Closes every open window |
 | `the screen is clear` | Closes every window Pickle does not own and drops every one that opens afterwards, the scenario's own included, until the scenario ends. Setup for a scenario that clicks on the map, a gizmo or the main tab bar; lift it with `windows are allowed to open again` before a click whose effect is to open a window |
 | `windows are allowed to open again` | Lets the game open its own windows again, before the scenario ends |
@@ -598,6 +601,11 @@ by its label key, such as `TabGear`. The short form of either works too, such as
 `Gear`. All three are identifiers, so a scenario keeps working under a language mod.
 The label a player reads never matches. A name that fits two tabs fails and asks for
 the full type name.
+The research window draws its tabs as tab records, not as buttons, so `I click button` never
+finds one. `I open the research tab` runs the tab's own click action instead, and takes the
+`ResearchTabDef` name, so it works in any language. That is how a mod that adds a research
+tab checks its projects sit inside it. The two checks read what the window would draw, the
+selected tab and its listed projects, rather than the picture of it.
 
 Vanilla warns constantly, so there is no blanket `no warnings were logged`. Every warning
 step names a substring, and a warning never fails a scenario on its own the way an error
