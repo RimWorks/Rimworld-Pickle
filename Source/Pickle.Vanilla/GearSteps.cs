@@ -142,7 +142,7 @@ public class GearSteps {
     pawn.Drawer.renderer.EnsureGraphicsInitialized();
     List<string> drawn = [.. DrawnNodes(pawn.Drawer.renderer.renderTree.rootNode)
         .Where(n => n.apparel?.def == def)
-        .Select(n => n.PrimaryGraphic?.path ?? "(no graphic)")];
+        .Select(n => GameCompat.PrimaryGraphicOf(n)?.path ?? "(no graphic)")];
 
     ctx.Assert(
         drawn.Contains(texturePath),

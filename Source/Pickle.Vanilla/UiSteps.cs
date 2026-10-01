@@ -73,7 +73,7 @@ public class UiSteps {
         $"no translation is loaded for '{key}', so no label can be built from it. "
             + $"active language: {LanguageDatabase.activeLanguage?.FriendlyNameEnglish ?? Nothing}");
 
-    await this.ClickButton(ctx, key.Translate());
+    await ClickButton(ctx, key.Translate());
   }
 
   /// <summary>Changes the interface scale the way the Options page does, for the scenario only.</summary>

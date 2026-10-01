@@ -32,7 +32,7 @@ public class LanguageSteps {
   public async Task SetLanguage(PickleContext ctx, string folderName) {
     // Folder names carry the native name too - "French (Français)" - so an exact match on "French"
     // finds nothing. Exact first, so "Russian" cannot take "Russian (Русский)" by accident.
-    List<LoadedLanguage> all = LanguageDatabase.AllLoadedLanguages.ToList();
+    List<LoadedLanguage> all = [.. LanguageDatabase.AllLoadedLanguages];
     LoadedLanguage? language = all.FirstOrDefault(l => l.folderName == folderName)
         ?? all.FirstOrDefault(l => l.folderName.StartsWith(folderName + " (", StringComparison.Ordinal));
     ctx.Require(
