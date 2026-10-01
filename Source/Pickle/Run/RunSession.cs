@@ -493,6 +493,7 @@ public class RunSession {
       film?.Finish();
       PickleRunMode.Current = modeBeforeScenario;
       InteractionRequest.Clear();
+      WindowSuppression.End();
       LogWatch.Disarm();
       Watchdog.EndScenario();
     }

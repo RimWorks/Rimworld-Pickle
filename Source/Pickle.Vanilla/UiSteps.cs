@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using RimWorks.Pickle.Evidence;
+using RimWorks.Pickle.Runtime;
 using RimWorks.Pickle.UI;
 using RimWorld;
 using Verse;
@@ -13,6 +14,8 @@ namespace RimWorks.Pickle.Vanilla;
 [PickleSteps]
 public class UiSteps {
   private const string Nothing = "(none)";
+
+  private float? scaleBeforeScenario;
 
   /// <summary>Returns to the main menu, waiting out any running long event first.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
@@ -55,6 +58,68 @@ public class UiSteps {
   [When("I click button {string}")]
   public async Task ClickButton(PickleContext ctx, string label) {
     await ctx.Click($"btn:{label}");
+  }
+
+  /// <summary>Clicks a button by the translation key its label comes from.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="key">The translation key of the button's label.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
+  // Buttons are captured under the label the game drew, which is the player's language. A
+  // scenario that spells the label out only runs on the language it was written in.
+  [When("I click button keyed {string}")]
+  public async Task ClickButtonKeyed(PickleContext ctx, string key) {
+    ctx.Require(
+        key.CanTranslate(),
+        $"no translation is loaded for '{key}', so no label can be built from it. "
+            + $"active language: {LanguageDatabase.activeLanguage?.FriendlyNameEnglish ?? Nothing}");
+
+    await ClickButton(ctx, key.Translate());
+  }
+
+  /// <summary>Changes the interface scale the way the Options page does, for the scenario only.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="percent">The scale to set, in percent; 100 is unscaled.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
+  // Writing Prefs.UIScale is not enough, and a scenario that only writes it tests nothing. Widgets
+  // are laid out in UI.screenWidth/screenHeight, two cached fields that only Root.OnGUI recomputes,
+  // and a window already open keeps the rect it was given in the old space until something tells it
+  // the resolution moved. A tag recorded from such a rect points where nothing is drawn any more,
+  // and the click that follows misses for a reason that has nothing to do with the conversion under
+  // test. So: write it, drop the label widths measured at the old scale, let frames pass for the
+  // fields, lay the open windows out again as WindowStack.AdjustWindowsIfResolutionChanged does,
+  // and refuse to continue if the GUI space did not follow.
+  //
+  // Prefs.Save is never called and the hook below puts the value back, so a run leaves the player's
+  // scale as it found it.
+  [Given("the interface scale is {int} percent")]
+  public async Task InterfaceScaleIs(PickleContext ctx, int percent) {
+    scaleBeforeScenario ??= Prefs.UIScale;
+
+    Prefs.UIScale = percent / 100f;
+    GenUI.ClearLabelWidthCache();
+    await ctx.WaitFrames(2);
+
+    foreach (Window window in Find.WindowStack.Windows.ToList()) {
+      window.Notify_ResolutionChanged();
+    }
+
+    await ctx.WaitFrames(5);
+
+    int expected = UnityEngine.Mathf.RoundToInt(UnityEngine.Screen.height / Prefs.UIScale);
+    ctx.Require(
+        Verse.UI.screenHeight == expected,
+        $"the GUI space did not follow the scale: UI.screenHeight is {Verse.UI.screenHeight}, and "
+        + $"{UnityEngine.Screen.height} pixels at {Prefs.UIScale:0.##} make {expected}. Every rect "
+        + "measured now still belongs to the old layout");
+  }
+
+  /// <summary>Puts the interface scale back, so one scenario's scale cannot reach the next.</summary>
+  [AfterScenario]
+  public void RestoreInterfaceScale() {
+    if (scaleBeforeScenario is float previous) {
+      Prefs.UIScale = previous;
+      scaleBeforeScenario = null;
+    }
   }
 
   /// <summary>Presses a key.</summary>
@@ -148,6 +213,30 @@ public class UiSteps {
     }
   }
 
+  /// <summary>Closes every window the runner does not own and drops every one that opens afterwards, the scenario's own included, until the scenario ends.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
+  // Closing once is not enough on a real load order: a log viewer that tails errors, or a mod
+  // that reopens its notice, is back on the next frame and sits over the button a click step is
+  // aiming at. The miss then reads as "the window never opened", which blames the wrong mod.
+  [Given("the screen is clear")]
+  public async Task ScreenIsClear(PickleContext ctx) {
+    WindowSuppression.Begin();
+
+    foreach (Window window in Find.WindowStack.Windows.Where(w => !WindowSuppression.IsOwn(w)).ToList()) {
+      Find.WindowStack.TryRemove(window, doCloseSound: false);
+    }
+
+    await ctx.WaitFrames(2);
+  }
+
+  /// <summary>Lets the game open its own windows again, undoing <c>the screen is clear</c>.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  [When("windows are allowed to open again")]
+  public void AllowWindows(PickleContext ctx) {
+    WindowSuppression.End();
+  }
+
   /// <summary>Asserts the inspect pane's label contains a substring.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="expectedSubstring">The substring the label should contain.</param>
@@ -158,6 +247,50 @@ public class UiSteps {
     ctx.Assert(
         actualLabel.IndexOf(expectedSubstring, StringComparison.OrdinalIgnoreCase) >= 0,
         $"inspect pane should show '{expectedSubstring}'; actually showing: {actualLabel}");
+  }
+
+  /// <summary>Opens an inspect tab on the selected thing, naming it by type or label key.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="tabName">The tab's type name, its label key, or the short form of either.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
+  // Named by type or label key, never by the translated label a player reads, so a scenario
+  // written here still passes under a language mod. OpenTab switches the main tabs root to
+  // Inspect on its own and toggles only a closed tab, so reopening an open tab is a no-op.
+  [When("I open the {string} inspect tab")]
+  public async Task OpenInspectTab(PickleContext ctx, string tabName) {
+    List<InspectTabBase> tabs = RequireInspectTabs(ctx);
+    InspectTabBase tab = RequireInspectTab(tabs, tabName);
+
+    bool openable = tab.IsVisible && !tab.Hidden;
+    ctx.Require(
+        openable,
+        openable
+            ? string.Empty
+            : $"inspect tab '{tabName}' is on the selection but hidden, so no player could open it. "
+                + $"available tabs: {DescribeInspectTabs(tabs)}");
+
+    InspectPaneUtility.OpenTab(tab.GetType());
+    await ctx.WaitFrames(2);
+
+    ctx.Assert(
+        InspectPane().OpenTabType == tab.GetType(),
+        $"inspect tab '{tabName}' should be open; open tab: {DescribeOpenInspectTab()}");
+  }
+
+  /// <summary>Asserts the named inspect tab is the one currently open.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="tabName">The tab's type name, its label key, or the short form of either.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
+  // Waits the way 'window is open' does: a tab opened by a real click lands a frame or two
+  // after the click, and asserting straight away would race it.
+  [Then("the {string} inspect tab is open")]
+  public async Task AssertInspectTabOpen(PickleContext ctx, string tabName) {
+    List<InspectTabBase> tabs = RequireInspectTabs(ctx);
+    InspectTabBase tab = RequireInspectTab(tabs, tabName);
+
+    await ctx.AssertEventually(
+        () => InspectPane().OpenTabType == tab.GetType(),
+        () => $"inspect tab '{tabName}' should be open; open tab: {DescribeOpenInspectTab()}");
   }
 
   /// <summary>Asserts no error has been logged since <see cref="LogWatch"/> was armed.</summary>
@@ -205,23 +338,66 @@ public class UiSteps {
         $"expected {expectedCount} warning(s) matching '{substring}'; got {matches.Count}: {string.Join(" | ", matches)}");
   }
 
+  /// <summary>Logs a warning from this assembly, so a scenario can assert on attribution.</summary>
+  /// <remarks>
+  /// Attribution cannot be asserted against a warning nobody controls: in a staged set the only
+  /// mods that warn at all are the framework ones, and a third-party warning depends on that
+  /// mod's own behaviour and timing. This produces one on demand, inside the scenario, carrying
+  /// this mod's identity - which is what the assertions around it need in order to mean anything.
+  /// </remarks>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  [When("Pickle logs a warning for its own tests")]
+  public void LogTestWarning(PickleContext ctx) {
+    Log.Warning("pickle-attribution-canary");
+  }
+
+  /// <summary>Asserts at least one warning attributed to a mod was logged.</summary>
+  /// <remarks>
+  /// The counterpart of <c>no warnings from mod</c>, and the only way a scenario can prove that
+  /// attribution is looked at rather than merely not contradicted: a check that never matches
+  /// passes the negative form for the wrong reason, and nothing in a report shows the difference.
+  /// </remarks>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
+  /// <param name="modName">The mod's name or packageId, as every other mod step takes it.</param>
+  [Then("a warning from mod {string} was logged")]
+  public void AssertWarningFromMod(PickleContext ctx, string modName) {
+    ModContentPack? mod = ModLookup.Find(modName);
+    ctx.Require(
+        mod != null,
+        $"mod '{modName}' is not loaded. loaded mods: {ModLookup.DescribeLoadOrder()}; " +
+        $"warnings seen from: {DescribeObservedMods()}");
+
+    List<string> matches = [.. LogWatch.WarningsSinceArmed
+        .Where(w => string.Equals(w.Mod, mod!.Name, StringComparison.OrdinalIgnoreCase))
+        .Select(w => w.Message)];
+    ctx.Assert(
+        matches.Count > 0,
+        $"expected a warning from mod '{mod!.Name}'; warnings seen from: {DescribeObservedMods()}");
+  }
+
   /// <summary>Asserts no warning attributed to a mod was logged.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
-  /// <param name="modName">The mod's display name, as RimLogging attributes it.</param>
+  /// <param name="modName">The mod's name or packageId, as every other mod step takes it.</param>
   [Then("no warnings from mod {string}")]
   public void AssertNoWarningsFromMod(PickleContext ctx, string modName) {
+    ModContentPack? mod = ModLookup.Find(modName);
     ctx.Require(
-        ModLookup.IsLoaded(modName),
+        mod != null,
         $"mod '{modName}' is not loaded. loaded mods: {ModLookup.DescribeLoadOrder()}; " +
         $"warnings seen from: {DescribeObservedMods()}");
     RequireWarningsNotDropped(ctx);
 
+    // RimLogging attributes an entry to the mod's display name, while every neighbouring step
+    // takes a name or a packageId. So resolve first and compare against the resolved name.
     List<string> matches = [.. LogWatch.WarningsSinceArmed
-        .Where(w => string.Equals(w.Mod, modName, StringComparison.OrdinalIgnoreCase))
+        .Where(w => string.Equals(w.Mod, mod!.Name, StringComparison.OrdinalIgnoreCase))
         .Select(w => w.Message)];
     ctx.Assert(
         matches.Count == 0,
-        $"expected no warnings from mod '{modName}'; got {matches.Count}: {string.Join(" | ", matches)}");
+        matches.Count == 0
+            ? string.Empty
+            : $"expected no warnings attributed to '{mod!.Name}'; got {matches.Count}: "
+                + $"{string.Join(" | ", matches)}. warnings seen from: {DescribeObservedMods()}");
   }
 
   /// <summary>Captures the current frame to a file and attaches it to the report.</summary>
@@ -363,6 +539,94 @@ public class UiSteps {
         .Select(c => c.LabelCap)
         .Where(l => !string.IsNullOrEmpty(l))
         .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)];
+
+    return labels.Count == 0 ? Nothing : string.Join(", ", labels);
+  }
+
+  private static MainTabWindow_Inspect InspectPane() {
+    return (MainTabWindow_Inspect)MainButtonDefOf.Inspect.TabWindow;
+  }
+
+  // The map guard runs first because CurTabs reaches Find.Selector through
+  // ((UIRoot_Play)UIRoot).mapUI, which is an InvalidCastException at the main menu rather
+  // than a null. Past that, CurTabs is null for anything but a single selected thing, and
+  // null again while screenshot mode hides the pane. Both read as "no tabs" here, so the
+  // requirement names what is selected rather than leaving an author with a null.
+  private static List<InspectTabBase> RequireInspectTabs(PickleContext ctx) {
+    RequireMap(ctx);
+
+    IEnumerable<InspectTabBase>? tabs = InspectPane().CurTabs;
+    ctx.Require(
+        tabs != null,
+        "no inspect tabs are available; the pane needs exactly one thing selected. " +
+        $"selected: {DescribeSelection()}");
+
+    List<InspectTabBase> list = [.. tabs!];
+    ctx.Require(list.Count > 0, $"'{DescribeSelection()}' has no inspect tabs at all");
+
+    return list;
+  }
+
+  // Three passes, widening only when the narrower one finds nothing: the exact type name,
+  // then the exact label key, then the short form of either. A tie inside one pass is an
+  // author's ambiguity, not a pick Pickle should make for them.
+  private static InspectTabBase RequireInspectTab(List<InspectTabBase> tabs, string name) {
+    foreach (Func<InspectTabBase, bool> match in InspectTabMatchers(name)) {
+      List<InspectTabBase> hits = [.. tabs.Where(match)];
+
+      if (hits.Count == 1) {
+        return hits[0];
+      }
+
+      if (hits.Count > 1) {
+        throw new InvalidOperationException(
+            $"'{name}' matches {hits.Count} inspect tabs: {DescribeInspectTabs(hits)}. " +
+            "name one by its full type name");
+      }
+    }
+
+    throw new InvalidOperationException(
+        $"no inspect tab matches '{name}' on the current selection. " +
+        $"available tabs: {DescribeInspectTabs(tabs)}");
+  }
+
+  private static IEnumerable<Func<InspectTabBase, bool>> InspectTabMatchers(string name) {
+    yield return t => SameName(t.GetType().Name, name) || SameName(t.GetType().FullName, name);
+    yield return t => SameName(t.labelKey, name);
+
+    // "Gear" for ITab_Pawn_Gear or the TabGear label key. Both are identifiers, so this
+    // stays a shorthand for a type or a key and never matches the label a player sees.
+    yield return t => t.GetType().Name.EndsWith($"_{name}", StringComparison.OrdinalIgnoreCase)
+        || SameName(t.labelKey, $"Tab{name}");
+  }
+
+  private static bool SameName(string? actual, string expected) {
+    return string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase);
+  }
+
+  private static string DescribeInspectTabs(IEnumerable<InspectTabBase> tabs) {
+    List<string> described = [.. tabs
+        .Select(DescribeInspectTab)
+        .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)];
+
+    return described.Count == 0 ? Nothing : string.Join(", ", described);
+  }
+
+  private static string DescribeInspectTab(InspectTabBase tab) {
+    string name = tab.GetType().Name;
+    string label = tab.labelKey == null ? name : $"{name} ('{tab.labelKey}')";
+
+    return tab.IsVisible && !tab.Hidden ? label : $"{label} [hidden]";
+  }
+
+  private static string DescribeOpenInspectTab() {
+    return InspectPane().OpenTabType?.Name ?? Nothing;
+  }
+
+  private static string DescribeSelection() {
+    List<string> labels = [.. Find.Selector.SelectedObjectsListForReading
+        .Select(o => o is Thing t ? t.LabelCap : o.GetType().Name)
+        .Where(l => !string.IsNullOrEmpty(l))];
 
     return labels.Count == 0 ? Nothing : string.Join(", ", labels);
   }

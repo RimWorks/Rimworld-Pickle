@@ -58,7 +58,7 @@ public static class RunnerToolbar {
         }));
       }
 
-      Find.WindowStack.Add(new FloatMenu(options));
+      WindowSuppression.AddOwn(new FloatMenu(options));
     }
 
     Label(new Rect(scope.xMax + 22f, y, 40f, ButtonHeight), "Mode", RunnerStatusColors.Muted, GameFont.Tiny);
@@ -257,7 +257,7 @@ public static class RunnerToolbar {
   }
 
   private static void OpenOptions(RunnerWindow window) {
-    Find.WindowStack.Add(new FloatMenu([
+    WindowSuppression.AddOwn(new FloatMenu([
         new FloatMenuOption($"Pause on failure: {(BreakOnFailureState.Enabled ? "On" : "Off")}", () => {
           BreakOnFailureState.Enabled = !BreakOnFailureState.Enabled;
           window.PublishSnapshot();

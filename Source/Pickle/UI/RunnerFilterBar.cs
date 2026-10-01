@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimWorks.Pickle.Runtime;
 using UnityEngine;
 using Verse;
 
@@ -62,7 +63,7 @@ public static class RunnerFilterBar {
         options.Add(new FloatMenuOption(mod, () => window.SetFilter(mod: mod)));
       }
 
-      Find.WindowStack.Add(new FloatMenu(options));
+      WindowSuppression.AddOwn(new FloatMenu(options));
     }
 
     Rect tagRect = new Rect(modRect.xMax + 8f, searchRect.y, 144f, 30f);

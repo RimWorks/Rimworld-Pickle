@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Core.Fixtures;
+using RimWorks.Pickle.Runtime;
 using RimWorks.Pickle.Web;
 using RimWorld;
 using UnityEngine;
@@ -81,7 +82,7 @@ public class SaveFixtureDialog : PickleWindow {
       DiscoveredSuite suite = suites[selectedSuite];
       string target = FixtureCatalog.PathForName(suite.WritableFixturesDir, fixtureName.Trim());
       if (File.Exists(target)) {
-        Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation($"Overwrite fixture '{fixtureName.Trim()}'?\n{target}", () => _ = SaveAndClose(true), destructive: true));
+        WindowSuppression.AddOwn(Dialog_MessageBox.CreateConfirmation($"Overwrite fixture '{fixtureName.Trim()}'?\n{target}", () => _ = SaveAndClose(true), destructive: true));
       } else {
         _ = SaveAndClose(false);
       }

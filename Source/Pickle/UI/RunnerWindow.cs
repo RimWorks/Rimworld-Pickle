@@ -377,8 +377,9 @@ public class RunnerWindow : PickleWindow {
       }
     }
 
-    PickleHttpServer.Publish(
-        RunnerSnapshot.Build(parsedFeatures, results, ActiveSession, IsRunning, IsScenarioSelected, this));
+    PickleHttpServer.PublishSafely(
+        () => RunnerSnapshot.Build(
+            parsedFeatures, results, ActiveSession, IsRunning, IsScenarioSelected, this));
   }
 
   /// <summary>Resumes a paused run and dismisses the break card, as if its Continue button was clicked.</summary>

@@ -48,6 +48,7 @@ public static class PickleHttpServer {
     ["/break"] = c => RunnerCommands.SetBreakOnFailure(c.Request.QueryString["on"] != OffValue).GetAwaiter().GetResult(),
   };
 
+  private static bool publishFailureLogged;
   private static HttpListener? listener;
   private static volatile bool running;
 
@@ -65,6 +66,27 @@ public static class PickleHttpServer {
   /// <param name="json">The full snapshot document, already serialized.</param>
   public static void Publish(string json) {
     snapshot = json;
+  }
+
+  /// <summary>Builds a snapshot and publishes it, absorbing anything the build throws.</summary>
+  /// <param name="build">Builds the snapshot JSON from live state.</param>
+  // The dashboard is a view of a run, not a part of it, so nothing it does may end one. A build
+  // reads live game state and can meet that state mid-change, and the throw used to travel out
+  // through OnProgress and be reported against whichever scenario was running. Every publisher
+  // routes through here, so the runner window and the autorun path are both covered. Only the
+  // first failure in a streak is logged, since the cause repeats every frame.
+  public static void PublishSafely(Func<string> build) {
+    try {
+      Publish(build());
+      publishFailureLogged = false;
+    } catch (Exception ex) {
+      if (publishFailureLogged) {
+        return;
+      }
+
+      publishFailureLogged = true;
+      Log.WarnTo(PickleLog.Channel, ex, "dashboard snapshot failed, the run continues without it");
+    }
   }
 
   /// <summary>Starts the dashboard on the configured or default port, unless <c>-pickle-no-http</c> was passed, then opens it in a browser.</summary>

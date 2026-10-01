@@ -311,7 +311,7 @@ public class FixtureManagerDialog : PickleWindow {
   }
 
   private void ConfirmDelete(FixtureEntry entry) {
-    Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+    WindowSuppression.AddOwn(Dialog_MessageBox.CreateConfirmation(
         "Pickle_DeleteFixtureConfirm".Translate(entry.Name, entry.FullPath),
         () => _ = Delete(entry),
         destructive: true));

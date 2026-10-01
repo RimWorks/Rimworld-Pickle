@@ -18,6 +18,26 @@ Feature: ui steps
     Then window "MainTabWindow_Research" is closed
     Then no errors were logged
 
+  Scenario: inspect tab steps open the pane tabs on a selected pawn
+    Given a colonist "Tabby" exists
+    When I select "Tabby"
+    And I open the "Gear" inspect tab
+    Then the "Gear" inspect tab is open
+    And the "ITab_Pawn_Gear" inspect tab is open
+    And the "TabGear" inspect tab is open
+    When I open the "Health" inspect tab
+    Then the "Health" inspect tab is open
+    When I open the "Character" inspect tab
+    Then the "Character" inspect tab is open
+    And no errors were logged
+  Scenario: a research tab is opened by def name and lists its project
+    When I open the research tab "Main"
+    Then window "MainTabWindow_Research" is open
+    And the research window is on the tab "Main"
+    And the research window lists the project "Stonecutting"
+    When I close all dialogs
+    Then no errors were logged
+
   @timeout:60
   Scenario: a filmstrip follows a colonist through a whole order
     Given the save "test-colony" is loaded

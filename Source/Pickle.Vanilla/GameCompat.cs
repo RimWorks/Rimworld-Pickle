@@ -38,6 +38,14 @@ internal static class GameCompat {
 #endif
   }
 
+  public static Graphic? PrimaryGraphicOf(PawnRenderNode node) {
+#if RW_1_5
+    return node.Graphic;
+#else
+    return node.PrimaryGraphic;
+#endif
+  }
+
   public static bool InViewOf(CameraDriver camera, Thing thing) {
 #if RW_1_5
     // the body of 1.6's CameraDriver.InViewOf, which 1.5 does not have

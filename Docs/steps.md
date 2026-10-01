@@ -59,6 +59,16 @@ game exists. These run at the main menu, like the def steps.
 
 A miss lists every loaded mod in load order, the way a def miss lists close matches.
 
+## Language
+
+| Step | Does |
+| --- | --- |
+| `the language is set to {string}` | Switches the active language by folder prefix and waits for the reload |
+| `the language is {string}` | Checks which language is active |
+
+Switching the language reloads the game's play data, which clears the loaded game. A scenario
+that switches language cannot also use a fixture, and cannot be tagged `@same-world`.
+
 ## Fixtures
 
 | Step | Does |
@@ -122,6 +132,8 @@ every 5000 ticks, so a check straight after a spawn would still see the old numb
 | `I take the trait {string} from {string}` | Removes a trait |
 | `{string} is {int} years old` | Sets biological age |
 | `{string} gender is {word}` | `male` or `female` |
+| `{string} body type is {word}` | Sets the body type, such as `Fat`, `Thin` or `Hulk`, and redraws the pawn |
+| `{string} body is drawn from {string}` | Checks the texture path the pawn's body is drawn with |
 | `{string} has {word} passion for {string}` | `none`, `minor` or `major` |
 | `{string} can do {string}` | Checks a work type is enabled |
 <!-- RimWorld calls a work type a pawn refuses "disabled", so Google's "turn off"
@@ -136,6 +148,18 @@ set a skill level can still meet a pawn that refuses the job.
 Changing a backstory or trait drops the pawn's disabled-work cache, so the new
 capabilities apply straight away.
 <!-- vale Google.WordListCase = YES -->
+
+The body type is a def name, one of `Male`, `Female`, `Thin`, `Fat`, `Hulk`, `Child` or
+`Baby`, and it is separate from the gender. A female pawn can be `Fat`. The step sets what
+you ask for and does not check the age against it. An unknown name fails and lists the body
+types the game has. The pawn is redrawn, and `body is drawn from` and `apparel ... is drawn
+from` read the texture path the game then draws with, such as
+`Things/Pawn/Humanlike/Bodies/Naked_Fat`. The game appends the body type to a worn apparel's
+texture, for example `Things/Pawn/Humanlike/Apparel/ShirtBasic/ShirtBasic_Fat`.
+
+The game can choose the body type again. Adding or removing a Biotech gene that carries one,
+such as `Body_Fat`, `Body_Thin` or `Body_Hulk`, replaces it, and so does a child growing
+up. Set it after the genes and the age.
 
 ## Simulation
 
@@ -423,6 +447,7 @@ about, the failure says so. The value you are reading is then the def default.
 | `{string} is wielding nothing` | Checks the pawn holds no weapon |
 | `{string} is wearing {string}` | Checks worn apparel for a def |
 | `{string} apparel covers {string}` | Checks a body part group is covered |
+| `{string} apparel {string} is drawn from {string}` | Checks the texture path a worn apparel def is drawn with |
 
 `{string} is carrying {int} {string}` only counts hands and inventory. A weapon and worn
 apparel live in different places, so none of this was reachable through it.
@@ -544,19 +569,30 @@ into a tile, so Pickle scans the grid for the closest one.
 | `the main menu is open` | Quits to the main menu if a game is loaded, then waits for `UIRoot_Entry`. The way into the `Page_` stack |
 | `I click {string}` | Clicks a tagged widget |
 | `I click button {string}` | Clicks a vanilla button by label. Pickle tags those for you |
+| `I click button keyed {string}` | Clicks a button by the translation key its label comes from, so the scenario runs in any language |
 | `I click gizmo {string}` | Runs a gizmo on the current selection |
 | `I hover {string}` | Moves the pointer onto a tagged widget |
 | `I press key {string}` | Sends a key into the game's `OnGUI` pass, so `Event.current` sees it. Accepts `Escape`, `Return`, `Space`, `Tab`, `Delete`, `Backspace`, a letter, or a digit |
 | `I select {string}` | Selects a pawn or thing by name |
 | `I open the {string} tab` | Opens a main tab by def name or label |
+| `I open the research tab {string}` | Opens the research window and selects one of its tabs by def name |
+| `the research window is on the tab {string}` | Checks the selected tab, and that it would draw its projects |
+| `the research window lists the project {string}` | Checks a project is listed on the selected tab |
 | `I close all dialogs` | Closes every open window |
+| `the screen is clear` | Closes every window Pickle does not own. Drops every window that opens afterwards, the scenario's own included, until the scenario ends. Use it before a scenario clicks the map, a gizmo, or the main tab bar. Lift it with `windows are allowed to open again` before a click meant to open a window |
+| `windows are allowed to open again` | Lets the game open its own windows again, before the scenario ends |
+| `the interface scale is {int} percent` | Sets `Prefs.UIScale` the way the Options page does: clears the measured label widths, lets the GUI space follow, and lays the open windows out again. Restored after the scenario, never saved. A click at a scale other than 100 is the only one that exercises the tag store's conversion |
 | `window {string} is open` | Checks a window type is open |
 | `window {string} is closed` | Checks a window type is closed |
 | `the inspect pane shows {string}` | Checks the selected thing's label |
+| `I open the {string} inspect tab` | Opens an inspect tab on the selected thing. Names the tab by its type name or its label key |
+| `the {string} inspect tab is open` | Checks which inspect tab the pane has open |
 | `no errors were logged` | Fails if the game logged an error during the scenario |
 | `a warning matching {string} was logged` | Checks at least one warning contains the text |
 | `no warning matching {string} was logged` | Checks no warning contains the text |
 | `{int} warnings matching {string} were logged` | Checks an exact count, for a step that should warn once and not twice |
+| `Pickle logs a warning for its own tests` | Logs one warning from Pickle's own assembly, for asserting on attribution |
+| `a warning from mod {string} was logged` | Checks at least one warning is attributed to a mod. Takes a name or a packageId |
 | `no warnings from mod {string}` | Checks no warning is attributed to a mod |
 | `I take a screenshot {string}` | Captures a screenshot and attaches it to the report |
 
@@ -566,6 +602,19 @@ anything built on `Widgets.ButtonInvisible`. A widget that does its own `Event.c
 test is out of reach, and the step fails naming the rect it resolved. `I press key` goes
 into the game's `OnGUI` pass, so code polling `Input.GetKeyDown` never sees it.
 See [running tests](running.md).
+
+The two inspect tab steps are the pane below the main tabs, not the main tabs
+themselves. They need exactly one thing selected, because that selection is what
+decides which tabs exist. Name a tab by its type name, such as `ITab_Pawn_Gear`, or
+by its label key, such as `TabGear`. The short form of either works too, such as
+`Gear`. All three are identifiers, so a scenario keeps working under a language mod.
+The label a player reads never matches. A name that fits two tabs fails and asks for
+the full type name.
+The research window draws its tabs as tab records, not as buttons, so `I click button` never
+finds one. `I open the research tab` runs the tab's own click action instead, and takes the
+`ResearchTabDef` name, so it works in any language. That is how a mod that adds a research
+tab checks its projects sit inside it. The two checks read what the window would draw, the
+selected tab and its listed projects, rather than the picture of it.
 
 Vanilla warns constantly, so there is no blanket `no warnings were logged`. Every warning
 step names a substring, and a warning never fails a scenario on its own the way an error
@@ -600,3 +649,14 @@ PickleUI.Tag("my-button", buttonRect);
 
 Vanilla buttons need no tagging. Pickle records them by label, so
 `I click button "Research"` works out of the box.
+
+A label is whatever the game drew, in the player's language: `I click button "Research"`
+finds nothing on a French client, where the button reads `Recherche`. Name the translation
+key instead, and the scenario runs anywhere:
+
+```gherkin
+When I click button keyed "Research"
+```
+
+The key is the one the drawing code translates, vanilla's own or your mod's. When no
+translation is loaded for it the step fails and names the active language.
