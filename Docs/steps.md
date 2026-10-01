@@ -573,6 +573,7 @@ into a tile, so Pickle scans the grid for the closest one.
 | `I close all dialogs` | Closes every open window |
 | `the screen is clear` | Closes every window Pickle does not own and drops every one that opens afterwards, the scenario's own included, until the scenario ends. Setup for a scenario that clicks on the map, a gizmo or the main tab bar; lift it with `windows are allowed to open again` before a click whose effect is to open a window |
 | `windows are allowed to open again` | Lets the game open its own windows again, before the scenario ends |
+| `the interface scale is {int} percent` | Sets `Prefs.UIScale` the way the Options page does: clears the measured label widths, lets the GUI space follow, and lays the open windows out again. Restored after the scenario, never saved. A click at a scale other than 100 is the only one that exercises the tag store's conversion |
 | `window {string} is open` | Checks a window type is open |
 | `window {string} is closed` | Checks a window type is closed |
 | `the inspect pane shows {string}` | Checks the selected thing's label |
