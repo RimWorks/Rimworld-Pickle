@@ -14,7 +14,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="RimWorks.RimLogging" Version="2.*" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="RimWorks.RimLogging" Version="3.*" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="Gherkin" Version="42.0.*" />
     <PackageReference Include="Cucumber.CucumberExpressions" Version="20.1.*" />
   </ItemGroup>
