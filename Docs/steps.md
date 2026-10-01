@@ -579,13 +579,13 @@ into a tile, so Pickle scans the grid for the closest one.
 | `the research window is on the tab {string}` | Checks the selected tab, and that it would draw its projects |
 | `the research window lists the project {string}` | Checks a project is listed on the selected tab |
 | `I close all dialogs` | Closes every open window |
-| `the screen is clear` | Closes every window Pickle does not own and drops every one that opens afterwards, the scenario's own included, until the scenario ends. Setup for a scenario that clicks on the map, a gizmo or the main tab bar; lift it with `windows are allowed to open again` before a click whose effect is to open a window |
+| `the screen is clear` | Closes every window Pickle does not own. Drops every window that opens afterwards, the scenario's own included, until the scenario ends. Use it before a scenario clicks the map, a gizmo, or the main tab bar. Lift it with `windows are allowed to open again` before a click meant to open a window |
 | `windows are allowed to open again` | Lets the game open its own windows again, before the scenario ends |
 | `the interface scale is {int} percent` | Sets `Prefs.UIScale` the way the Options page does: clears the measured label widths, lets the GUI space follow, and lays the open windows out again. Restored after the scenario, never saved. A click at a scale other than 100 is the only one that exercises the tag store's conversion |
 | `window {string} is open` | Checks a window type is open |
 | `window {string} is closed` | Checks a window type is closed |
 | `the inspect pane shows {string}` | Checks the selected thing's label |
-| `I open the {string} inspect tab` | Opens an inspect tab on the selected thing, by tab type name or label key |
+| `I open the {string} inspect tab` | Opens an inspect tab on the selected thing. Names the tab by its type name or its label key |
 | `the {string} inspect tab is open` | Checks which inspect tab the pane has open |
 | `no errors were logged` | Fails if the game logged an error during the scenario |
 | `a warning matching {string} was logged` | Checks at least one warning contains the text |
