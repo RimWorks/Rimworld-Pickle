@@ -20,7 +20,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "daisyui": "^5.7.46",
-    "oxlint": "^1.85.0",
+    "oxlint": "^1.86.0",
     "oxlint-tsgolint": "^7.0.2003",
     "tailwindcss": "^4.1.14",
     "typescript": "^7.0.2",
