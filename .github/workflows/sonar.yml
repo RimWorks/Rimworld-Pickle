@@ -37,6 +37,7 @@ jobs:
       packages: write
     with:
       artifact-prefix: sonar-image-ref
+      windows: false
     secrets:
       STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
       STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}

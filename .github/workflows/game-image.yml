@@ -12,6 +12,10 @@ on:
         description: Rebuild even when the Steam buildid has not moved.
         type: boolean
         default: false
+      windows:
+        description: Also build the Windows images. A caller that only compiles does not need them.
+        type: boolean
+        default: true
     secrets:
       STEAM_USERNAME:
         required: false
@@ -50,7 +54,7 @@ jobs:
         1.5=version-1.5
         1.6=version-1.6.4633
       image: ghcr.io/${{ github.repository_owner }}/rimworld-game-runnable
-      windows: true
+      windows: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || inputs.windows }}
       force: ${{ inputs.force || false }}
     secrets:
       STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
