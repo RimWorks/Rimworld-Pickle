@@ -273,3 +273,28 @@ jobs:
           path: reports/**/junit.xml
           reporter: java-junit
           fail-on-error: false
+
+  gate:
+    name: ci gate
+    needs: [dashboard, prose, links, package-deps, game-image,
+            build-15, build, suite, suite-windows, suite-checks]
+    # always(), or a gate its own condition skipped reports as a passing required check
+    if: always()
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      # suite-windows is the only job with a conditional if:, so it is the only skip that
+      # is not a failure. a blanket "success or skipped" would pass a job that never ran
+      - name: Check every job
+        run: |
+          printf '%s' '${{ toJSON(needs) }}' > results.json
+          jq -r 'to_entries[] | "\(.value.result)\t\(.key)"' results.json
+          bad=$(jq -r '
+            to_entries[]
+            | select(.value.result != "success")
+            | select(.key != "suite-windows" or .value.result != "skipped")
+            | .key' results.json)
+          if [ -n "$bad" ]; then
+            echo "::error::not green: $(echo "$bad" | tr "\n" " ")"
+            exit 1
+          fi
