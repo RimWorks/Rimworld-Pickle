@@ -11,7 +11,7 @@ public sealed class DialogAnswers {
   private readonly Dictionary<string, string> byWindowType = new(StringComparer.Ordinal);
 
   /// <summary>Whether any answer is registered, so a caller can skip its per-frame work.</summary>
-  public bool Any => this.byWindowType.Count > 0;
+  public bool Any => byWindowType.Count > 0;
 
   /// <summary>Records the button to click when a window of this type opens, replacing any earlier answer for it.</summary>
   /// <param name="windowTypeName">The window's simple type name, as <c>GetType().Name</c> reports it.</param>
@@ -29,7 +29,7 @@ public sealed class DialogAnswers {
       throw new ArgumentException("a dialog answer needs a button label", nameof(buttonLabel));
     }
 
-    this.byWindowType[type] = label;
+    byWindowType[type] = label;
   }
 
   /// <summary>Looks an answer up by exact, case sensitive type name. A base class or a namespace never matches.</summary>
@@ -37,7 +37,7 @@ public sealed class DialogAnswers {
   /// <param name="buttonLabel">The label to click, when one is registered.</param>
   /// <returns><c>true</c> when an answer is registered for the type.</returns>
   public bool TryGet(string? windowTypeName, out string buttonLabel) {
-    if (windowTypeName != null && this.byWindowType.TryGetValue(windowTypeName, out string? found)) {
+    if (windowTypeName != null && byWindowType.TryGetValue(windowTypeName, out string? found)) {
       buttonLabel = found;
       return true;
     }
@@ -48,6 +48,6 @@ public sealed class DialogAnswers {
 
   /// <summary>Forgets every answer, so one scenario's rules never reach the next.</summary>
   public void Clear() {
-    this.byWindowType.Clear();
+    byWindowType.Clear();
   }
 }

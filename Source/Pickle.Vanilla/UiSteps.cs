@@ -123,10 +123,11 @@ public class UiSteps {
   }
 
   /// <summary>Clicks a button on a window of this type whenever it opens, rather than suppressing it.</summary>
+  /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="windowType">The window's simple type name, such as <c>Dialog_MessageBox</c>.</param>
   /// <param name="button">The label on the button to click.</param>
   [Given("a window {string} is answered with {string}")]
-  public void AnswerWindow(string windowType, string button) {
+  public void AnswerWindow(PickleContext ctx, string windowType, string button) {
     DialogAnswering.Answer(windowType, button);
   }
 
