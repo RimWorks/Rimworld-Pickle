@@ -22,7 +22,7 @@ public static class EvidenceName {
       return full;
     }
 
-    return full.Substring(0, MaxStemLength) + "-" + ProcessStableShortHash(full);
+    return full.Remove(MaxStemLength) + "-" + ProcessStableShortHash(full);
   }
 
   private static string Sanitize(string? name) {
