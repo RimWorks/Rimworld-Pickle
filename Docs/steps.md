@@ -581,6 +581,7 @@ into a tile, so Pickle scans the grid for the closest one.
 | `I close all dialogs` | Closes every open window |
 | `the screen is clear` | Closes every window Pickle does not own. Drops every window that opens afterwards, the scenario's own included, until the scenario ends. Use it before a scenario clicks the map, a gizmo, or the main tab bar. Lift it with `windows are allowed to open again` before a click meant to open a window |
 | `windows are allowed to open again` | Lets the game open its own windows again, before the scenario ends |
+| `a window {string} is answered with {string}` | Clicks the named button on a window of that type whenever it opens, instead of suppressing it. Match the simple type name exactly, as in `Dialog_MessageBox`. Place it before `the save {string} is loaded` to answer a window another mod opens during the load, which is the case a dropped window never answers. Forgotten when the scenario ends |
 | `the interface scale is {int} percent` | Sets `Prefs.UIScale` the way the Options page does: clears the measured label widths, lets the GUI space follow, and lays the open windows out again. Restored after the scenario, never saved. A click at a scale other than 100 is the only one that exercises the tag store's conversion |
 | `window {string} is open` | Checks a window type is open |
 | `window {string} is closed` | Checks a window type is closed |
