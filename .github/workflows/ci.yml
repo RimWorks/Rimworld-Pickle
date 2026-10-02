@@ -270,6 +270,6 @@ jobs:
         if: always()
         with:
           name: suite scenarios
-          path: reports/*/junit.xml
+          path: reports/**/junit.xml
           reporter: java-junit
           fail-on-error: false
