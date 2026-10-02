@@ -43,3 +43,17 @@ Feature: window suppression
     And a window Pickle does not own opens
     Then window "Dialog_MessageBox" is open
     And no errors were logged
+
+  Scenario: an answered window is let through suppression, and no button means no click
+    Given a window "Dialog_MessageBox" is answered with "NoSuchButton"
+    And the screen is clear
+    When a window Pickle does not own opens
+    Then window "Dialog_MessageBox" is open
+    And no errors were logged
+
+  Scenario: the same window with a real button is clicked, so it closes itself
+    Given a window "Dialog_MessageBox" is answered with "OK"
+    And the screen is clear
+    When a window Pickle does not own opens
+    Then window "Dialog_MessageBox" is closed
+    And no errors were logged

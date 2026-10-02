@@ -53,6 +53,7 @@ public static class WindowSuppression {
     }
 
     return Pending.Remove(window)
+        || DialogAnswering.Wants(window)
         || WindowSuppressionRule.Allows(Active, AssemblyNameOf(window));
   }
 
