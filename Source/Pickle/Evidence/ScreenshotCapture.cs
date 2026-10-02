@@ -1,7 +1,6 @@
-using System;
 using System.IO;
-using System.Text.RegularExpressions;
 using RimWorks.Pickle.Autorun;
+using RimWorks.Pickle.Core.Reports;
 using RimWorks.Pickle.Runtime;
 using UnityEngine;
 using Verse;
@@ -11,8 +10,6 @@ namespace RimWorks.Pickle.Evidence;
 
 /// <summary>Resolves where screenshots and film frames land, and builds their file paths.</summary>
 public static class ScreenshotCapture {
-  private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(2);
-
   private static string? resolvedDir;
 
   /// <summary>Points the screenshots folder at a report root chosen by autorun.</summary>
@@ -60,7 +57,7 @@ public static class ScreenshotCapture {
   /// <param name="stepIndex">The step's position in the scenario.</param>
   /// <returns>The full path to write the screenshot to.</returns>
   public static string BuildScreenshotPath(string featureName, string scenarioName, int stepIndex) {
-    string filename = $"{Sanitize(featureName)}--{Sanitize(scenarioName)}--step{stepIndex}.png";
+    string filename = $"{EvidenceName.Stem(featureName, scenarioName)}--step{stepIndex}.png";
 
     return Path.Combine(ReportsDirectory(), filename);
   }
@@ -72,7 +69,7 @@ public static class ScreenshotCapture {
   // One folder per scenario with plain numbered names, because ffmpeg reads a sequence
   // by pattern and cannot see a scenario name embedded in the file name.
   public static string FrameDirectory(string featureName, string scenarioName) {
-    string dir = Path.Combine(ReportsDirectory(), "film", $"{Sanitize(featureName)}--{Sanitize(scenarioName)}");
+    string dir = Path.Combine(ReportsDirectory(), "film", EvidenceName.Stem(featureName, scenarioName));
     TryCreate(dir);
 
     return dir;
@@ -104,9 +101,5 @@ public static class ScreenshotCapture {
     } catch {
       return false;
     }
-  }
-
-  private static string Sanitize(string name) {
-    return Regex.Replace(name, "[^A-Za-z0-9._-]", "-", RegexOptions.None, RegexTimeout);
   }
 }
