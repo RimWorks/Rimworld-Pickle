@@ -33,7 +33,8 @@ The report links them from `screenshots/film/` instead, so keep that folder next
 ## Video
 
 A `@film` scenario writes its frames to `screenshots/film/<feature>--<scenario>/`. They
-are named `0000.jpg`, `0001.jpg`, and so on. When `ffmpeg` is on the PATH, Pickle also
+are named `0000.jpg`, `0001.jpg`, and so on. Long titles are cut to 60 characters and
+given a short hash, so that a report survives being copied to a deep path on Windows. When `ffmpeg` is on the PATH, Pickle also
 encodes them into `film.webm` in that folder. The report then shows a player next to the
 strip.
 
