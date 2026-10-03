@@ -30,6 +30,9 @@ public static class PickleHttpServer {
 
   private const int DefaultPort = 27750;
 
+  // How many consecutive ports a dashboard with no requested port tries, starting at DefaultPort.
+  private const int FallbackPortCount = 10;
+
   private static readonly string[] ReportFiles = ["junit.xml", "messages.ndjson", "summary.json", "summary.md"];
 
   private static readonly string[] MutatingPaths = ["/abort", "/pause", "/continue", "/run", "/scope", "/select", "/filter", "/mode", "/wip", "/break", "/pill", "/fixture", "/step", "/step/reset", "/gherkin"];
@@ -97,38 +100,30 @@ public static class PickleHttpServer {
   /// <summary>Starts the dashboard on the configured or default port, unless <c>-pickle-no-http</c> was passed, then opens it in a browser.</summary>
   // On unless asked otherwise. The old -pickle-http is gone; RimWorld ignores an argument
   // nothing reads, so a command line that still passes it keeps working.
+  // A port given with -pickle-http-port is used as given, with no search: whoever names a
+  // port needs that one. Without it, a taken default port moves the dashboard to the next
+  // free one instead of leaving it dead, which would also leave no driver for the console
+  // routes (DashboardSeed only creates it once the server is up).
   public static void StartUnlessDisabled() {
     if (GenCommandLine.CommandLineArgPassed("-pickle-no-http")) {
       return;
     }
 
     bool valued = GenCommandLine.TryGetCommandLineArg("-pickle-http-port", out string portValue);
-    int port = valued && int.TryParse(portValue, out int parsed) ? parsed : DefaultPort;
-    Start(port);
-    OpenInBrowser(port);
+    if (valued) {
+      Start(int.TryParse(portValue, out int parsed) ? parsed : DefaultPort);
+    } else {
+      StartOnFreePort(DefaultPort);
+    }
+
+    OpenInBrowser(Port);
   }
 
   /// <summary>Starts the HTTP listener on a background thread. Does nothing if it is already running; logs and gives up if the port cannot be bound.</summary>
   /// <param name="port">The TCP port to listen on.</param>
   public static void Start(int port) {
-    if (running) {
-      return;
-    }
-
-    try {
-      listener = new HttpListener();
-      listener.Prefixes.Add($"http://*:{port}/");
-      listener.Start();
-      running = true;
-      Port = port;
-
-      Thread worker = new Thread(Serve) { IsBackground = true, Name = "pickle-http" };
-      worker.Start();
-
-      Log.InfoTo(PickleLog.Channel, "dashboard on http://0.0.0.0:{Port}/", [port]);
-    } catch (Exception ex) {
-      running = false;
-      Log.ErrorTo(PickleLog.Channel, ex, $"dashboard failed to start on port {port}");
+    if (!TryStart(port, out Exception? error)) {
+      Log.ErrorTo(PickleLog.Channel, error!, $"dashboard failed to start on port {port}");
     }
   }
 
@@ -142,6 +137,53 @@ public static class PickleHttpServer {
       // shutting down anyway, and a listener that is already dead throws here
     }
     listener = null;
+  }
+
+  private static void StartOnFreePort(int firstPort) {
+    Exception? error = null;
+    for (int port = firstPort; port < firstPort + FallbackPortCount; port++) {
+      if (TryStart(port, out error)) {
+        if (port != firstPort) {
+          Log.InfoTo(PickleLog.Channel, "dashboard port {Taken} is in use, serving on port {Port} instead", [firstPort, port]);
+        }
+
+        return;
+      }
+    }
+
+    Log.ErrorTo(PickleLog.Channel, error!, $"dashboard failed to start on ports {firstPort} to {firstPort + FallbackPortCount - 1}");
+  }
+
+  private static bool TryStart(int port, out Exception? error) {
+    error = null;
+    if (running) {
+      return true;
+    }
+
+    try {
+      listener = new HttpListener();
+      listener.Prefixes.Add($"http://*:{port}/");
+      listener.Start();
+      running = true;
+      Port = port;
+
+      Thread worker = new Thread(Serve) { IsBackground = true, Name = "pickle-http" };
+      worker.Start();
+
+      Log.InfoTo(PickleLog.Channel, "dashboard on http://0.0.0.0:{Port}/", [port]);
+      return true;
+    } catch (Exception ex) {
+      running = false;
+      error = ex;
+      try {
+        listener?.Close();
+      } catch (Exception) {
+        // a listener that never started has nothing to release
+      }
+
+      listener = null;
+      return false;
+    }
   }
 
   // Application.OpenURL picks the platform's own handler. Not on an autorun: that is CI or a
