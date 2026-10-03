@@ -95,8 +95,8 @@ jobs:
       # the republish uploads the working tree, so every version the mod claims needs a folder
       - name: dotnet build
         run: |
-          npx build-mod Pickle.slnx --nologo --no-restore
-          npx verify-ship-list .
+          npx --no-install build-mod Pickle.slnx --nologo --no-restore
+          npx --no-install verify-ship-list .
 
       - name: dotnet test
         run: |

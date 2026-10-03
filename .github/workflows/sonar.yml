@@ -55,7 +55,11 @@ jobs:
       project-key: RimWorks_Rimworld-Pickle
       exclusions: Dashboard/dist/**,Dashboard/node_modules/**,Styles/**,artifacts/**,**/bin/**,**/obj/**
       coverage-exclusions: Source/Pickle/**,Source/Pickle.Vanilla/**,Source/Pickle.Patches.*/**,Source/Pickle.Ref/**,Dashboard/**,.github/**
-      extra-begin-args: >-
-        /d:sonar.issue.ignore.multicriteria=todo,ternary,catchname,jsxspacing,ariarole,detailskeys /d:sonar.issue.ignore.multicriteria.todo.ruleKey=csharpsquid:S1135 /d:sonar.issue.ignore.multicriteria.todo.resourceKey=**/*.cs /d:sonar.issue.ignore.multicriteria.ternary.ruleKey=typescript:S3358 /d:sonar.issue.ignore.multicriteria.ternary.resourceKey=**/*.tsx /d:sonar.issue.ignore.multicriteria.catchname.ruleKey=typescript:S7718 /d:sonar.issue.ignore.multicriteria.catchname.resourceKey=**/*.tsx /d:sonar.issue.ignore.multicriteria.jsxspacing.ruleKey=typescript:S6772 /d:sonar.issue.ignore.multicriteria.jsxspacing.resourceKey=**/*.tsx /d:sonar.issue.ignore.multicriteria.ariarole.ruleKey=typescript:S6819 /d:sonar.issue.ignore.multicriteria.ariarole.resourceKey=**/*.tsx /d:sonar.issue.ignore.multicriteria.detailskeys.ruleKey=typescript:S6847 /d:sonar.issue.ignore.multicriteria.detailskeys.resourceKey=**/*.tsx
+      ignore-rules: |
+        typescript:S3358=**/*.tsx
+        typescript:S7718=**/*.tsx
+        typescript:S6772=**/*.tsx
+        typescript:S6819=**/*.tsx
+        typescript:S6847=**/*.tsx
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
