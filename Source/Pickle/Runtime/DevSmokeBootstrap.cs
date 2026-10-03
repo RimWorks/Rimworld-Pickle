@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using RimWorks.Pickle.Web;
 using UnityEngine.SceneManagement;
 using Verse;
 using Log = RimWorks.RimLogging.Log;
@@ -56,6 +57,12 @@ public static class DevSmokeBootstrap {
     if (marker == "tag store smoke passed") {
       PickleDriver.EnsureExists();
       LongEventHandler.QueueLongEvent(() => _ = RunTagStoreSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
+      return;
+    }
+
+    if (marker == "gherkin endpoint smoke passed") {
+      PickleDriver.EnsureExists();
+      LongEventHandler.QueueLongEvent(() => _ = RunGherkinEndpointSmoke(), LoadingEvent, doAsynchronously: true, exceptionHandler: null);
       return;
     }
 
@@ -181,6 +188,18 @@ public static class DevSmokeBootstrap {
       await driver.WaitTicks(5);
 
       WidgetCaptureSmoke.Run();
+    } catch (Exception ex) {
+      Log.ErrorTo(PickleLog.Channel, ex, SmokeFailed);
+    }
+  }
+
+  private static async Task RunGherkinEndpointSmoke() {
+    try {
+      PickleDriver driver = PickleDriver.Instance;
+      await driver.WaitUntil(() => PickleHttpServer.IsRunning, 60f);
+      await driver.WaitFrames(5);
+
+      _ = GherkinEndpointSmoke.Run();
     } catch (Exception ex) {
       Log.ErrorTo(PickleLog.Channel, ex, SmokeFailed);
     }

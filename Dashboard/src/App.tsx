@@ -9,6 +9,7 @@ import { post, Toolbar } from "./Toolbar";
 import { Logo } from "./Logo";
 import { Fixtures } from "./Fixtures";
 import { Console } from "./Console";
+import { Gherkin } from "./Gherkin";
 
 const POLL_MS = 400;
 
@@ -194,6 +195,7 @@ export function App() {
                 <Detail key={selected ? toHash(selected) : "empty"} scenario={current} live={running ? snap : null} feature={snap.features.find((feature) => feature.path === selected?.path)} onTag={snap.controllable && !running ? (tag, additive) => { void post(`/filter?tag=${encodeURIComponent(tag)}&additive=${additive}`); } : undefined} />
               </>}
               {workspace === "console" && <Console running={running} onClose={() => setWorkspace("run")} />}
+              {workspace === "gherkin" && <Gherkin running={running} onClose={() => setWorkspace("run")} />}
               {workspace === "fixtures" && <Fixtures running={running} onClose={() => setWorkspace("run")} />}
               {workspace === "reports" && <section className="reports-workspace">
                 <h1 className="text-xl font-semibold">Last run report</h1>
@@ -253,7 +255,7 @@ function Header({ snap, workspace, onWorkspace, theme, onToggleTheme }: Readonly
   const busy = snap?.status === "running" || snap?.status === "paused";
   const state = runState(snap);
   const counts = countOutcomes(snap?.features.flatMap((feature) => feature.scenarios) ?? []);
-  const tabs = [["run", "Run"], ["fixtures", "Fixtures"], ["reports", "Reports"], ["console", "Step console"]];
+  const tabs = [["run", "Run"], ["fixtures", "Fixtures"], ["reports", "Reports"], ["console", "Step console"], ["gherkin", "Gherkin"]];
   const title = !snap ? "Waiting for the game" : snap.pauseRequested && !busy ? "Idle" : state === "running" && snap.pauseRequested ? "Pausing after current step" : state[0].toUpperCase() + state.slice(1);
 
   return (

@@ -68,6 +68,24 @@ jobs:
       lint: true
       artifact-name: dashboard-dist
 
+  dashboard-tests:
+    name: dashboard tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - run: npm ci
+        working-directory: Dashboard
+
+      - run: npm test
+        working-directory: Dashboard
+
   prose:
     uses: RimWorks/mod-ci/.github/workflows/prose.yml@v3
     with:
@@ -276,7 +294,7 @@ jobs:
 
   gate:
     name: ci gate
-    needs: [dashboard, prose, links, package-deps, game-image,
+    needs: [dashboard, dashboard-tests, prose, links, package-deps, game-image,
             build-15, build, suite, suite-windows, suite-checks]
     # always(), or a gate its own condition skipped reports as a passing required check
     if: always()
