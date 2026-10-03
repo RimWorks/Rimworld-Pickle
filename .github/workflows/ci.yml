@@ -80,7 +80,7 @@ jobs:
         with:
           node-version: '22'
 
-      - run: npm ci
+      - run: npm ci --ignore-scripts
         working-directory: Dashboard
 
       - run: npm test
