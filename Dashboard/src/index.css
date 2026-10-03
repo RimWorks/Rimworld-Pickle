@@ -8,6 +8,9 @@
 @font-face { font-family: Fira; src: url("./assets/fira-semibold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
 .runner-app { font-family: Fira, sans-serif; --runner-accent: #b2e48b; --runner-paused: #e9be70; --runner-failed: #ffaaa3; --runner-muted: #b3c1c7; --runner-line: #47525b; --color-primary: #b2e48b; --color-primary-content: #18251b; --color-base-100: #282f39; --color-base-200: #222933; --color-base-300: #343e48; --color-base-content: #e6eded; --color-success: #83d6b7; --color-error: #ffaaa3; }
 [data-theme=winter] .runner-app { --runner-accent: #426620; --runner-paused: #805600; --runner-failed: #b3312b; --runner-muted: #4a5b64; --runner-line: #bdc7ce; --color-primary: #426620; --color-primary-content: #fff; --color-base-100: #f4f7f8; --color-base-200: #fff; --color-base-300: #e0e7eb; --color-base-content: #22313a; --color-success: #246b4f; --color-error: #b3312b; }
+:root { --runner-arg: #8fd3e8; }
+[data-theme=winter] { --runner-arg: #1d5c74; }
+.step-arg { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; color: var(--runner-arg); }
 .runner-app .btn { box-shadow: none; font-weight: 400; text-transform: none; transition: none; }
 .runner-app .btn-primary { font-weight: 600; }
 .runner-app :is(button,summary,input,select,a):focus-visible { outline: 2px solid var(--runner-accent); outline-offset: 3px; }

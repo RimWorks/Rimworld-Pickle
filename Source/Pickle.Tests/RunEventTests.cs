@@ -1,5 +1,6 @@
 using System.Linq;
 using RimWorks.Pickle.Core.Run;
+using RimWorks.Pickle.Core.Steps;
 using Xunit;
 
 namespace RimWorks.Pickle.Tests;
@@ -34,6 +35,22 @@ public class RunEventTests {
     string line = RunEvent.Step(0, 0, "Given", "it works", "Failed", 5, string.Empty);
 
     Assert.Contains("\"failureMessage\":\"\"", line);
+  }
+
+  [Fact]
+  public void Step_ArgumentSpansRideAlongWithTheText() {
+    StepArgument[] spans = [new StepArgument { Start = 9, Length = 13 }];
+
+    string line = RunEvent.Step(0, 0, "Given", "the save \"test-colony\" is loaded", "Passed", 8100, null, spans);
+
+    Assert.Contains("\"args\":[{\"start\":9,\"length\":13}]", line);
+  }
+
+  [Fact]
+  public void Step_NoArgumentsIsAnEmptyArrayNotNull() {
+    string line = RunEvent.Step(0, 0, "Then", "the game is not paused", "Passed", 4, null);
+
+    Assert.Contains("\"args\":[]", line);
   }
 
   [Fact]

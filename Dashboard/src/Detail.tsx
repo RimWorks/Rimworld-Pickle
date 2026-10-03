@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { formatMs, isFlaky, statusTone, translator } from "./types";
-import type { Attachment, Feature, Scenario, Snapshot } from "./types";
+import { formatMs, isFlaky, translator } from "./types";
+import type { Attachment, Feature, Scenario, Snapshot, Step } from "./types";
+import { StepCard } from "./StepList";
 
-export function Detail({ scenario, live, feature, onTag }: Readonly<{ scenario: Scenario | null; live: Snapshot | null; feature?: Feature; onTag?: (tag: string, additive: boolean) => void }>) {
+export function Detail({ scenario, live, feature, onTag, onRerun }: Readonly<{ scenario: Scenario | null; live: Snapshot | null; feature?: Feature; onTag?: (tag: string, additive: boolean) => void; onRerun?: () => void }>) {
   const [zoomed, setZoomed] = useState<string | null>(null);
   const t = translator(live);
 
@@ -23,30 +24,43 @@ export function Detail({ scenario, live, feature, onTag }: Readonly<{ scenario: 
           onClose={() => setZoomed(null)}
         />
       )}
-      <div className="flex items-baseline gap-3 flex-wrap">
-        <h1 className="text-xl font-semibold">{scenario.name}</h1>
-        <span className="text-xs text-base-content/40 font-mono">
-          {formatMs(scenario.durationMs)}
-        </span>
-        {scenario.tags.map((tag) => (
-          onTag ? <button key={tag} type="button" className="btn btn-xs btn-ghost" onClick={(event) => onTag(tag, event.shiftKey)}>{tag}</button>
-            : <span key={tag} className="badge badge-sm badge-soft badge-warning">{tag}</span>
-        ))}
-      </div>
-
-      {feature && <p className="mt-2 text-sm break-all">{feature.mod} / {feature.path.split(/[\\/]/).pop()}:{scenario.line}</p>}
-      {scenario.steps.some((step) => /the save "([^"]+)" is loaded/.test(step.text)) && <p className="mt-1 text-sm">Fixture: {scenario.steps.map((step) => /the save "([^"]+)" is loaded/.exec(step.text)?.[1]).find(Boolean)}</p>}
-
-      {scenario.failureMessage && (
-        <div role="alert" className="alert alert-error alert-soft mt-4 items-start">
-          <pre className="whitespace-pre-wrap break-words text-xs">{scenario.failureMessage}</pre>
+      <StepCard steps={scenario.steps}>
+        <div className="flex items-start gap-4 flex-wrap">
+          <div className="grow min-w-48">
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <h1 className="text-lg font-semibold">{scenario.name}</h1>
+              {scenario.tags.map((tag) => (
+                onTag ? <button key={tag} type="button" className="btn btn-xs btn-ghost" onClick={(event) => onTag(tag, event.shiftKey)}>{tag}</button>
+                  : <span key={tag} className="badge badge-sm badge-soft badge-warning">{tag}</span>
+              ))}
+            </div>
+            {feature && <p className="mt-1 text-xs text-base-content/60 break-all">{feature.mod} / {feature.path.split(/[\\/]/).pop()}:{scenario.line}</p>}
+            {fixtureOf(scenario) && <p className="mt-0.5 text-xs text-base-content/60">Fixture: {fixtureOf(scenario)}</p>}
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="font-mono text-xs tabular-nums text-base-content/50 text-right">
+              <div>{stepTally(scenario)}</div>
+              <div>{formatMs(scenario.durationMs)}</div>
+            </div>
+            {onRerun && (
+              <button type="button" className="btn btn-sm btn-outline btn-primary" onClick={onRerun}>
+                {t("Pickle_Rerun", "Rerun")}
+              </button>
+            )}
+          </div>
         </div>
-      )}
+      </StepCard>
 
       {scenario.tickCost && (
         <p className="mt-3 text-xs text-base-content/50 font-mono">
           {scenario.tickCost.ticks} ticks · mean {scenario.tickCost.meanMs}ms · max {scenario.tickCost.maxMs}ms
         </p>
+      )}
+
+      {scenario.failureMessage && (
+        <div role="alert" className="alert alert-error alert-soft mt-4 items-start">
+          <pre className="whitespace-pre-wrap break-words text-xs">{scenario.failureMessage}</pre>
+        </div>
       )}
 
       {(scenario.failedAttempts ?? []).length > 0 && (
@@ -65,28 +79,6 @@ export function Detail({ scenario, live, feature, onTag }: Readonly<{ scenario: 
           </div>
         </output>
       )}
-
-      <ol className="mt-5 flex flex-col gap-1">
-        {scenario.steps.map((step, i) => (
-          <li key={`${i}-${step.keyword}-${step.text}`} className="rounded-box px-3 py-2 hover:bg-base-100">
-            <div className="flex items-baseline gap-2">
-              <span className={`font-mono text-xs w-14 shrink-0 ${statusTone[step.status]}`}>
-                {step.keyword}
-              </span>
-              <span className="grow font-mono text-sm break-words">{step.text}</span>
-              <span className="text-xs text-base-content/30 font-mono shrink-0">
-                {step.status} {" "}
-                {formatMs(step.durationMs)}
-              </span>
-            </div>
-            {step.failureMessage && (
-              <pre className="mt-2 ml-16 whitespace-pre-wrap break-words text-xs text-error">
-                {step.failureMessage}
-              </pre>
-            )}
-          </li>
-        ))}
-      </ol>
 
       {scenario.attachments.length > 0 && (
         <section className="mt-6">
@@ -140,6 +132,25 @@ export function Detail({ scenario, live, feature, onTag }: Readonly<{ scenario: 
       )}
     </div>
   );
+}
+
+function fixtureOf(scenario: Scenario): string | undefined {
+  return scenario.steps.map((step) => /the save "([^"]+)" is loaded/.exec(step.text)?.[1]).find(Boolean);
+}
+
+function stepTally(scenario: Scenario): string {
+  const parts: string[] = [];
+  const count = (match: (status: Step["status"]) => boolean) => scenario.steps.filter((step) => match(step.status)).length;
+  const passed = count((status) => status === "Passed");
+  const failed = count((status) => status === "Failed" || status === "Undefined" || status === "Ambiguous");
+  const skipped = count((status) => status === "Skipped");
+  const pending = count((status) => status === "Pending");
+
+  if (passed > 0) parts.push(`${String(passed)} passed`);
+  if (failed > 0) parts.push(`${String(failed)} failed`);
+  if (skipped > 0) parts.push(`${String(skipped)} skipped`);
+  if (pending > 0) parts.push(`${String(pending)} pending`);
+  return parts.join(" · ");
 }
 
 function isImage(content: string): boolean {

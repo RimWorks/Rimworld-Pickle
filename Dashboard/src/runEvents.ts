@@ -1,4 +1,4 @@
-import type { StepStatus } from "./types";
+import type { StepArg, StepStatus } from "./types";
 
 export type RunEvent = {
   event: string;
@@ -14,12 +14,13 @@ export type RunEvent = {
   outcome?: string;
   durationMs?: number;
   failureMessage?: string | null;
+  args?: StepArg[];
   passed?: number;
   failed?: number;
   message?: string;
 };
 
-export type RanStep = { keyword: string; text: string; status: StepStatus; durationMs: number };
+export type RanStep = { keyword: string; text: string; status: StepStatus; durationMs: number; failureMessage: string | null; args?: StepArg[] };
 
 export type RanScenario = {
   index: number;
@@ -72,6 +73,8 @@ export function fold(events: RunEvent[]): Folded {
         text: event.text ?? "",
         status: event.status ?? "Pending",
         durationMs: event.durationMs ?? 0,
+        failureMessage: event.failureMessage ?? null,
+        args: event.args,
       });
     } else if (event.event === "scenario" && at) {
       at.outcome = event.outcome ?? null;

@@ -551,7 +551,7 @@ public class RunSession {
               stepPlan.Text,
               StepStatus.Failed,
               stepTimer.ElapsedMilliseconds,
-              "Invalid step binding");
+              "Invalid step binding") { ArgumentSpans = matchedStep.ArgumentSpans };
         }
 
         try {
@@ -565,7 +565,7 @@ public class RunSession {
               stepPlan.Text,
               StepStatus.Failed,
               stepTimer.ElapsedMilliseconds,
-              timeoutMessage);
+              timeoutMessage) { ArgumentSpans = matchedStep.ArgumentSpans };
         }
 
         if (stepTask.IsFaulted) {
@@ -576,7 +576,7 @@ public class RunSession {
               stepPlan.Text,
               StepStatus.Failed,
               stepTimer.ElapsedMilliseconds,
-              ex?.Message ?? "Step execution failed");
+              ex?.Message ?? "Step execution failed") { ArgumentSpans = matchedStep.ArgumentSpans };
         }
 
         stepTimer.Stop();
@@ -584,7 +584,7 @@ public class RunSession {
             stepPlan.Keyword,
             stepPlan.Text,
             StepStatus.Passed,
-            stepTimer.ElapsedMilliseconds);
+            stepTimer.ElapsedMilliseconds) { ArgumentSpans = matchedStep.ArgumentSpans };
       }
 
       stepTimer.Stop();

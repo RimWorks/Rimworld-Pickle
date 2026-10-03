@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using RimWorks.Pickle.Core.Steps;
+
 namespace RimWorks.Pickle.Core.Run;
 
 /// <summary>What one step in a scenario did, and how long it took.</summary>
@@ -30,4 +33,8 @@ public class StepResult {
 
   /// <summary>Why the step failed, or <c>null</c> when it did not.</summary>
   public string? FailureMessage { get; set; }
+
+  /// <summary>Where each matched argument sits inside <see cref="Text"/>, empty when the step took none or never
+  /// matched a definition.</summary>
+  public IReadOnlyList<StepArgument> ArgumentSpans { get; set; } = [];
 }

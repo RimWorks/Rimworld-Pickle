@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using RimWorks.Pickle.Core.Reports;
+using RimWorks.Pickle.Core.Steps;
 
 namespace RimWorks.Pickle.Core.Run;
 
@@ -37,6 +38,7 @@ public static class RunEvent {
   /// <param name="status">The step's status name.</param>
   /// <param name="durationMs">How long the step took.</param>
   /// <param name="failureMessage">The failure text, or <c>null</c> when it did not fail.</param>
+  /// <param name="args">Where each matched argument sits in <paramref name="text"/>, or <c>null</c> for none.</param>
   /// <returns>One JSON object, with no trailing newline.</returns>
   public static string Step(
       int scenario,
@@ -45,13 +47,15 @@ public static class RunEvent {
       string? text,
       string? status,
       long durationMs,
-      string? failureMessage) {
+      string? failureMessage,
+      IReadOnlyList<StepArgument>? args = null) {
     return "{\"event\":\"step\",\"scenario\":" + Count(scenario)
         + ",\"index\":" + Count(index)
         + ",\"keyword\":" + Text(keyword)
         + ",\"text\":" + Text(text)
         + ",\"status\":" + Text(status)
         + ",\"durationMs\":" + Count(durationMs)
+        + ",\"args\":" + JsonEscape.Spans(args ?? [])
         + ",\"failureMessage\":" + Nullable(failureMessage) + "}";
   }
 

@@ -1,12 +1,15 @@
 export type StepStatus = "Pending" | "Passed" | "Failed" | "Skipped" | "Undefined" | "Ambiguous";
 export type Outcome = "Pending" | "Running" | "Passed" | "Failed" | "Skipped";
 
+export type StepArg = { start: number; length: number };
+
 export type Step = {
   keyword: string;
   text: string;
   status: StepStatus;
   durationMs: number;
   failureMessage: string | null;
+  args?: StepArg[];
 };
 
 export type Attachment = { name: string; content: string };

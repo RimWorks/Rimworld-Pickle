@@ -145,7 +145,8 @@ public static class GherkinCommands {
             step.Text,
             step.Status.ToString(),
             (long)step.DurationMs,
-            step.FailureMessage));
+            step.FailureMessage,
+            step.ArgumentSpans));
       }
     };
 

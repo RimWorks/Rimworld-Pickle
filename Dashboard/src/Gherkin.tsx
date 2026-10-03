@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { formatMs, statusTone } from "./types";
+import { formatMs } from "./types";
+import { StepCard } from "./StepList";
 import { fold } from "./runEvents";
 import type { Attempt, Folded } from "./runEvents";
 
@@ -32,23 +33,16 @@ function Outcome({ view }: Readonly<{ view: Folded }>) {
     <>
       {view.error && <pre role="alert" className="text-error text-sm my-2 whitespace-pre-wrap break-words">{view.error}</pre>}
       {view.scenarios.map((scenario) => (
-        <article key={scenario.index} className="mb-3">
-          <div className="flex flex-wrap items-baseline gap-3">
-            <span className="font-semibold">{scenario.name}</span>
-            {scenario.outcome && <span className="text-sm">{scenario.outcome}</span>}
-            {scenario.durationMs > 0 && <span className="text-sm">{formatMs(scenario.durationMs)}</span>}
-          </div>
-          <ol className="mt-1">
-            {scenario.steps.map((step, position) => (
-              <li key={`${String(position)}-${step.text}`} className="flex flex-wrap items-baseline gap-3 py-1">
-                <span className={`font-mono text-xs w-16 shrink-0 ${statusTone[step.status]}`}>{step.status}</span>
-                <code className="grow break-words">{step.keyword} {step.text}</code>
-                <span className="text-sm">{formatMs(step.durationMs)}</span>
-              </li>
-            ))}
-          </ol>
-          {scenario.failureMessage && <pre className="text-sm mt-2 whitespace-pre-wrap break-all">{scenario.failureMessage}</pre>}
-        </article>
+        <div key={scenario.index} className="mb-3">
+          <StepCard steps={scenario.steps}>
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <h3 className="text-base font-semibold grow">{scenario.name}</h3>
+              {scenario.outcome && <span className="text-sm">{scenario.outcome}</span>}
+              {scenario.durationMs > 0 && <span className="font-mono text-xs tabular-nums">{formatMs(scenario.durationMs)}</span>}
+            </div>
+          </StepCard>
+          {scenario.failureMessage && !scenario.steps.some((step) => step.failureMessage) && <pre className="text-sm mt-2 whitespace-pre-wrap break-all">{scenario.failureMessage}</pre>}
+        </div>
       ))}
     </>
   );
@@ -105,7 +99,7 @@ export function Gherkin({ running, onClose }: Readonly<{ running: boolean; onClo
     });
   };
 
-  const run = async () => {
+  const run = async (source: string) => {
     setPending(true);
     setFailure("");
 
@@ -113,7 +107,7 @@ export function Gherkin({ running, onClose }: Readonly<{ running: boolean; onClo
       const response = await fetch(new URL("/gherkin", window.location.origin), {
         method: "POST",
         headers: { "Content-Type": "text/plain" },
-        body: text,
+        body: source,
       });
       if (!response.ok) throw new Error(`The run would not start (${String(response.status)})`);
       await response.text();
@@ -142,7 +136,7 @@ export function Gherkin({ running, onClose }: Readonly<{ running: boolean; onClo
       {running && <p role="alert" className="text-error mb-3">A run owns the game. This is off until it finishes.</p>}
       {failure && <p role="alert" className="text-error mb-3">{failure}</p>}
 
-      <form className="mb-6" onSubmit={(event) => { event.preventDefault(); void run(); }}>
+      <form className="mb-6" onSubmit={(event) => { event.preventDefault(); void run(text); }}>
         <label className="flex flex-col gap-1 text-sm">
           Feature
           <textarea
@@ -190,10 +184,12 @@ export function Gherkin({ running, onClose }: Readonly<{ running: boolean; onClo
 
       {newest && (
         <section className="mb-6">
-          <div className="flex flex-wrap items-baseline gap-3 mb-1">
+          <div className="flex flex-wrap items-baseline gap-3 mb-2">
             <h2 className="text-lg font-semibold">{newest.view.feature || "Latest run"}</h2>
             <span className="text-sm">{newest.attempt.startedAt}</span>
             {live && <span className="text-sm">live</span>}
+            <span className="grow" />
+            <button type="button" className="btn btn-sm btn-outline btn-primary" disabled={disabled} onClick={() => { void run(newest.attempt.source); }}>Rerun</button>
           </div>
           <Outcome view={newest.view} />
         </section>
@@ -208,14 +204,24 @@ export function Gherkin({ running, onClose }: Readonly<{ running: boolean; onClo
             <span>{view.tally || view.error || "no result"}</span>
           </summary>
           <Outcome view={view} />
-          <button
-            type="button"
-            className="btn btn-xs mt-2"
-            disabled={disabled}
-            onClick={() => { setText(attempt.source); setCaret(0); editor.current?.focus(); }}
-          >
-            Load into the editor
-          </button>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <button
+              type="button"
+              className="btn btn-xs btn-outline btn-primary"
+              disabled={disabled}
+              onClick={() => { void run(attempt.source); }}
+            >
+              Rerun
+            </button>
+            <button
+              type="button"
+              className="btn btn-xs"
+              disabled={disabled}
+              onClick={() => { setText(attempt.source); setCaret(0); editor.current?.focus(); }}
+            >
+              Load into the editor
+            </button>
+          </div>
         </details>
       ))}
     </section>
