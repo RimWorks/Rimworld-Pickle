@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Gherkin;
+using Gherkin.Ast;
 using RimWorks.Pickle.Core;
 using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Core.Model;
@@ -27,6 +28,57 @@ public static class FeatureParser {
     }
 
     return parsed;
+  }
+
+  /// <summary>Parses Gherkin text that came from no file, such as a one-off run typed into the dashboard.</summary>
+  /// <param name="gherkin">The Gherkin source.</param>
+  /// <returns>The plan, whose <c>SourcePath</c> is <c>null</c> because there is no file.</returns>
+  /// <exception cref="InvalidOperationException">The text is blank, will not parse, or holds a problem that stops it running. The message is shown to whoever typed the Gherkin, so it carries no parameter name.</exception>
+  public static FeaturePlan ParseText(string? gherkin) {
+    if (string.IsNullOrWhiteSpace(gherkin)) {
+      throw new InvalidOperationException("Send some Gherkin to run.");
+    }
+
+    FeaturePlan plan;
+    try {
+      Parser parser = new Parser();
+      using StringReader reader = new StringReader(gherkin);
+      plan = GherkinAdapter.Adapt(parser.Parse(reader), null);
+    } catch (CompositeParserException composite) {
+      throw new InvalidOperationException(Explain(composite.Errors), composite);
+    } catch (ParserException single) {
+      throw new InvalidOperationException(Explain([single]), single);
+    } catch (Exception ex) {
+      throw new InvalidOperationException(ex.Message, ex);
+    }
+
+    IReadOnlyList<string> problems = QuickstartTag.Problems(plan);
+    if (problems.Count > 0) {
+      throw new InvalidOperationException(string.Join("; ", problems));
+    }
+
+    return plan;
+  }
+
+  private static string Explain(IEnumerable<ParserException> errors) {
+    List<string> lines = [];
+
+    foreach (ParserException error in errors) {
+      string where = error.Location is Location at ? $"line {at.Line}, column {at.Column}: " : string.Empty;
+      string? hint = error switch {
+        UnexpectedTokenException token => GherkinHint.For(token.ExpectedTokenTypes, false),
+        UnexpectedEOFException end => GherkinHint.For(end.ExpectedTokenTypes, true),
+        NoSuchLanguageException => GherkinHint.UnknownLanguage,
+        _ => null,
+      };
+
+      lines.Add(where + (hint ?? error.Message));
+      if (hint != null) {
+        lines.Add("    " + error.Message);
+      }
+    }
+
+    return string.Join("\n", lines);
   }
 
   private static FeaturePlan? ParseOne(string featureFile) {

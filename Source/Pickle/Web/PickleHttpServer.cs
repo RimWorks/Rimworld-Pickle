@@ -5,6 +5,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using RimWorks.Pickle.Core.Run;
 using RimWorks.Pickle.Evidence;
 using RimWorks.Pickle.Run;
 using UnityEngine;
@@ -23,6 +24,7 @@ public static class PickleHttpServer {
   private const string ErrorPrefix = "{\"error\":";
   private const string OffValue = "false";
   private const string PlainText = "text/plain";
+  private const string NdjsonContentType = "application/x-ndjson";
 
   private const string EvidencePrefix = "/screenshots/";
 
@@ -30,7 +32,7 @@ public static class PickleHttpServer {
 
   private static readonly string[] ReportFiles = ["junit.xml", "messages.ndjson", "summary.json", "summary.md"];
 
-  private static readonly string[] MutatingPaths = ["/abort", "/pause", "/continue", "/run", "/scope", "/select", "/filter", "/mode", "/wip", "/break", "/pill", "/fixture", "/step", "/step/reset"];
+  private static readonly string[] MutatingPaths = ["/abort", "/pause", "/continue", "/run", "/scope", "/select", "/filter", "/mode", "/wip", "/break", "/pill", "/fixture", "/step", "/step/reset", "/gherkin"];
 
   // Every route here does its work and answers OkBody, so they share one lookup rather
   // than eleven branches in Route.
@@ -61,6 +63,9 @@ public static class PickleHttpServer {
 
   /// <summary>True once <see cref="Start"/> has a listener up. False after <see cref="Stop"/> or a failed start.</summary>
   public static bool IsRunning => running;
+
+  /// <summary>The port the listener bound, or zero before <see cref="Start"/> succeeds.</summary>
+  public static int Port { get; private set; }
 
   /// <summary>Replaces the snapshot the <c>/state</c> route serves.</summary>
   /// <param name="json">The full snapshot document, already serialized.</param>
@@ -115,6 +120,7 @@ public static class PickleHttpServer {
       listener.Prefixes.Add($"http://*:{port}/");
       listener.Start();
       running = true;
+      Port = port;
 
       Thread worker = new Thread(Serve) { IsBackground = true, Name = "pickle-http" };
       worker.Start();
@@ -238,6 +244,12 @@ public static class PickleHttpServer {
       case "/step/reset":
         ServeConsole(context, path);
         return;
+      case "/gherkin":
+        ServeGherkin(context);
+        return;
+      case "/gherkin/runs":
+        Write(context, JsonContentType, GherkinCommands.Recent());
+        return;
       case "/":
         Write(context, "text/html; charset=utf-8", Dashboard.Html);
         return;
@@ -336,6 +348,28 @@ public static class PickleHttpServer {
     } catch (Exception ex) {
       context.Response.StatusCode = 400;
       Write(context, JsonContentType, ErrorPrefix + Json.Quote(ex.Message) + "}");
+    }
+  }
+
+  private static void ServeGherkin(HttpListenerContext context) {
+    string gherkin;
+    using (StreamReader reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding)) {
+      gherkin = reader.ReadToEnd();
+    }
+
+    context.Response.ContentType = NdjsonContentType;
+    context.Response.SendChunked = true;
+
+    void WriteChunk(string line) {
+      byte[] bytes = Encoding.UTF8.GetBytes(line + "\n");
+      context.Response.OutputStream.Write(bytes, 0, bytes.Length);
+      context.Response.OutputStream.Flush();
+    }
+
+    try {
+      GherkinCommands.Stream(gherkin, WriteChunk);
+    } catch (Exception ex) {
+      WriteChunk(RunEvent.Error(ex.Message));
     }
   }
 
