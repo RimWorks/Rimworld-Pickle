@@ -33,30 +33,17 @@ public static class RunEvent {
   /// <summary>Reports one finished step.</summary>
   /// <param name="scenario">The owning scenario's index.</param>
   /// <param name="index">The step's position in the scenario, counting from zero.</param>
-  /// <param name="keyword">The step's Gherkin keyword.</param>
-  /// <param name="text">The step's text.</param>
-  /// <param name="status">The step's status name.</param>
-  /// <param name="durationMs">How long the step took.</param>
-  /// <param name="failureMessage">The failure text, or <c>null</c> when it did not fail.</param>
-  /// <param name="args">Where each matched argument sits in <paramref name="text"/>, or <c>null</c> for none.</param>
+  /// <param name="step">The finished step.</param>
   /// <returns>One JSON object, with no trailing newline.</returns>
-  public static string Step(
-      int scenario,
-      int index,
-      string? keyword,
-      string? text,
-      string? status,
-      long durationMs,
-      string? failureMessage,
-      IReadOnlyList<StepArgument>? args = null) {
+  public static string Step(int scenario, int index, StepResult step) {
     return "{\"event\":\"step\",\"scenario\":" + Count(scenario)
         + ",\"index\":" + Count(index)
-        + ",\"keyword\":" + Text(keyword)
-        + ",\"text\":" + Text(text)
-        + ",\"status\":" + Text(status)
-        + ",\"durationMs\":" + Count(durationMs)
-        + ",\"args\":" + JsonEscape.Spans(args ?? [])
-        + ",\"failureMessage\":" + Nullable(failureMessage) + "}";
+        + ",\"keyword\":" + Text(step.Keyword)
+        + ",\"text\":" + Text(step.Text)
+        + ",\"status\":" + Text(step.Status.ToString())
+        + ",\"durationMs\":" + Count((long)step.DurationMs)
+        + ",\"args\":" + JsonEscape.Spans(step.ArgumentSpans)
+        + ",\"failureMessage\":" + Nullable(step.FailureMessage) + "}";
   }
 
   /// <summary>Reports one finished scenario.</summary>
