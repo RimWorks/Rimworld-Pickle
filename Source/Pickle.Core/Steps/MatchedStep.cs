@@ -17,4 +17,7 @@ public class MatchedStep : StepResolution {
 
   /// <summary>The captured groups, converted to <see cref="StepDefinition.ParameterTypes"/>, in order.</summary>
   public IReadOnlyList<object?> Args { get; }
+
+  /// <summary>Where each captured group sits in the step text, in the same order as <see cref="Args"/>.</summary>
+  public IReadOnlyList<StepArgument> ArgumentSpans { get; set; } = [];
 }

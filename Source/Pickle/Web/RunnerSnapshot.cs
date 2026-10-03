@@ -8,6 +8,7 @@ using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Core.Model;
 using RimWorks.Pickle.Core.Reports;
 using RimWorks.Pickle.Core.Run;
+using RimWorks.Pickle.Core.Steps;
 using RimWorks.Pickle.Evidence;
 using RimWorks.Pickle.Run;
 using RimWorks.Pickle.Runtime;
@@ -197,9 +198,16 @@ public static class RunnerSnapshot {
     json.Append("\"text\":").Append(Json.Quote(step.Text)).Append(',');
     json.Append("\"status\":").Append(Json.Quote(step.Status.ToString())).Append(',');
     json.Append("\"durationMs\":").Append(Json.Number(step.DurationMs)).Append(',');
+    json.Append("\"args\":").Append(BuildArgs(step.ArgumentSpans)).Append(',');
     json.Append("\"failureMessage\":").Append(Json.Quote(step.FailureMessage));
     json.Append('}');
     return json.ToString();
+  }
+
+  private static string BuildArgs(IReadOnlyList<StepArgument> spans) {
+    return Json.Array(spans.Select(span =>
+        "{\"start\":" + span.Start.ToString(CultureInfo.InvariantCulture)
+        + ",\"length\":" + span.Length.ToString(CultureInfo.InvariantCulture) + "}"));
   }
 
   private static string BuildPlannedStep(StepPlan step) {
@@ -209,6 +217,7 @@ public static class RunnerSnapshot {
     json.Append("\"text\":").Append(Json.Quote(step.Text)).Append(',');
     json.Append("\"status\":\"Pending\",");
     json.Append("\"durationMs\":0,");
+    json.Append("\"args\":[],");
     json.Append("\"failureMessage\":null");
     json.Append('}');
     return json.ToString();

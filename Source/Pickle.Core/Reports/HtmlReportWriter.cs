@@ -174,6 +174,7 @@ public static class HtmlReportWriter {
     json.Append("\"text\":").Append(JsonEscape.Quote(step.Text)).Append(',');
     json.Append("\"status\":").Append(JsonEscape.Quote(step.Status.ToString())).Append(',');
     json.Append("\"durationMs\":").Append(step.DurationMs.ToString("0.##", CultureInfo.InvariantCulture)).Append(',');
+    json.Append("\"args\":").Append(JsonEscape.Spans(step.ArgumentSpans)).Append(',');
     json.Append("\"failureMessage\":").Append(Quote(step.FailureMessage));
     json.Append('}');
     return json.ToString();

@@ -56,7 +56,7 @@ public class StepTable {
 
     (StepDefinition matchedDef, Match matchedMatch) = matches[0];
     List<object?> args = ExtractArgs(matchedDef, matchedMatch);
-    return new MatchedStep(matchedDef, args);
+    return new MatchedStep(matchedDef, args) { ArgumentSpans = ExtractSpans(matchedDef, matchedMatch) };
   }
 
   private static object? ConvertValue(string value, Type targetType) {
@@ -87,6 +87,19 @@ public class StepTable {
     }
 
     return args;
+  }
+
+  private static List<StepArgument> ExtractSpans(StepDefinition definition, Match match) {
+    List<StepArgument> spans = new();
+
+    for (int i = 1; i < match.Groups.Count && i <= definition.ParameterTypes.Count; i++) {
+      Group group = match.Groups[i];
+      if (group.Success) {
+        spans.Add(new StepArgument { Start = group.Index, Length = group.Length });
+      }
+    }
+
+    return spans;
   }
 
   private Regex CompilePattern(string pattern) {

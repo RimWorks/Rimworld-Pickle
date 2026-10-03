@@ -192,7 +192,11 @@ export function App() {
             <main className="flex-1 min-w-0 overflow-y-auto p-4 md:p-6">
               {workspace === "run" && <>
                 {current?.visible === false && <p className="text-sm mb-3">This scenario is hidden by the current filters.</p>}
-                <Detail key={selected ? toHash(selected) : "empty"} scenario={current} live={running ? snap : null} feature={snap.features.find((feature) => feature.path === selected?.path)} onTag={snap.controllable && !running ? (tag, additive) => { void post(`/filter?tag=${encodeURIComponent(tag)}&additive=${additive}`); } : undefined} />
+                <Detail key={selected ? toHash(selected) : "empty"} scenario={current} live={running ? snap : null} feature={snap.features.find((feature) => feature.path === selected?.path)} onTag={snap.controllable && !running ? (tag, additive) => { void post(`/filter?tag=${encodeURIComponent(tag)}&additive=${additive}`); } : undefined} onRerun={snap.controllable && !running && !snap.fixtureBusy && selected ? () => {
+                  void post("/select?scope=none");
+                  void post(`/select?path=${encodeURIComponent(selected.path)}&index=${String(selected.index)}&on=true`);
+                  void post("/run?scope=selected");
+                } : undefined} />
               </>}
               {workspace === "console" && <Console running={running} onClose={() => setWorkspace("run")} />}
               {workspace === "gherkin" && <Gherkin running={running} onClose={() => setWorkspace("run")} />}

@@ -1,5 +1,6 @@
 using System.Linq;
 using RimWorks.Pickle.Core.Run;
+using RimWorks.Pickle.Core.Steps;
 using Xunit;
 
 namespace RimWorks.Pickle.Tests;
@@ -7,7 +8,7 @@ namespace RimWorks.Pickle.Tests;
 public class RunEventTests {
   [Fact]
   public void Step_AFailureMessageWithNewlinesStaysOneLine() {
-    string line = RunEvent.Step(0, 1, "Then", "it works", "Failed", 12, "line one\nline two\r\nline three");
+    string line = RunEvent.Step(0, 1, new StepResult("Then", "it works", StepStatus.Failed, 12, "line one\nline two\r\nline three"));
 
     Assert.DoesNotContain("\n", line);
     Assert.DoesNotContain("\r", line);
@@ -16,7 +17,7 @@ public class RunEventTests {
 
   [Fact]
   public void Step_GherkinTextWithQuotesStaysOneLine() {
-    string line = RunEvent.Step(0, 0, "Given", "a window \"Dialog_MessageBox\" is answered", "Passed", 1, null);
+    string line = RunEvent.Step(0, 0, new StepResult("Given", "a window \"Dialog_MessageBox\" is answered", StepStatus.Passed, 1));
 
     Assert.DoesNotContain("\n", line);
     Assert.Contains("\\\"Dialog_MessageBox\\\"", line);
@@ -24,16 +25,32 @@ public class RunEventTests {
 
   [Fact]
   public void Step_NoFailureIsJsonNullNotAnEmptyString() {
-    string line = RunEvent.Step(0, 0, "Given", "it works", "Passed", 5, null);
+    string line = RunEvent.Step(0, 0, new StepResult("Given", "it works", StepStatus.Passed, 5));
 
     Assert.Contains("\"failureMessage\":null", line);
   }
 
   [Fact]
   public void Step_AnEmptyFailureIsAStringNotNull() {
-    string line = RunEvent.Step(0, 0, "Given", "it works", "Failed", 5, string.Empty);
+    string line = RunEvent.Step(0, 0, new StepResult("Given", "it works", StepStatus.Failed, 5, string.Empty));
 
     Assert.Contains("\"failureMessage\":\"\"", line);
+  }
+
+  [Fact]
+  public void Step_ArgumentSpansRideAlongWithTheText() {
+    StepArgument[] spans = [new StepArgument { Start = 9, Length = 13 }];
+
+    string line = RunEvent.Step(0, 0, new StepResult("Given", "the save \"test-colony\" is loaded", StepStatus.Passed, 8100) { ArgumentSpans = spans });
+
+    Assert.Contains("\"args\":[{\"start\":9,\"length\":13}]", line);
+  }
+
+  [Fact]
+  public void Step_NoArgumentsIsAnEmptyArrayNotNull() {
+    string line = RunEvent.Step(0, 0, new StepResult("Then", "the game is not paused", StepStatus.Passed, 4));
+
+    Assert.Contains("\"args\":[]", line);
   }
 
   [Fact]
@@ -71,7 +88,7 @@ public class RunEventTests {
   public void Document_EndsEveryLineWithANewlineSoAReaderCanSplit() {
     string document = RunEvent.Document([
       RunEvent.RunStarted("f", 1),
-      RunEvent.Step(0, 0, "Given", "a\nb", "Passed", 1, null),
+      RunEvent.Step(0, 0, new StepResult("Given", "a\nb", StepStatus.Passed, 1)),
       RunEvent.RunFinished(1, 0),
     ]);
 

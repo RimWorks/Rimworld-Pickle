@@ -138,14 +138,7 @@ public static class GherkinCommands {
       IReadOnlyList<StepResult> done = session.CurrentStepResults;
       for (; emittedSteps < done.Count; emittedSteps++) {
         StepResult step = done[emittedSteps];
-        events.Enqueue(RunEvent.Step(
-            scenarioIndex,
-            emittedSteps,
-            step.Keyword,
-            step.Text,
-            step.Status.ToString(),
-            (long)step.DurationMs,
-            step.FailureMessage));
+        events.Enqueue(RunEvent.Step(scenarioIndex, emittedSteps, step));
       }
     };
 
