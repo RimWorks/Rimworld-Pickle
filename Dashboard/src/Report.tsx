@@ -39,7 +39,6 @@ export function Report() {
     () => initialTheme(),
   );
 
-  // The document ships with a hardcoded theme, so the chosen one has to be applied.
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);

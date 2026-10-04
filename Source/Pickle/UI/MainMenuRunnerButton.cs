@@ -16,8 +16,6 @@ public static class MainMenuRunnerButton {
   private const float ButtonHeight = 50f;
   private const float LanguageButtonBottom = 60f;
 
-  // MainMenuDrawer parks the bottom of the web-links column here and puts the language
-  // button 10px under it. Private, and the only honest way to sit below that button.
   private static readonly FieldInfo? WebBackgroundYMax =
       typeof(MainMenuDrawer).GetField("webBackgroundYMax", BindingFlags.NonPublic | BindingFlags.Static);
 

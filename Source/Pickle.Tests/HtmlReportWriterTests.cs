@@ -252,8 +252,6 @@ public class HtmlReportWriterTests {
         .GetProperty("attachments")[0];
   }
 
-  // Expand probes the disk for film.webm beside the frames, so the branches only separate
-  // when the file really is or is not there.
   private sealed class TempFilmDir : System.IDisposable {
     private readonly string root;
 

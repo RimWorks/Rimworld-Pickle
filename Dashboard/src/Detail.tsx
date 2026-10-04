@@ -165,8 +165,6 @@ function filmVideo(attachments: Attachment[]): string | null {
   return attachments.find((a) => a.name === "film-video")?.content ?? null;
 }
 
-// Only written when ffmpeg was on the PATH during the run, so the strip below stays as
-// the thing that always works.
 function FilmVideo({ src }: Readonly<{ src: string }>) {
   return (
     <figure>
@@ -182,7 +180,6 @@ function otherAttachments(attachments: Attachment[]): Attachment[] {
   return attachments.filter((a) => !a.name.startsWith("film-"));
 }
 
-// capture rate varies with rendering speed, so the slider counts frames.
 function Filmstrip({ frames, onOpen }: Readonly<{ frames: Attachment[]; onOpen: (src: string) => void }>) {
   const [index, setIndex] = useState(0);
   const frame = frames[Math.min(index, frames.length - 1)];
@@ -221,8 +218,6 @@ function Zoomable({
   );
 }
 
-// A frame is 1920 wide and the pane is not, so the strip is only useful if a click can
-// show the real thing.
 function Lightbox({ src, label, onClose }: Readonly<{ src: string; label: string; onClose: () => void }>) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

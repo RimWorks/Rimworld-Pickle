@@ -55,7 +55,6 @@ public class RunPill : PickleWindow {
   // way to land the pill top-right instead, matching the approved mock.
 
   /// <inheritdoc/>
-  // Both labels wrap, so the pill is only as tall as the text currently needs.
   public override void WindowUpdate() {
     base.WindowUpdate();
 

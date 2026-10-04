@@ -87,7 +87,6 @@ export function App() {
     setSelected(next);
   }, [snap, selected, following]);
 
-  // A new run is a fresh reason to watch, so following comes back on by itself.
   useEffect(() => {
     if ((snap?.status === "running" || snap?.status === "paused") && !wasRunning.current) {
       setFollowing(true);
@@ -95,7 +94,6 @@ export function App() {
     }
   }, [snap]);
 
-  // Keep the followed row on screen; the sidebar is taller than the viewport.
   useEffect(() => {
     if (!selected) return;
     document
@@ -103,7 +101,6 @@ export function App() {
       ?.scrollIntoView({ block: "nearest" });
   }, [selected]);
 
-  // Jump to the first failure the moment a run ends, matching the in-game runner.
   useEffect(() => {
     if (!snap) return;
     const running = snap?.status === "running" || snap?.status === "paused";

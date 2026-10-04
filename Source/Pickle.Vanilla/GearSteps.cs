@@ -151,8 +151,6 @@ public class GearSteps {
         DescribeWhyNotDrawn(pawn, def));
   }
 
-  // A worn apparel with an empty worn graphic path has no render node at all, and so does an apparel
-  // that is not worn, so the failure has to say which of the two it is.
   private static string DescribeWhyNotDrawn(Pawn pawn, ThingDef def) {
     Apparel? worn = pawn.apparel?.WornApparel.FirstOrDefault(a => a.def == def);
     if (worn == null) {

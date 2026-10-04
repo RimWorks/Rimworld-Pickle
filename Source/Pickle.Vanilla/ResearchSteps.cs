@@ -65,7 +65,6 @@ public class ResearchSteps {
 
     ResearchProjectDef project = DefLookup.Require<ResearchProjectDef>(projectDefName);
 
-    // The list the window draws from: the visible projects whose tab is the selected one.
     List<ResearchProjectDef> listed = [.. window.VisibleResearchProjects.Where(p => p.tab == current)];
     bool isListed = listed.Contains(project);
     ctx.Assert(

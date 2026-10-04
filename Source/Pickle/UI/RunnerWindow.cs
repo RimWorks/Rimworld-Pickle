@@ -525,8 +525,7 @@ public class RunnerWindow : PickleWindow {
     }
   }
 
-  // Reparsing keeps results, so a reload does not blank mods it never ran. A feature
-  // whose scenario order changed can show a stale row until the next full run.
+  // TODO(stale-rows): key results by scenario id so a reordered feature stops showing a stale row
   private void DiscoverAndParseFeatures() {
     visibleScenarios = null;
     DiscoveredSuites = SuiteScanner.DiscoverSuites();

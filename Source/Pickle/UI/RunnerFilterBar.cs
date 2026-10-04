@@ -105,8 +105,6 @@ public static class RunnerFilterBar {
     return width - (Padding * 2f) - (width < 1000f ? 0f : RunnerToolbar.ActionsWidth + 18f);
   }
 
-  // Restores whatever the caller was using. Hardcoding Small here measured the tag in Tiny
-  // and then drew it in Small, so every chip came out too narrow for its own label.
   private static float ChipWidth(string tag, float fieldsWidth) {
     GameFont previous = Text.Font;
     Text.Font = GameFont.Tiny;

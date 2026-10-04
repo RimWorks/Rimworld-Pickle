@@ -30,15 +30,12 @@ public static class PickleHttpServer {
 
   private const int DefaultPort = 27750;
 
-  // How many consecutive ports a dashboard with no requested port tries, starting at DefaultPort.
   private const int FallbackPortCount = 10;
 
   private static readonly string[] ReportFiles = ["junit.xml", "messages.ndjson", "summary.json", "summary.md"];
 
   private static readonly string[] MutatingPaths = ["/abort", "/pause", "/continue", "/run", "/scope", "/select", "/filter", "/mode", "/wip", "/break", "/pill", "/fixture", "/step", "/step/reset", "/gherkin"];
 
-  // Every route here does its work and answers OkBody, so they share one lookup rather
-  // than eleven branches in Route.
   private static readonly Dictionary<string, Action<HttpListenerContext>> Commands = new Dictionary<string, Action<HttpListenerContext>> {
     ["/abort"] = _ => RunnerCommands.Abort().GetAwaiter().GetResult(),
     ["/run"] = c => RunnerCommands.Run(c.Request.QueryString["scope"] ?? "all").GetAwaiter().GetResult(),
@@ -76,13 +73,9 @@ public static class PickleHttpServer {
     snapshot = json;
   }
 
-  /// <summary>Builds a snapshot and publishes it, absorbing anything the build throws.</summary>
+  /// <summary>Builds a snapshot and publishes it, absorbing anything the build throws so a
+  /// failed snapshot never ends the run. Only the first failure in a streak is logged.</summary>
   /// <param name="build">Builds the snapshot JSON from live state.</param>
-  // The dashboard is a view of a run, not a part of it, so nothing it does may end one. A build
-  // reads live game state and can meet that state mid-change, and the throw used to travel out
-  // through OnProgress and be reported against whichever scenario was running. Every publisher
-  // routes through here, so the runner window and the autorun path are both covered. Only the
-  // first failure in a streak is logged, since the cause repeats every frame.
   public static void PublishSafely(Func<string> build) {
     try {
       Publish(build());
@@ -97,13 +90,8 @@ public static class PickleHttpServer {
     }
   }
 
-  /// <summary>Starts the dashboard on the configured or default port, unless <c>-pickle-no-http</c> was passed, then opens it in a browser.</summary>
-  // On unless asked otherwise. The old -pickle-http is gone; RimWorld ignores an argument
-  // nothing reads, so a command line that still passes it keeps working.
-  // A port given with -pickle-http-port is used as given, with no search: whoever names a
-  // port needs that one. Without it, a taken default port moves the dashboard to the next
-  // free one instead of leaving it dead, which would also leave no driver for the console
-  // routes (DashboardSeed only creates it once the server is up).
+  /// <summary>Starts the dashboard unless <c>-pickle-no-http</c> was passed, then opens it. A port
+  /// named with <c>-pickle-http-port</c> is used as given; otherwise a taken default moves on.</summary>
   public static void StartUnlessDisabled() {
     if (GenCommandLine.CommandLineArgPassed("-pickle-no-http")) {
       return;

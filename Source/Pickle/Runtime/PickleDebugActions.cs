@@ -30,8 +30,7 @@ public static class PickleDebugActions {
     _ = RunSessionSmoke.Run();
   }
 
-  // no state bits means no requirement. IsAllowedInCurrentGameState ANDs every bit set,
-  // so Entry | PlayingOnMap would demand both at once and never show.
+  // Invalid is no bits: IsAllowedInCurrentGameState ANDs them, so two would demand both.
   [DebugAction(Category, "runner window", allowedGameStates = AllowedGameStates.Invalid)]
   private static void RunnerWindowDebugAction() {
     PickleDriver.EnsureExists();

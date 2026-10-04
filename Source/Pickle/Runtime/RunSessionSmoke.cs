@@ -80,8 +80,6 @@ Feature: Run Session Smoke Test
         return;
       }
 
-      // Asserts the content, not just presence: a non-empty message passed while reflection
-      // reported its own wrapper text instead of the assertion's.
       string failureMessage = second.FailureMessage ?? string.Empty;
       if (failureMessage.Length == 0 || !failureMessage.Contains("deliberate smoke failure")) {
         Log.ErrorTo(PickleLog.Channel,

@@ -789,8 +789,6 @@ public class RunSession {
     return (screenshotPath, stateDumps);
   }
 
-  // The step attribute wins over an @timeout: tag, because a step that waits on the
-  // simulation knows how long it needs better than the scenario does.
   private float ResolveStepTimeout(StepDefinition definition) {
     if (definition.TimeoutSeconds.HasValue) {
       return definition.TimeoutSeconds.Value;

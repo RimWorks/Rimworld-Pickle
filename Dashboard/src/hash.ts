@@ -1,7 +1,5 @@
 import type { Selection } from "./types";
 
-// The hash is the address of a scenario, so a link into one failure survives a reload
-// and the back button walks the scenarios you looked at.
 export function toHash(selection: Selection): string {
   return `#${encodeURIComponent(selection.path)}:${selection.index}`;
 }
