@@ -23,7 +23,7 @@ exits.
 | `-pickle-run-timeout=N` | Stop the run after N minutes |
 | `-pickle-max-film-seconds=N` | Seconds of footage a `@film` scenario keeps. Defaults to 60. Use `0` to film nothing |
 | `-pickle-config=PATH` | Read these flags from a file |
-| `-pickle-http-port=N` | Serve the dashboard on port N instead of 27750 |
+| `-pickle-http-port=N` | Serve the dashboard on port N instead of 27750. Pickle uses this port as given and does not try another |
 | `-pickle-no-http` | Do not serve the dashboard |
 | `-pickle-no-browser` | Do not open the dashboard in a browser |
 
@@ -173,8 +173,9 @@ accepts anything tests nothing.
 ## Watch a run
 
 The dashboard is on for every run, including autorun. Open `http://localhost:27750` to
-see the tree, the current step, and live counts. Autorun never opens a browser itself,
-because CI and containers have none.
+see the tree, the current step, and live counts. If that port was in use, the log names
+the port Pickle took. Autorun never opens a browser itself, because CI and containers
+have none.
 
 The dashboard reads its state over HTTP, so a scenario that reloads a save does not
 disturb it. This is the only way to watch a headless run.
