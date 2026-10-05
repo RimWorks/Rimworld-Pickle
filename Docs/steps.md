@@ -74,6 +74,7 @@ that switches language cannot also use a fixture, and cannot be tagged `@same-wo
 | Step | Does |
 | --- | --- |
 | `the save {string} is loaded` | Loads a fixture from any mod's `Pickle/Fixtures/`. Tag the scenario `@same-world` to reuse the world the previous scenario left |
+| `the save file {string} is loaded` | Loads a save file instead of a shipped fixture. Pickle reads a bare name from the saved games folder, uses a rooted path as written, and adds `.rws` when you leave it off. Use it to load a file the scenario wrote with `I save and reload as {string}` |
 
 Most scenarios start here. Loading a save reloads the Unity scene, so read game state
 again afterwards.
@@ -581,7 +582,7 @@ into a tile, so Pickle scans the grid for the closest one.
 | `I close all dialogs` | Closes every open window |
 | `the screen is clear` | Closes every window Pickle does not own. Drops every window that opens afterwards, the scenario's own included, until the scenario ends. Use it before a scenario clicks the map, a gizmo, or the main tab bar. Lift it with `windows are allowed to open again` before a click meant to open a window |
 | `windows are allowed to open again` | Lets the game open its own windows again, before the scenario ends |
-| `a window {string} is answered with {string}` | Clicks the named button on a window of that type whenever it opens, instead of suppressing it. Match the simple type name exactly, as in `Dialog_MessageBox`. Place it before `the save {string} is loaded` to answer a window another mod opens during the load, which is the case a dropped window never answers. Forgotten when the scenario ends |
+| `a window {string} is answered with {string}` | Clicks the named button on a window of that type whenever it opens, instead of suppressing it. Match the simple type name exactly, as in `Dialog_MessageBox`. Place it before `the save {string} is loaded` to answer a window another mod opens during the load, which is the case a dropped window never answers. Forgotten when the scenario ends. Some mods store your answer in the save. Vanilla Expanded Framework does this for an ignored faction, so a scenario that saves after answering writes that state into the file |
 | `the interface scale is {int} percent` | Sets `Prefs.UIScale` the way the Options page does: clears the measured label widths, lets the GUI space follow, and lays the open windows out again. Restored after the scenario, never saved. A click at a scale other than 100 is the only one that exercises the tag store's conversion |
 | `window {string} is open` | Checks a window type is open |
 | `window {string} is closed` | Checks a window type is closed |

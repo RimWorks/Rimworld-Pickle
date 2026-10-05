@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
@@ -690,6 +691,12 @@ public class RunSession {
         new Func<PickleContext, string, Task>(LoadFixtureStep));
 
     AddEngineStep(
+        "the save file {string} is loaded",
+        StepKind.Given,
+        [typeof(string)],
+        new Func<PickleContext, string, Task>(LoadSaveFileStep));
+
+    AddEngineStep(
         "I save and reload",
         StepKind.When,
         [],
@@ -767,6 +774,25 @@ public class RunSession {
     await FixtureLoader.LoadFixture(resolution.Fixture!.FullPath, driver, ctx.WaitScope);
 
     currentLoadedFixture = fixtureName;
+    currentLoadedQuickstart = null;
+    LogWatch.ArmAfterLoad();
+  }
+
+  private async Task LoadSaveFileStep(PickleContext ctx, string reference) {
+    string resolved = SaveFilePath.Resolve(reference, GenFilePaths.SavedGamesFolderPath);
+
+    if (resolved.Length == 0) {
+      throw new InvalidOperationException("no save file was named");
+    }
+
+    if (!File.Exists(resolved)) {
+      throw new InvalidOperationException(
+          $"no save file at '{resolved}'. save one first with 'I save and reload as \"<name>\"'");
+    }
+
+    await FixtureLoader.LoadFixture(resolved, driver, ctx.WaitScope);
+
+    currentLoadedFixture = null;
     currentLoadedQuickstart = null;
     LogWatch.ArmAfterLoad();
   }
