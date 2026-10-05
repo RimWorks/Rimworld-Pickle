@@ -22,9 +22,18 @@ public static class StepScanner {
 
     foreach (Assembly assembly in assemblies) {
       Type[] types = GetLoadableTypes(assembly);
+      bool couldHoldSteps = StepScanScope.CouldHoldSteps(assembly.GetName().Name);
+
       foreach (Type type in types) {
         if (Has<PickleStepsAttribute>(type)) {
           ScanStepsClass(type, table);
+        } else if (couldHoldSteps) {
+          int orphans = CountStepMethods(type);
+          if (orphans > 0) {
+            Log.WarnTo(PickleLog.Channel,
+                "{Type} has {Count} step method(s) but no [PickleSteps], so none of them registered",
+                [type.FullName, orphans]);
+          }
         }
       }
     }
@@ -104,6 +113,20 @@ public static class StepScanner {
           [assembly.GetName().Name, ex.Message]);
       return [];
     }
+  }
+
+  private static int CountStepMethods(Type type) {
+    int count = 0;
+
+    foreach (MethodInfo method in type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)) {
+      if (method.GetCustomAttribute<GivenAttribute>() != null
+          || method.GetCustomAttribute<WhenAttribute>() != null
+          || method.GetCustomAttribute<ThenAttribute>() != null) {
+        count++;
+      }
+    }
+
+    return count;
   }
 
   private static void ScanStepsClass(Type stepsClass, StepTable table) {

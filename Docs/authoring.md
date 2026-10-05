@@ -33,6 +33,9 @@ public class GreeterSteps {
 The keyword you use in the feature file does not have to match the attribute. Pickle
 matches on the expression text alone.
 
+A class that forgets `[PickleSteps]` still compiles, and its steps register nowhere. Pickle
+logs a warning at startup that names the class, and the scenario reports `Undefined step`.
+
 ### Share state between steps
 
 `ctx.Set<T>` and `ctx.Get<T>` hold values for the length of one scenario. Pickle
