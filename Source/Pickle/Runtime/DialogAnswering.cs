@@ -18,6 +18,10 @@ public static class DialogAnswering {
 
   private static bool hooked;
 
+  /// <summary>Whether any answer is registered. <see cref="Reset"/> runs after every scenario, so a
+  /// scenario that starts with this true read state its predecessor left behind.</summary>
+  public static bool HasAnswers => Rules.Any;
+
   /// <summary>Records the button to click whenever a window of this type opens during the scenario.</summary>
   /// <param name="windowTypeName">The window's simple type name, as <c>GetType().Name</c> reports it.</param>
   /// <param name="buttonLabel">The label on the button to click.</param>

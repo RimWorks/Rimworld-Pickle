@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using RimWorks.Pickle.Web;
 using Verse;
 using Log = RimWorks.RimLogging.Log;
 
@@ -29,8 +30,14 @@ public class WindowSuppressionSteps {
 
     Log.InfoTo(
         PickleLog.Channel,
-        "scenario entry: suppression {Active}, pending {Pending}, windows [{Open}]",
-        [WindowSuppression.Active, WindowSuppression.PendingCount, open]);
+        "scenario entry {Scenario}: suppression {Active}, pending {Pending}, answers {Answers}, windows [{Open}]",
+        [
+          PickleHttpServer.ActiveSession?.CurrentScenarioName ?? "unknown",
+          WindowSuppression.Active,
+          WindowSuppression.PendingCount,
+          DialogAnswering.HasAnswers,
+          open,
+        ]);
   }
 
   /// <summary>Opens a window belonging to the game, which suppression is meant to drop.</summary>
