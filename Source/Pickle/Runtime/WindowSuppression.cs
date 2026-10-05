@@ -15,6 +15,9 @@ public static class WindowSuppression {
   /// <summary>Whether foreign windows are currently being dropped as they open.</summary>
   public static bool Active { get; private set; }
 
+  /// <summary>How many runner-owned windows are registered and still waiting to open.</summary>
+  public static int PendingCount => Pending.Count;
+
   /// <summary>Starts dropping foreign windows as they open.</summary>
   public static void Begin() {
     Active = true;

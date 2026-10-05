@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Verse;
+using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
@@ -18,6 +19,19 @@ public class WindowSuppressionSteps {
   // and nothing leaks into the next one.
   private Dialog_MessageBox? foreign;
   private TagClickTestWindow? own;
+
+  /// <summary>Logs the window state a scenario starts with.</summary>
+  [BeforeScenario]
+  public static void LogEntryState() {
+    string open = Find.WindowStack == null
+        ? "no stack"
+        : string.Join(", ", Find.WindowStack.Windows.Select(w => w.GetType().Name));
+
+    Log.InfoTo(
+        PickleLog.Channel,
+        "scenario entry: suppression {Active}, pending {Pending}, windows [{Open}]",
+        [WindowSuppression.Active, WindowSuppression.PendingCount, open]);
+  }
 
   /// <summary>Opens a window belonging to the game, which suppression is meant to drop.</summary>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>

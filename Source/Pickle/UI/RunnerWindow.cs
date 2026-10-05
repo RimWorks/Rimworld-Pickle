@@ -525,7 +525,6 @@ public class RunnerWindow : PickleWindow {
     }
   }
 
-  // TODO(stale-rows): key results by scenario id so a reordered feature stops showing a stale row
   private void DiscoverAndParseFeatures() {
     visibleScenarios = null;
     DiscoveredSuites = SuiteScanner.DiscoverSuites();
