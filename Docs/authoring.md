@@ -36,6 +36,10 @@ matches on the expression text alone.
 A class that forgets `[PickleSteps]` still compiles, and its steps register nowhere. Pickle
 logs a warning at startup that names the class, and the scenario reports `Undefined step`.
 
+Parentheses in an expression mark optional text, so a trailing `(s)` makes the `s` optional. The
+expression `at least {int} time(s)` matches `at least 2 time` and `at least 2 times`. It does not
+match a step that writes the parentheses out.
+
 ### Share state between steps
 
 `ctx.Set<T>` and `ctx.Get<T>` hold values for the length of one scenario. Pickle
