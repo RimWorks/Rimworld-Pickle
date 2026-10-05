@@ -11,12 +11,19 @@ namespace RimWorks.Pickle;
 /// <summary>Finds step definitions across loaded assemblies, whether declared as attributed
 /// methods or registered fluently through a <see cref="PickleEntryAttribute"/> class.</summary>
 public static class StepScanner {
+  private static readonly List<KeyValuePair<string, int>> Unregistered = [];
+
+  /// <summary>Classes whose step methods registered nowhere, keyed by full type name with the count of
+  /// step methods each one holds. Rebuilt by every <see cref="PopulateStepTable"/> call.</summary>
+  public static IReadOnlyList<KeyValuePair<string, int>> UnregisteredStepClasses => Unregistered;
+
   /// <summary>Builds a step table from every <see cref="PickleStepsAttribute"/> class in the given
   /// assemblies, running entry points first so fluent registrations land too.</summary>
   /// <param name="assemblies">The assemblies to scan.</param>
   /// <returns>A step table ready to resolve step text against.</returns>
   public static StepTable PopulateStepTable(IEnumerable<Assembly> assemblies) {
     StepTable table = new StepTable();
+    Unregistered.Clear();
 
     InvokeEntryPoints(assemblies, table);
 
@@ -30,6 +37,7 @@ public static class StepScanner {
         } else if (couldHoldSteps) {
           int orphans = CountStepMethods(type);
           if (orphans > 0) {
+            Unregistered.Add(new KeyValuePair<string, int>(type.FullName ?? type.Name, orphans));
             Log.WarnTo(PickleLog.Channel,
                 "{Type} has {Count} step method(s) but no [PickleSteps], so none of them registered",
                 [type.FullName, orphans]);

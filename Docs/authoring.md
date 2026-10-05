@@ -34,7 +34,9 @@ The keyword you use in the feature file does not have to match the attribute. Pi
 matches on the expression text alone.
 
 A class that forgets `[PickleSteps]` still compiles, and its steps register nowhere. Pickle
-logs a warning at startup that names the class, and the scenario reports `Undefined step`.
+logs a warning at startup that names the class, and the scenario reports `Undefined step`. The
+dashboard's `/steps` response lists the same classes under `unregistered`, with the number of
+step methods each one holds.
 
 Parentheses in an expression mark optional text, so a trailing `(s)` makes the `s` optional. The
 expression `at least {int} time(s)` matches `at least 2 time` and `at least 2 times`. It does not

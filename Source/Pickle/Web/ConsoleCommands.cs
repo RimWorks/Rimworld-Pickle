@@ -24,7 +24,12 @@ public static class ConsoleCommands {
               + ",\"kind\":" + Json.Quote(definition.Kind.ToString())
               + ",\"source\":" + Json.Quote(definition.Source) + "}");
 
-      return Task.FromResult("{\"steps\":" + Json.Array(steps) + "}");
+      IEnumerable<string> unregistered = StepScanner.UnregisteredStepClasses
+          .Select(entry => "{\"type\":" + Json.Quote(entry.Key)
+              + ",\"stepMethods\":" + Json.Number(entry.Value) + "}");
+
+      return Task.FromResult("{\"steps\":" + Json.Array(steps)
+          + ",\"unregistered\":" + Json.Array(unregistered) + "}");
     });
   }
 
