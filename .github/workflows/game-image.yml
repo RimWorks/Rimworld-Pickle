@@ -43,7 +43,7 @@ permissions:
 jobs:
   image:
     name: rimworld images
-    uses: RimWorks/mod-ci/.github/workflows/game-image.yml@v3
+    uses: RimWorks/mod-ci/.github/workflows/game-image.yml@v4
     permissions:
       contents: read
       packages: write

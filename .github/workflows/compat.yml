@@ -41,7 +41,7 @@ jobs:
 
   dashboard:
     name: dashboard
-    uses: RimWorks/mod-ci/.github/workflows/node-build.yml@v3
+    uses: RimWorks/mod-ci/.github/workflows/node-build.yml@v4
     with:
       working-directory: Dashboard
       artifact-name: dashboard-dist
@@ -63,7 +63,7 @@ jobs:
   suite:
     name: suite
     needs: [sets, dashboard, game-image]
-    uses: RimWorks/mod-ci/.github/workflows/pickle-suite.yml@v3
+    uses: RimWorks/mod-ci/.github/workflows/pickle-suite.yml@v4
     permissions:
       contents: read
       # write, not read: the reusable's game-image job declares it, and a caller is checked
