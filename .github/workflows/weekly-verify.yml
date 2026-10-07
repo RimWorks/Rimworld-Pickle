@@ -58,13 +58,13 @@ jobs:
       - name: Build dashboard
         run: npm --prefix Dashboard run build
 
-      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v3
+      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v4
         id: refs-15
         with:
           image: ${{ fromJSON(needs.images.outputs.image-refs)['1.5'] }}
           dest: ${{ runner.temp }}/game-1.5
 
-      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v3
+      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v4
         id: refs-16
         with:
           image: ${{ fromJSON(needs.images.outputs.image-refs)['1.6'] }}
@@ -106,7 +106,7 @@ jobs:
           passed=$(grep -oE 'Passed:[[:space:]]+[0-9]+' test-output.txt | grep -oE '[0-9]+' | tail -1)
           echo "TESTS_PASSED=${passed:-unknown}" >> "$GITHUB_ENV"
 
-      - uses: RimWorks/mod-ci/.github/actions/steam-republish@v3
+      - uses: RimWorks/mod-ci/.github/actions/steam-republish@v4
         with:
           solution: Pickle.slnx
           workshop-id: ${{ vars.WORKSHOP_ID }}
