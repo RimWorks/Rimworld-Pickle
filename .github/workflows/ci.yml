@@ -200,7 +200,7 @@ jobs:
       backends: ${{ inputs.backend != ''
         && format('["{0}"]', inputs.backend)
         || (github.event_name == 'pull_request'
-        && '["harmony"]'
+        && '["harmony","concord"]'
         || '["harmony","concord","both"]') }}
       build-command: dotnet build Pickle.slnx -c Release
       # the dashboard bundles are embedded resources, so the build needs them on disk
