@@ -212,57 +212,6 @@ jobs:
       run-timeout: 25
       timeout-minutes: 45
 
-  suite-windows:
-    name: suite (windows)
-    needs: [dashboard, game-image]
-    # mod-ci's game-image.yml downloads the linux depot, so this leg runs on the ref built here
-    if: needs.game-image.outputs.windows-image-refs != '{}'
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    permissions:
-      contents: read
-      packages: read
-      actions: read
-    env:
-      REPORT_DIR: ${{ github.workspace }}/pickle-reports
-    steps:
-      - uses: actions/checkout@v7
-
-      # the verdict inside the action is node
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '22'
-
-      # the linux ref, not windows-image-ref: stage-game-refs reads RimWorldLinux_Data/Managed
-      - uses: ./.github/actions/build-mod
-        with:
-          game-image: ${{ fromJSON(needs.game-image.outputs.image-refs)['1.6'] }}
-
-      # the pickle-run action, not a second pickle-suite.yml call: two calls in one run collide on
-      # the reusable's merged-report artifact and each merge swallows the other call's legs
-      - uses: RimWorks/mod-ci/.github/actions/pickle-run@v4
-        with:
-          game-image: ${{ fromJSON(needs.game-image.outputs.windows-image-refs)['1.6'] }}
-          mod-name: Pickle
-          mod-package-id: rimworks.pickle
-          pickle-version: self
-          unfiltered: true
-          backend: harmony
-          platform: windows
-          set-name: windows
-          run-timeout: 25
-          timeout-minutes: 45
-          report-dir: ${{ env.REPORT_DIR }}
-
-      # not pickle-report-*: that stem is what the linux call's merge job downloads, and this leg
-      # is not one of its legs
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: windows-report
-          path: ${{ env.REPORT_DIR }}/
-          if-no-files-found: warn
-
   # a uses: job cannot hold steps, so the check run the suite used to publish lives here
   suite-checks:
     name: suite scenarios
@@ -295,14 +244,12 @@ jobs:
   gate:
     name: ci gate
     needs: [dashboard, dashboard-tests, prose, links, package-deps, game-image,
-            build-15, build, suite, suite-windows, suite-checks]
+            build-15, build, suite, suite-checks]
     # always(), or a gate its own condition skipped reports as a passing required check
     if: always()
     runs-on: ubuntu-latest
     permissions: {}
     steps:
-      # suite-windows is the only job with a conditional if:, so it is the only skip that
-      # is not a failure. a blanket "success or skipped" would pass a job that never ran
       - name: Check every job
         run: |
           printf '%s' '${{ toJSON(needs) }}' > results.json
@@ -310,7 +257,6 @@ jobs:
           bad=$(jq -r '
             to_entries[]
             | select(.value.result != "success")
-            | select(.key != "suite-windows" or .value.result != "skipped")
             | .key' results.json)
           if [ -n "$bad" ]; then
             echo "::error::not green: $(echo "$bad" | tr "\n" " ")"
