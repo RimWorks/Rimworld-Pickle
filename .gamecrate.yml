@@ -13,4 +13,4 @@ profiles:
       - pkl
     autoDependencies: true
   ci:
-    extends: pickle
+    mods: []
