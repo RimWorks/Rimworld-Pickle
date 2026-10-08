@@ -53,6 +53,7 @@ jobs:
       branches: |
         1.5=version-1.5
         1.6=public
+        1.7=unstable
       image: ghcr.io/${{ github.repository_owner }}/rimworld-game-runnable
       windows: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || inputs.windows }}
       force: ${{ inputs.force || false }}

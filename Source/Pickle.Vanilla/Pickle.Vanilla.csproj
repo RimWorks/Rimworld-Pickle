@@ -14,7 +14,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Lib.Harmony" Version="2.4.*" ExcludeAssets="runtime" PrivateAssets="all" />
+        <!-- Harmony 3 is not on NuGet yet, so this is a local build of the upstream v3 branch. -->
+    <Reference Include="$(HarmonyDir)/0Harmony.dll" Private="False" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Pickle\Pickle.csproj" />

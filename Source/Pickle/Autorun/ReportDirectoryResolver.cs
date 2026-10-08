@@ -14,15 +14,15 @@ public static class ReportDirectoryResolver {
   /// <param name="explicitDir">The <c>-pickle-report-dir</c> value, or <c>null</c> to use the default order.</param>
   /// <returns>A directory that exists and is writable.</returns>
   public static string Resolve(string? explicitDir) {
-    if (!string.IsNullOrEmpty(explicitDir)) {
-      if (TryPrepare(explicitDir!)) {
-        return explicitDir!;
+    if (explicitDir is { Length: > 0 }) {
+      if (TryPrepare(explicitDir)) {
+        return explicitDir;
       }
 
       // A bad path used to throw out of AutorunBootstrap's static constructor, which
       // killed the type and ran nothing. Name it and carry on instead.
       string fallback = ResolveDefault();
-      Log.ErrorTo(PickleLog.Channel, "report dir '{Dir}' is not writable, falling back to {Fallback}", [explicitDir!, fallback]);
+      Log.ErrorTo(PickleLog.Channel, "report dir '{Dir}' is not writable, falling back to {Fallback}", [explicitDir, fallback]);
       return fallback;
     }
 

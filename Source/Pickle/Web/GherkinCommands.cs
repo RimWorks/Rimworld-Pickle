@@ -171,7 +171,7 @@ public static class GherkinCommands {
   }
 
   private static void Drain(ConcurrentQueue<string> events, Action<string> emit) {
-    while (events.TryDequeue(out string line)) {
+    while (events.TryDequeue(out string? line)) {
       emit(line);
     }
   }

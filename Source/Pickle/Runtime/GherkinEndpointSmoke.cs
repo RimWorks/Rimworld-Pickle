@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -71,20 +71,15 @@ Feature: Gherkin Endpoint Smoke
   }
 
   private static void Collect(List<string> lines) {
-    HttpWebRequest request = (HttpWebRequest)WebRequest.Create($"http://127.0.0.1:{PickleHttpServer.Port}/gherkin");
-    request.Method = "POST";
-    request.ContentType = "text/plain";
-    request.Timeout = 60000;
-    request.ReadWriteTimeout = 60000;
+    using HttpClient client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+    using StringContent body = new StringContent(Source, Encoding.UTF8, "text/plain");
+    using HttpResponseMessage response = client
+        .PostAsync($"http://127.0.0.1:{PickleHttpServer.Port}/gherkin", body)
+        .GetAwaiter()
+        .GetResult();
+    response.EnsureSuccessStatusCode();
 
-    byte[] body = Encoding.UTF8.GetBytes(Source);
-    request.ContentLength = body.Length;
-    using (Stream stream = request.GetRequestStream()) {
-      stream.Write(body, 0, body.Length);
-    }
-
-    using WebResponse response = request.GetResponse();
-    using Stream received = response.GetResponseStream();
+    using Stream received = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
     using StreamReader reader = new StreamReader(received, Encoding.UTF8);
 
     while (reader.ReadLine() is string line) {

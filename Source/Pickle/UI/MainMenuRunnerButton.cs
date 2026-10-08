@@ -27,7 +27,7 @@ public static class MainMenuRunnerButton {
       return;
     }
 
-    float columnBottom = (float)WebBackgroundYMax.GetValue(null);
+    float columnBottom = (float)WebBackgroundYMax.GetValue(null)!;
     Rect buttonRect = new Rect(
         rect.x + ColumnX,
         rect.y + columnBottom + LanguageButtonBottom + 4f,

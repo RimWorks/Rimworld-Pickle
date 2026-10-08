@@ -111,8 +111,8 @@ public static class RunnerDetailView {
       Color color = step == null ? Color.white : RunnerStatusColors.ForStep(step.Status);
       Label(text, width, ref y, GameFont.Small, color, draw);
       Label(status, width, ref y, GameFont.Tiny, color, draw);
-      if (!string.IsNullOrEmpty(step?.FailureMessage)) {
-        Label(step!.FailureMessage!, width, ref y, GameFont.Small, RunnerStatusColors.FailedText, draw);
+      if (step is { FailureMessage.Length: > 0 }) {
+        Label(step.FailureMessage, width, ref y, GameFont.Small, RunnerStatusColors.FailedText, draw);
       }
 
       y += 6f;
@@ -120,8 +120,8 @@ public static class RunnerDetailView {
   }
 
   private static void Outcome(float width, ScenarioResult result, ref float y, bool draw) {
-    if (!string.IsNullOrEmpty(result.FailureMessage)) {
-      Label(result.FailureMessage!, width, ref y, GameFont.Small, RunnerStatusColors.FailedText, draw);
+    if (result.FailureMessage is { Length: > 0 }) {
+      Label(result.FailureMessage, width, ref y, GameFont.Small, RunnerStatusColors.FailedText, draw);
     }
 
     Attachments(width, result, ref y, draw);
