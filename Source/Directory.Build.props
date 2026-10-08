@@ -31,6 +31,8 @@
     <RimLoggingDir Condition="'$(RimLoggingDir)' == ''">$(RimLoggingRoot)/$(GameVersion)/Assemblies</RimLoggingDir>
 
     <HarmonyDir Condition="'$(HarmonyDir)' == ''">$([System.IO.Path]::Combine($([System.Environment]::GetFolderPath(SpecialFolder.UserProfile)), '.local', 'share', 'harmony3', '$(GameTfm)'))</HarmonyDir>
+    <HarmonyLocal>false</HarmonyLocal>
+    <HarmonyLocal Condition="Exists('$(HarmonyDir)/0Harmony.dll')">true</HarmonyLocal>
 
     <HasGameRefs>false</HasGameRefs>
     <HasGameRefs Condition="Exists('$(GamecrateRefs)/Assembly-CSharp.dll')">true</HasGameRefs>
