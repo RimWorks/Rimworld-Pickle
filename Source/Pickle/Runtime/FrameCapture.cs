@@ -11,7 +11,12 @@ namespace RimWorks.Pickle.Runtime;
 [StaticConstructorOnStartup]
 internal static class FrameCapture {
   private static bool warnedReadback;
+#if RW_1_7
+  // 1.7 leaks a buffer per async readback, so it reads frames on this thread.
+  private static bool readOnThisThread = true;
+#else
   private static bool readOnThisThread;
+#endif
   private static Texture2D? scratch;
 
   /// <summary>Writes the screen to a PNG at full resolution.</summary>

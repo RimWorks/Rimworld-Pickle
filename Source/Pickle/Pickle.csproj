@@ -17,6 +17,8 @@
     <PackageReference Include="RimWorks.RimLogging" Version="3.*" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="Gherkin" Version="42.0.*" />
     <PackageReference Include="Cucumber.CucumberExpressions" Version="20.1.*" />
+    <!-- net10 carries HttpClient in the shared framework; net472 needs the facade named. -->
+    <Reference Include="System.Net.Http" Condition="'$(GameTfm)' != 'net10.0'" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Pickle.Core\Pickle.Core.csproj" />

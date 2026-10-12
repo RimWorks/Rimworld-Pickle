@@ -2,7 +2,6 @@
 <LanguageData>
 
   <!-- Runner window -->
-  <Pickle_RunnerTitle>Pickle test runner</Pickle_RunnerTitle>
   <Pickle_SelectScenario>Select a scenario to see its steps.</Pickle_SelectScenario>
 
   <!-- Toolbar -->

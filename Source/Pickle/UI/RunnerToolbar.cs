@@ -124,6 +124,9 @@ public static class RunnerToolbar {
 
   private static float WorkspaceTabs(Rect rect, RunnerWindow window) {
     float x = rect.x + Padding;
+    GUI.DrawTexture(new Rect(x, rect.y + 10f, 28f, 28f), ContentFinder<Texture2D>.Get("Pickle/Logo"), ScaleMode.ScaleToFit);
+    x += 36f;
+
     foreach ((string key, string label) in new[] { ("run", "Run"), ("fixtures", "Fixtures"), ("reports", "Reports") }) {
       Rect tab = new Rect(x, rect.y, 90f, 48f);
       bool active = window.Workspace == key;

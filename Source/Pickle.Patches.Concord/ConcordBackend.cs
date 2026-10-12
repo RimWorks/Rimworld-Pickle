@@ -99,7 +99,7 @@ public class ConcordBackend : IPatchBackend {
     }
 
     Patcher.Patch(
-        typeof(PatchProbe).GetMethod(nameof(PatchProbe.Target)),
+        typeof(PatchProbe).GetMethod(nameof(PatchProbe.Target))!,
         Injection(nameof(AfterProbeTarget)),
         At.Tail);
 
@@ -109,12 +109,12 @@ public class ConcordBackend : IPatchBackend {
   /// <inheritdoc/>
   public void ApplyEarly() {
     Patcher.Patch(
-        typeof(LoadedModManager).GetMethod(nameof(LoadedModManager.ApplyPatches)),
+        typeof(LoadedModManager).GetMethod(nameof(LoadedModManager.ApplyPatches))!,
         Injection(nameof(BeforeApplyPatches)),
         At.Head);
 
     Patcher.Patch(
-        typeof(LoadedModManager).GetMethod(nameof(LoadedModManager.ClearCachedPatches)),
+        typeof(LoadedModManager).GetMethod(nameof(LoadedModManager.ClearCachedPatches))!,
         Injection(nameof(BeforeClearCachedPatches)),
         At.Head);
   }
@@ -122,39 +122,39 @@ public class ConcordBackend : IPatchBackend {
   /// <inheritdoc/>
   public void Apply() {
     Patcher.Patch(
-        typeof(UIRoot).GetMethod(nameof(UIRoot.UIRootOnGUI)),
+        typeof(UIRoot).GetMethod(nameof(UIRoot.UIRootOnGUI))!,
         Injection(nameof(BeforeUIRootOnGUI)),
         At.Head);
 
     Patcher.Patch(
-        typeof(UIRoot).GetMethod(nameof(UIRoot.UIRootOnGUI)),
+        typeof(UIRoot).GetMethod(nameof(UIRoot.UIRootOnGUI))!,
         Injection(nameof(AfterUIRootOnGUI)),
         At.Tail);
 
     Patcher.Patch(
         typeof(Widgets).GetMethod(
             nameof(Widgets.ButtonText),
-            [typeof(Rect), typeof(string), typeof(bool), typeof(bool), typeof(Color), typeof(bool), typeof(TextAnchor?)]),
+            [typeof(Rect), typeof(string), typeof(bool), typeof(bool), typeof(Color), typeof(bool), typeof(TextAnchor?)])!,
         Injection(nameof(AfterButtonText)),
         At.Tail);
 
     Patcher.Patch(
-        typeof(Widgets).GetMethod(nameof(Widgets.ButtonInvisible)),
+        typeof(Widgets).GetMethod(nameof(Widgets.ButtonInvisible))!,
         Injection(nameof(AfterButtonInvisible)),
         At.Tail);
 
     Patcher.Patch(
-        typeof(Mouse).GetMethod(nameof(Mouse.IsOver)),
+        typeof(Mouse).GetMethod(nameof(Mouse.IsOver))!,
         Injection(nameof(AfterIsOver)),
         At.Tail);
 
     Patcher.Patch(
-        typeof(WindowStack).GetMethod(nameof(WindowStack.Add)),
+        typeof(WindowStack).GetMethod(nameof(WindowStack.Add))!,
         Injection(nameof(BeforeWindowAdd)),
         At.Head);
 
     Patcher.Patch(
-        typeof(MainMenuDrawer).GetMethod(nameof(MainMenuDrawer.DoMainMenuControls)),
+        typeof(MainMenuDrawer).GetMethod(nameof(MainMenuDrawer.DoMainMenuControls))!,
         Injection(nameof(AfterMainMenuControls)),
         At.Tail);
   }
@@ -177,7 +177,7 @@ public class ConcordBackend : IPatchBackend {
       }
 
       try {
-        return (bool)ready.GetValue(null);
+        return ready.GetValue(null) as bool?;
       } catch (Exception) {
         return null;
       }

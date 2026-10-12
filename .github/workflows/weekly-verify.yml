@@ -70,16 +70,24 @@ jobs:
           image: ${{ fromJSON(needs.images.outputs.image-refs)['1.6'] }}
           dest: ${{ runner.temp }}/game-1.6
 
+      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v4
+        id: refs-17
+        with:
+          image: ${{ fromJSON(needs.images.outputs.image-refs)['1.7'] }}
+          dest: ${{ runner.temp }}/game-1.7
+
       # GameManagedDir so dotnet test evaluates the props without hard-erroring, and the per
       # version names so the build loop below and release.config.mjs read the same variables
       - name: Name the staged directories
         env:
           MANAGED_15: ${{ steps.refs-15.outputs.managed-dir }}
           MANAGED_16: ${{ steps.refs-16.outputs.managed-dir }}
+          MANAGED_17: ${{ steps.refs-17.outputs.managed-dir }}
         run: |
           {
             echo "GAME_MANAGED_1_5=$MANAGED_15"
             echo "GAME_MANAGED_1_6=$MANAGED_16"
+            echo "GAME_MANAGED_1_7=$MANAGED_17"
             echo "GameManagedDir=$MANAGED_16"
           } >> "$GITHUB_ENV"
 

@@ -1,0 +1,21 @@
+game: rimworld
+defaultProfile: pickle
+build: always
+replace: true
+resolution: 2560x1440
+profiles:
+  pickle:
+    mods:
+      - concordlib.concord
+      - rimworks.pickle
+      - RimWorks.RimLogging
+    aliases:
+      - pkl
+    autoDependencies: true
+  pickle-17:
+    extends: pickle
+    gameVersion: '1.7'
+    aliases:
+      - pkl17
+  ci:
+    mods: []

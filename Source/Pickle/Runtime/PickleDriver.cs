@@ -238,7 +238,7 @@ public class PickleDriver : MonoBehaviour {
   }
 
   private void Update() {
-    while (mainThreadQueue.TryDequeue(out Action action)) {
+    while (mainThreadQueue.TryDequeue(out Action? action)) {
       try {
         action();
       } catch (Exception ex) {
