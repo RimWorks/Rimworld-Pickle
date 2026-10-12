@@ -150,7 +150,7 @@ public static class RunnerDetailView {
       string keyword = (step?.Keyword ?? pending?.Keyword ?? string.Empty).Trim();
       bool tucked = keyword is "And" or "But";
       string marked = StepArgumentMarkup.Apply(step?.Text ?? pending?.Text ?? string.Empty, step?.ArgumentSpans, ArgumentOpen, ArgumentClose);
-      StepRow(width, keyword, marked, step, tucked, i == 0, ref y, draw);
+      StepRow(width, new StepRowInfo(keyword, marked, step, tucked, i == 0), ref y, draw);
       if (step is { FailureMessage.Length: > 0 }) {
         Text.Font = GameFont.Small;
         float height = Text.CalcHeight(step.FailureMessage, width - KeywordColumn - 12f) + 4f;
@@ -165,38 +165,43 @@ public static class RunnerDetailView {
     }
   }
 
-  private static void StepRow(float width, string keyword, string text, StepResult? step, bool tucked, bool first, ref float y, bool draw) {
-    float textX = KeywordColumn + 17f;
-    float textWidth = width - textX - DurationColumn;
+  private static void StepRow(float width, in StepRowInfo row, ref float y, bool draw) {
+    float textWidth = width - KeywordColumn - 17f - DurationColumn;
     Text.Font = GameFont.Small;
-    float rowHeight = Math.Max(Text.CalcHeight(text, textWidth), 22f) + (tucked ? 4f : 8f);
+    float rowHeight = Math.Max(Text.CalcHeight(row.Text, textWidth), 22f) + (row.Tucked ? 4f : 8f);
     if (draw) {
-      if (!first && !tucked) {
-        Widgets.DrawLineHorizontal(0f, y, width, CardLine);
-      }
-
-      Color dot = step == null ? RunnerStatusColors.Pending : RunnerStatusColors.ForStep(step.Status);
-      bool dim = step == null || step.Status == StepStatus.Skipped;
-      float baseline = y + (tucked ? 2f : 4f);
-
-      Text.Font = GameFont.Tiny;
-      Text.Anchor = TextAnchor.UpperRight;
-      GUI.color = tucked ? Faded : RunnerStatusColors.Muted;
-      Widgets.Label(new Rect(0f, baseline + 1f, KeywordColumn, 20f), keyword);
-
-      Widgets.Label(new Rect(width - DurationColumn, baseline + 1f, DurationColumn, 20f),
-          step == null ? string.Empty : $"{step.DurationMs:0}ms");
-      Text.Anchor = TextAnchor.UpperLeft;
-
-      RunnerStatusColors.DrawDot(new Vector2(KeywordColumn + 7f, baseline + 9f), dot, 7f);
-
-      Text.Font = GameFont.Small;
-      GUI.color = dim ? Faded : StepText;
-      Widgets.Label(new Rect(textX, baseline, textWidth, rowHeight), text);
-      GUI.color = Color.white;
+      DrawStepRow(width, row, y, rowHeight);
     }
 
     y += rowHeight;
+  }
+
+  private static void DrawStepRow(float width, in StepRowInfo row, float y, float rowHeight) {
+    if (!row.First && !row.Tucked) {
+      Widgets.DrawLineHorizontal(0f, y, width, CardLine);
+    }
+
+    StepResult? step = row.Step;
+    Color dot = step == null ? RunnerStatusColors.Pending : RunnerStatusColors.ForStep(step.Status);
+    bool dim = step == null || step.Status == StepStatus.Skipped;
+    float baseline = y + (row.Tucked ? 2f : 4f);
+
+    Text.Font = GameFont.Tiny;
+    Text.Anchor = TextAnchor.UpperRight;
+    GUI.color = row.Tucked ? Faded : RunnerStatusColors.Muted;
+    Widgets.Label(new Rect(0f, baseline + 1f, KeywordColumn, 20f), row.Keyword);
+
+    Widgets.Label(new Rect(width - DurationColumn, baseline + 1f, DurationColumn, 20f),
+        step == null ? string.Empty : $"{step.DurationMs:0}ms");
+    Text.Anchor = TextAnchor.UpperLeft;
+
+    RunnerStatusColors.DrawDot(new Vector2(KeywordColumn + 7f, baseline + 9f), dot, 7f);
+
+    float textX = KeywordColumn + 17f;
+    Text.Font = GameFont.Small;
+    GUI.color = dim ? Faded : StepText;
+    Widgets.Label(new Rect(textX, baseline, width - textX - DurationColumn, rowHeight), row.Text);
+    GUI.color = Color.white;
   }
 
   private static void Outcome(float width, ScenarioResult result, ref float y, bool draw) {
@@ -302,5 +307,25 @@ public static class RunnerDetailView {
     public ScenarioResult? Result { get; }
 
     public bool Live { get; }
+  }
+
+  private readonly struct StepRowInfo {
+    public StepRowInfo(string keyword, string text, StepResult? step, bool tucked, bool first) {
+      Keyword = keyword;
+      Text = text;
+      Step = step;
+      Tucked = tucked;
+      First = first;
+    }
+
+    public string Keyword { get; }
+
+    public string Text { get; }
+
+    public StepResult? Step { get; }
+
+    public bool Tucked { get; }
+
+    public bool First { get; }
   }
 }
