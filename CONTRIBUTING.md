@@ -42,9 +42,7 @@ dotnet build                       # StyleCop and Sonar analyzers run here
 dotnet build -p:GameVersion=1.7    # 1.7 runs WaylithCLR, so this one targets net10.0
 ```
 
-Build once per version `loadFolders.xml` declares. RimWorld 1.7 has no RimLogging package on
-NuGet yet, so its build reads the dll out of a `rimworld-logging-framework` checkout next to
-this one. Point `RimLoggingRoot` somewhere else if yours lives elsewhere.
+Build once per version `loadFolders.xml` declares.
 
 `dotnet build` still works without the dashboard bundles; the dashboard then serves a
 placeholder. StyleCop and Sonar analyzers run in the build, so a warning is a failure in

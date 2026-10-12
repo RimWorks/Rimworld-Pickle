@@ -26,10 +26,6 @@
     <GameTfm Condition="'$(GameTfm)' == ''">net472</GameTfm>
     <TargetFramework>$(GameTfm)</TargetFramework>
 
-    <!-- RimLogging's built mod folders, per game version. CI overrides the root. -->
-    <RimLoggingRoot Condition="'$(RimLoggingRoot)' == ''">$([System.IO.Path]::Combine($(MSBuildThisFileDirectory), '..', '..', 'rimworld-logging-framework'))</RimLoggingRoot>
-    <RimLoggingDir Condition="'$(RimLoggingDir)' == ''">$(RimLoggingRoot)/$(GameVersion)/Assemblies</RimLoggingDir>
-
     <HasGameRefs>false</HasGameRefs>
     <HasGameRefs Condition="Exists('$(GamecrateRefs)/Assembly-CSharp.dll')">true</HasGameRefs>
 
