@@ -232,12 +232,12 @@ public class FixtureManagerDialog : PickleWindow {
     parts.Add(FormatSize(entry.SizeBytes));
     parts.Add(entry.Modified.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture));
 
-    if (!string.IsNullOrEmpty(header?.ScenarioName)) {
-      parts.Add(header!.ScenarioName!);
+    if (header is { ScenarioName.Length: > 0 }) {
+      parts.Add(header.ScenarioName);
     }
 
-    if (!string.IsNullOrEmpty(header?.GameVersion)) {
-      parts.Add(header!.GameVersion!);
+    if (header is { GameVersion.Length: > 0 }) {
+      parts.Add(header.GameVersion);
     }
 
     Text.Font = GameFont.Tiny;

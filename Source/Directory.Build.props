@@ -1,6 +1,5 @@
 <Project>
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <DebugType>embedded</DebugType>
@@ -21,6 +20,11 @@
     <!-- CI stages the assemblies itself, so its path wins over the local gamecrate cache. -->
     <GamecrateRefs Condition="'$(GamecrateRefs)' == '' And '$(GameManagedDir)' != ''">$(GameManagedDir)</GamecrateRefs>
     <GamecrateRefs Condition="'$(GamecrateRefs)' == ''">$([System.IO.Path]::Combine($(GamecrateCache), 'gamecrate', 'refs', 'version', 'rimworld', $(GameVersion)))</GamecrateRefs>
+
+    <!-- 1.7 runs WaylithCLR at net10.0; 1.5 and 1.6 run Unity's mono at net472 -->
+    <GameTfm Condition="'$(GameVersion)' == '1.7'">net10.0</GameTfm>
+    <GameTfm Condition="'$(GameTfm)' == ''">net472</GameTfm>
+    <TargetFramework>$(GameTfm)</TargetFramework>
 
     <HasGameRefs>false</HasGameRefs>
     <HasGameRefs Condition="Exists('$(GamecrateRefs)/Assembly-CSharp.dll')">true</HasGameRefs>

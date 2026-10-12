@@ -24,6 +24,10 @@ public class StepScanScopeTests {
   [InlineData("netstandard")]
   [InlineData("Mono.Security")]
   [InlineData("Microsoft.CSharp")]
+  [InlineData("RimWorld")]
+  [InlineData("UnityStubs")]
+  [InlineData("Brutal.Core.Common")]
+  [InlineData("Waylith.UnityCompat")]
   public void CouldHoldSteps_SkipsTheGameAndTheRuntime(string name) {
     Assert.False(StepScanScope.CouldHoldSteps(name));
   }
@@ -40,6 +44,10 @@ public class StepScanScopeTests {
   [InlineData("Systemic")]
   [InlineData("UnityEngineering")]
   [InlineData("MonoMod")]
+  [InlineData("RimWorld.MyMod")]
+  [InlineData("UnityStubsHelper")]
+  [InlineData("BrutalMod")]
+  [InlineData("WaylithTweaks")]
   public void CouldHoldSteps_MatchesWholeSegmentsNotPrefixes(string name) {
     Assert.True(StepScanScope.CouldHoldSteps(name));
   }

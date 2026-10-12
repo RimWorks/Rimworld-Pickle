@@ -60,7 +60,7 @@ public static class FixtureManagerSmoke {
 
     Log.InfoTo(PickleLog.Channel,
         "fixture manager sees test-colony, {Bytes} bytes, {Version}, {Scenario}, {Mods} mods",
-        [colony.SizeBytes, header.GameVersion!, header.ScenarioName!, header.ModCount]);
+        [colony.SizeBytes, header.GameVersion, header.ScenarioName, header.ModCount]);
 
     // Bare menu first: the log viewer and anything else on the stack would cover the
     // Pickle Runner button, which is the thing this shot exists to show.

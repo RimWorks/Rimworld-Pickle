@@ -7,6 +7,7 @@ using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Core.Model;
 using RimWorks.Pickle.Core.Reports;
 using RimWorks.Pickle.Core.Run;
+using RimWorks.Pickle.Core.Steps;
 using UnityEngine;
 using Verse;
 
@@ -14,6 +15,16 @@ namespace RimWorks.Pickle.UI;
 
 /// <summary>The right-hand panel of the runner window: one scenario's steps, tags, and, once it has run, its outcome and evidence.</summary>
 public static class RunnerDetailView {
+  private const float KeywordColumn = 52f;
+  private const float DurationColumn = 56f;
+  private const float CardInset = 12f;
+  private const string ArgumentOpen = "<color=#8FD3E8>";
+  private const string ArgumentClose = "</color>";
+  private static readonly Color CardBackground = new Color(0.157f, 0.184f, 0.224f);
+  private static readonly Color CardHeaderBackground = new Color(0.133f, 0.161f, 0.200f);
+  private static readonly Color CardLine = new Color(0.278f, 0.322f, 0.357f);
+  private static readonly Color StepText = new Color(0.902f, 0.929f, 0.929f);
+  private static readonly Color Faded = new Color(0.753f, 0.737f, 0.682f, 0.55f);
   private static readonly Regex FixtureStepPattern = new Regex("the save \"([^\"]+)\" is loaded", RegexOptions.None, TimeSpan.FromSeconds(2));
 
   /// <summary>Draws the panel for whichever scenario is selected in the tree, or a prompt when nothing is selected.</summary>
@@ -48,10 +59,36 @@ public static class RunnerDetailView {
   }
 
   private static float Content(float width, in Detail detail, bool draw) {
-    float y = 0f;
-    Header(width, detail, ref y, draw);
-    Tags(width, detail, ref y, draw);
-    StepLines(width, detail, ref y, draw);
+    float inner = width - (CardInset * 2f);
+    float band = 0f;
+    Header(inner, detail, ref band, false);
+    Tags(inner, detail, ref band, false);
+    float steps = 0f;
+    StepLines(inner, detail, ref steps, false);
+    float bandHeight = band + (CardInset * 2f);
+    float cardHeight = bandHeight + steps + CardInset;
+
+    if (draw) {
+      Widgets.DrawBoxSolid(new Rect(0f, 0f, width, cardHeight), CardBackground);
+      Widgets.DrawBoxSolid(new Rect(0f, 0f, width, bandHeight), CardHeaderBackground);
+      Widgets.DrawLineHorizontal(0f, bandHeight, width, CardLine);
+      GUI.color = CardLine;
+      Widgets.DrawBox(new Rect(0f, 0f, width, cardHeight));
+      GUI.color = Color.white;
+
+      GUI.BeginGroup(new Rect(CardInset, CardInset, inner, band));
+      float head = 0f;
+      Header(inner, detail, ref head, true);
+      Tags(inner, detail, ref head, true);
+      GUI.EndGroup();
+
+      GUI.BeginGroup(new Rect(CardInset, bandHeight, inner, steps));
+      float list = 0f;
+      StepLines(inner, detail, ref list, true);
+      GUI.EndGroup();
+    }
+
+    float y = cardHeight + 12f;
     if (detail.Result != null) {
       Outcome(width, detail.Result, ref y, draw);
     }
@@ -67,9 +104,13 @@ public static class RunnerDetailView {
     }
 
     string location = $"{detail.Suite.ModName} / {Path.GetFileName(detail.Plan.SourcePath ?? detail.Plan.Name)}:{scenario.Line}";
+    Label(location, width, ref y, GameFont.Tiny, RunnerStatusColors.Muted, draw);
     string? fixture = scenario.Steps.Select(step => FixtureStepPattern.Match(step.Text)).FirstOrDefault(match => match.Success)?.Groups[1].Value;
-    Label(fixture == null ? location : location + $" · fixture: {fixture}", width, ref y, GameFont.Tiny, Color.white, draw);
-    Label(OutcomeText(detail), width, ref y, GameFont.Small, RunnerStatusColors.Keyword, draw);
+    if (fixture != null) {
+      Label($"Fixture: {fixture}", width, ref y, GameFont.Tiny, RunnerStatusColors.Muted, draw);
+    }
+
+    Label(OutcomeText(detail), width, ref y, GameFont.Tiny, RunnerStatusColors.Keyword, draw);
   }
 
   private static string OutcomeText(in Detail detail) {
@@ -77,7 +118,7 @@ public static class RunnerDetailView {
       return detail.Window.ActiveSession!.CurrentStepDisplay;
     }
 
-    return detail.Result == null ? "Pending" : $"{detail.Result.Outcome} · {detail.Result.DurationMs:0}ms";
+    return detail.Result == null ? "Pending" : $"{detail.Result.Outcome} in {detail.Result.DurationMs:0}ms";
   }
 
   private static void Tags(float width, in Detail detail, ref float y, bool draw) {
@@ -106,22 +147,66 @@ public static class RunnerDetailView {
     for (int i = 0; i < count; i++) {
       StepResult? step = i < steps.Count ? steps[i] : null;
       StepPlan? pending = i < detail.Scenario.Steps.Count ? detail.Scenario.Steps[i] : null;
-      string text = $"{step?.Keyword ?? pending?.Keyword} {step?.Text ?? pending?.Text}";
-      string status = step == null ? "Pending" : $"{step.Status} · {step.DurationMs:0}ms";
-      Color color = step == null ? Color.white : RunnerStatusColors.ForStep(step.Status);
-      Label(text, width, ref y, GameFont.Small, color, draw);
-      Label(status, width, ref y, GameFont.Tiny, color, draw);
-      if (!string.IsNullOrEmpty(step?.FailureMessage)) {
-        Label(step!.FailureMessage!, width, ref y, GameFont.Small, RunnerStatusColors.FailedText, draw);
-      }
+      string keyword = (step?.Keyword ?? pending?.Keyword ?? string.Empty).Trim();
+      bool tucked = keyword is "And" or "But";
+      string marked = StepArgumentMarkup.Apply(step?.Text ?? pending?.Text ?? string.Empty, step?.ArgumentSpans, ArgumentOpen, ArgumentClose);
+      StepRow(width, new StepRowInfo(keyword, marked, step, tucked, i == 0), ref y, draw);
+      if (step is { FailureMessage.Length: > 0 }) {
+        Text.Font = GameFont.Small;
+        float height = Text.CalcHeight(step.FailureMessage, width - KeywordColumn - 12f) + 4f;
+        if (draw) {
+          GUI.color = RunnerStatusColors.FailedText;
+          Widgets.Label(new Rect(KeywordColumn + 12f, y, width - KeywordColumn - 12f, height), step.FailureMessage);
+          GUI.color = Color.white;
+        }
 
-      y += 6f;
+        y += height + 4f;
+      }
     }
   }
 
+  private static void StepRow(float width, in StepRowInfo row, ref float y, bool draw) {
+    float textWidth = width - KeywordColumn - 17f - DurationColumn;
+    Text.Font = GameFont.Small;
+    float rowHeight = Math.Max(Text.CalcHeight(row.Text, textWidth), 22f) + (row.Tucked ? 4f : 8f);
+    if (draw) {
+      DrawStepRow(width, row, y, rowHeight);
+    }
+
+    y += rowHeight;
+  }
+
+  private static void DrawStepRow(float width, in StepRowInfo row, float y, float rowHeight) {
+    if (!row.First && !row.Tucked) {
+      Widgets.DrawLineHorizontal(0f, y, width, CardLine);
+    }
+
+    StepResult? step = row.Step;
+    Color dot = step == null ? RunnerStatusColors.Pending : RunnerStatusColors.ForStep(step.Status);
+    bool dim = step == null || step.Status == StepStatus.Skipped;
+    float baseline = y + (row.Tucked ? 2f : 4f);
+
+    Text.Font = GameFont.Tiny;
+    Text.Anchor = TextAnchor.UpperRight;
+    GUI.color = row.Tucked ? Faded : RunnerStatusColors.Muted;
+    Widgets.Label(new Rect(0f, baseline + 1f, KeywordColumn, 20f), row.Keyword);
+
+    Widgets.Label(new Rect(width - DurationColumn, baseline + 1f, DurationColumn, 20f),
+        step == null ? string.Empty : $"{step.DurationMs:0}ms");
+    Text.Anchor = TextAnchor.UpperLeft;
+
+    RunnerStatusColors.DrawDot(new Vector2(KeywordColumn + 7f, baseline + 9f), dot, 7f);
+
+    float textX = KeywordColumn + 17f;
+    Text.Font = GameFont.Small;
+    GUI.color = dim ? Faded : StepText;
+    Widgets.Label(new Rect(textX, baseline, width - textX - DurationColumn, rowHeight), row.Text);
+    GUI.color = Color.white;
+  }
+
   private static void Outcome(float width, ScenarioResult result, ref float y, bool draw) {
-    if (!string.IsNullOrEmpty(result.FailureMessage)) {
-      Label(result.FailureMessage!, width, ref y, GameFont.Small, RunnerStatusColors.FailedText, draw);
+    if (result.FailureMessage is { Length: > 0 }) {
+      Label(result.FailureMessage, width, ref y, GameFont.Small, RunnerStatusColors.FailedText, draw);
     }
 
     Attachments(width, result, ref y, draw);
@@ -222,5 +307,25 @@ public static class RunnerDetailView {
     public ScenarioResult? Result { get; }
 
     public bool Live { get; }
+  }
+
+  private readonly struct StepRowInfo {
+    public StepRowInfo(string keyword, string text, StepResult? step, bool tucked, bool first) {
+      Keyword = keyword;
+      Text = text;
+      Step = step;
+      Tucked = tucked;
+      First = first;
+    }
+
+    public string Keyword { get; }
+
+    public string Text { get; }
+
+    public StepResult? Step { get; }
+
+    public bool Tucked { get; }
+
+    public bool First { get; }
   }
 }

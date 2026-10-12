@@ -221,12 +221,12 @@ public static class PickleHttpServer {
   }
 
   private static void Route(HttpListenerContext context) {
-    string path = context.Request.Url.AbsolutePath;
+    string path = context.Request.Url!.AbsolutePath;
     if (Rejected(context, path)) {
       return;
     }
 
-    if (Commands.TryGetValue(path, out Action<HttpListenerContext> command)) {
+    if (Commands.TryGetValue(path, out Action<HttpListenerContext>? command)) {
       command(context);
       Write(context, JsonContentType, OkBody);
       return;
@@ -244,7 +244,7 @@ public static class PickleHttpServer {
 
     string? origin = context.Request.Headers["Origin"];
     if (origin != null
-        && !string.Equals(origin, context.Request.Url.GetLeftPart(UriPartial.Authority), StringComparison.OrdinalIgnoreCase)) {
+        && !string.Equals(origin, context.Request.Url!.GetLeftPart(UriPartial.Authority), StringComparison.OrdinalIgnoreCase)) {
       context.Response.StatusCode = 403;
       Write(context, PlainText, "use the dashboard origin");
       return true;

@@ -51,7 +51,6 @@ public class RunnerWindow : PickleWindow {
   /// tree is populated before the window ever draws.
   /// </summary>
   public RunnerWindow() {
-    optionalTitle = "Pickle_RunnerTitle".Translate();
     draggable = true;
     resizeable = true;
     doCloseX = true;

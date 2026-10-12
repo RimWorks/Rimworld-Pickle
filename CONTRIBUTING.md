@@ -39,7 +39,10 @@ steps and `Docs/steps.md` for the published step catalogue.
 npm --prefix Dashboard ci
 npm --prefix Dashboard run build   # bundles are embedded resources, build them first
 dotnet build                       # StyleCop and Sonar analyzers run here
+dotnet build -p:GameVersion=1.7    # 1.7 runs WaylithCLR, so this one targets net10.0
 ```
+
+Build once per version `loadFolders.xml` declares.
 
 `dotnet build` still works without the dashboard bundles; the dashboard then serves a
 placeholder. StyleCop and Sonar analyzers run in the build, so a warning is a failure in
@@ -69,13 +72,13 @@ npm --prefix Dashboard run build                          # tsc -b typechecks th
 
 | Project | Targets | Holds |
 | --- | --- | --- |
-| `Pickle.Core` | `net472;net9.0` | Gherkin parsing, step table, run model, report writers. **No RimWorld reference**, which is the only reason any of it is unit testable |
-| `Pickle` | `net472` | The mod assembly: driver, runner, UI, autorun, evidence, web dashboard host |
-| `Pickle.Vanilla` | `net472` | The built-in step definitions |
-| `Pickle.Patches.Harmony` | `net472` | Pickle's hooks as Harmony patches |
-| `Pickle.Patches.Concord` | `net472` | The same hooks as Concord injections |
-| `Pickle.Ref` | `net472` | Compile-time reference assembly published to NuGet for mod authors |
-| `Pickle.Tests` | `net9.0` | xunit over `Pickle.Core` |
+| `Pickle.Core` | `net472;net10.0` | Gherkin parsing, step table, run model, report writers. **No RimWorld reference**, which is the only reason any of it is unit testable |
+| `Pickle` | `net472`, or `net10.0` for 1.7 | The mod assembly: driver, runner, UI, autorun, evidence, web dashboard host |
+| `Pickle.Vanilla` | `net472`, or `net10.0` for 1.7 | The built-in step definitions |
+| `Pickle.Patches.Harmony` | `net472`, or `net10.0` for 1.7 | Pickle's hooks as Harmony patches |
+| `Pickle.Patches.Concord` | `net472`, or `net10.0` for 1.7 | The same hooks as Concord injections |
+| `Pickle.Ref` | `net472`, or `net10.0` for 1.7 | Compile-time reference assembly published to NuGet for mod authors |
+| `Pickle.Tests` | `net10.0` | xunit over `Pickle.Core` |
 
 Keep logic that does not need RimWorld in `Pickle.Core`. Once a type references `Verse` or
 `RimWorld` it leaves the reach of the test suite.

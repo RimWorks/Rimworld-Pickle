@@ -4,7 +4,7 @@ namespace RimWorks.Pickle.Core.Steps;
 
 /// <summary>Which assemblies are worth reflecting over to find step methods on an unregistered class.</summary>
 public static class StepScanScope {
-  private static readonly string[] NotMods = [
+  private static readonly string[] NotModPrefixes = [
     "Assembly-CSharp",
     "UnityEngine",
     "Unity",
@@ -13,6 +13,13 @@ public static class StepScanScope {
     "netstandard",
     "Mono",
     "Microsoft",
+    "Brutal",
+    "Waylith",
+  ];
+
+  private static readonly string[] NotModNames = [
+    "RimWorld",
+    "UnityStubs",
   ];
 
   /// <summary>Whether an assembly could hold a mod's step class, so a type-by-type scan of it is worth
@@ -25,7 +32,13 @@ public static class StepScanScope {
       return false;
     }
 
-    foreach (string prefix in NotMods) {
+    foreach (string exact in NotModNames) {
+      if (name.Equals(exact, StringComparison.Ordinal)) {
+        return false;
+      }
+    }
+
+    foreach (string prefix in NotModPrefixes) {
       if (name.Equals(prefix, StringComparison.Ordinal)
           || name.StartsWith(prefix + ".", StringComparison.Ordinal)
           || name.StartsWith(prefix + "-", StringComparison.Ordinal)) {

@@ -15,4 +15,10 @@
     <li IfModActive="brrainz.harmony">1.6/Harmony</li>
     <li IfModActive="concordlib.concord">1.6/Concord</li>
   </v1.6>
+  <v1.7>
+    <li>/</li>
+    <li>1.7</li>
+    <li IfModActive="brrainz.harmony">1.7/Harmony</li>
+    <li IfModActive="concordlib.concord">1.7/Concord</li>
+  </v1.7>
 </loadFolders>
