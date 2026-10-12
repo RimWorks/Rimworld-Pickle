@@ -209,14 +209,22 @@ public static class PickleHttpServer {
       Route(context);
     } catch (Exception ex) {
       Log.ErrorTo(PickleLog.Channel, ex, "dashboard request failed");
-      context.Response.StatusCode = 400;
-      Write(context, JsonContentType, ErrorPrefix + Json.Quote(ex.Message) + "}");
+      TryWriteError(context, ex);
     } finally {
       try {
         context.Response.Close();
       } catch (Exception) {
         // the client may disconnect during a fixture load.
       }
+    }
+  }
+
+  private static void TryWriteError(HttpListenerContext context, Exception ex) {
+    try {
+      context.Response.StatusCode = 400;
+      Write(context, JsonContentType, ErrorPrefix + Json.Quote(ex.Message) + "}");
+    } catch (Exception unsendable) {
+      Log.WarnTo(PickleLog.Channel, $"could not send that error to the client: {unsendable.Message}");
     }
   }
 
