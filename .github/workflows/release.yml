@@ -104,6 +104,7 @@ jobs:
           NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
           WORKSHOP_ID: ${{ vars.WORKSHOP_ID }}
           STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
           # release.config.mjs builds one leg per version and reads these by name
           GAME_MANAGED_1_5: ${{ steps.refs-15.outputs.managed-dir }}
           GAME_MANAGED_1_6: ${{ steps.refs-16.outputs.managed-dir }}
