@@ -14,8 +14,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="$(HarmonyDir)/0Harmony.dll" Private="False" Condition="'$(HarmonyLocal)' == 'true'" />
-    <PackageReference Include="Lib.Harmony" Version="3.0.*-*" ExcludeAssets="runtime" PrivateAssets="all" Condition="'$(HarmonyLocal)' != 'true'" />
+    <PackageReference Include="Lib.Harmony" Version="3.0.*-*" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Pickle\Pickle.csproj" />
