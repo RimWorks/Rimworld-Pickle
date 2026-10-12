@@ -229,10 +229,41 @@ jobs:
       run-timeout: 35
       timeout-minutes: 55
 
+  suite-17:
+    name: suite 1.7
+    needs: [dashboard, game-image]
+    permissions:
+      contents: read
+      packages: write
+      actions: read
+    uses: RimWorks/mod-ci/.github/workflows/pickle-suite.yml@v4
+    secrets:
+      DOCBIN_TOKEN: ${{ secrets.DOCBIN_TOKEN }}
+    with:
+      mod-name: Pickle
+      mod-package-id: rimworks.pickle
+      pickle-version: self
+      unfiltered: true
+      suite-filter: ${{ inputs.suite-filter }}
+      game-image: ${{ fromJSON(needs.game-image.outputs.image-refs)['1.7'] }}
+      game-version: '1.7'
+      backends: ${{ inputs.backend != ''
+        && format('["{0}"]', inputs.backend)
+        || '["harmony","concord"]' }}
+      set-suffix: '-17'
+      build-command: dotnet build Pickle.slnx -c Release -p:GameVersion=1.7
+      build-artifacts: dashboard-dist:Dashboard/dist
+      dotnet-version: 10.0.x
+      film-seconds: 0
+      live-dashboard: false
+      publish-report: true
+      run-timeout: 35
+      timeout-minutes: 55
+
   # a uses: job cannot hold steps, so the check run the suite used to publish lives here
   suite-checks:
     name: suite scenarios
-    needs: suite
+    needs: [suite, suite-17]
     if: always()
     runs-on: ubuntu-latest
     permissions:
@@ -261,7 +292,7 @@ jobs:
   gate:
     name: ci gate
     needs: [dashboard, dashboard-tests, prose, links, package-deps, game-image,
-            build-15, build-17, build, suite, suite-checks]
+            build-15, build-17, build, suite, suite-17, suite-checks]
     # always(), or a gate its own condition skipped reports as a passing required check
     if: always()
     runs-on: ubuntu-latest
