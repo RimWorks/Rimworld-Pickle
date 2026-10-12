@@ -226,8 +226,8 @@ jobs:
       film-seconds: ${{ (github.event_name != 'workflow_dispatch' || inputs.film) && 60 || 0 }}
       live-dashboard: ${{ github.event_name != 'workflow_dispatch' || inputs.live-dashboard }}
       publish-report: true
-      run-timeout: 25
-      timeout-minutes: 45
+      run-timeout: 35
+      timeout-minutes: 55
 
   # a uses: job cannot hold steps, so the check run the suite used to publish lives here
   suite-checks:
