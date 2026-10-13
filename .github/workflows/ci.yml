@@ -260,7 +260,7 @@ jobs:
       build-command: dotnet build Pickle.slnx -c Release -p:GameVersion=1.7
       build-artifacts: dashboard-dist:Dashboard/dist
       dotnet-version: 10.0.x
-      film-seconds: 0
+      film-seconds: ${{ (github.event_name != 'workflow_dispatch' || inputs.film) && 60 || 0 }}
       live-dashboard: false
       publish-report: true
       run-timeout: 35
