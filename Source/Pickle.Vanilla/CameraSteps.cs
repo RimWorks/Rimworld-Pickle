@@ -14,9 +14,10 @@ namespace RimWorks.Pickle.Vanilla;
 [PickleSteps]
 public static class CameraSteps {
   // ZoomRootSize is half the visible height in cells, so smaller is closer in.
-  private const float CloseSize = 12f;
+  private const float CloseSize = 3f;
   private const float FarSize = 50f;
   private const float ZoomStep = 8f;
+  private const float SizeTolerance = 0.05f;
 
   private static Pawn? followed;
   private static Action? followHook;
@@ -126,6 +127,33 @@ public static class CameraSteps {
     await SetSize(ctx, FarSize);
   }
 
+  /// <summary>Zooms to an exact half-visible-height in cells, closer than the player's own zoom limit can reach.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="cells">Half the visible height in cells. Smaller is closer in.</param>
+  /// <returns>A task that completes when the step finishes. A failed assertion faults it.</returns>
+  [When("I zoom the camera to {float} cells")]
+  public static async Task ZoomToCells(PickleContext ctx, float cells) {
+    RequireMapView(ctx);
+    ctx.Require(
+        cells >= CloseSize && cells <= FarSize,
+        $"zoom must be between {CloseSize} and {FarSize} cells; got {cells}");
+
+    GameCompat.SetCameraSize(Find.CameraDriver, cells);
+    await ctx.WaitFrames(1);
+  }
+
+  /// <summary>Asserts the camera's zoom, in half-visible-height cells.</summary>
+  /// <param name="ctx">The running scenario's context.</param>
+  /// <param name="cells">The expected half-visible-height in cells.</param>
+  [Then("the camera is zoomed to {float} cells")]
+  public static void AssertZoomedTo(PickleContext ctx, float cells) {
+    RequireMapView(ctx);
+    float actual = Find.CameraDriver.ZoomRootSize;
+    ctx.Assert(
+        Mathf.Abs(actual - cells) <= SizeTolerance,
+        $"camera should be zoomed to {cells} cells; it is at {actual}");
+  }
+
   /// <summary>Asserts the camera's map position.</summary>
   /// <param name="ctx">The running scenario's context.</param>
   /// <param name="x">The expected x coordinate.</param>
@@ -161,6 +189,13 @@ public static class CameraSteps {
     followed = null;
   }
 
+  private static void LowerConfiguredZoomLimit() {
+    CameraMapConfig config = Find.CameraDriver.config;
+    if (config.sizeRange.min > CloseSize) {
+      config.sizeRange.min = CloseSize;
+    }
+  }
+
   private static async Task SetSize(PickleContext ctx, float size) {
     RequireMapView(ctx);
     GameCompat.SetCameraSize(Find.CameraDriver, Mathf.Clamp(size, CloseSize, FarSize));
@@ -181,5 +216,9 @@ public static class CameraSteps {
         !GameCompat.WorldRendered,
         "the world is on screen, so these steps drive a camera nobody is looking at; "
             + "close the world view, or use a world-camera step");
+
+    if (Find.CameraDriver != null) {
+      LowerConfiguredZoomLimit();
+    }
   }
 }

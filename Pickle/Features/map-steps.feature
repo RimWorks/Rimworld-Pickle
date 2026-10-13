@@ -19,3 +19,9 @@ Feature: map steps
     Then the stockpile holds 0 "Plasteel"
     Given 20 "Plasteel" is spawned at the stockpile
     Then the stockpile holds 20 "Plasteel"
+
+  Scenario: painted terrain sticks on every cell of the rectangle
+    When I set the terrain from (140, 150) to (142, 152) to "SterileTile"
+    Then the terrain at (140, 150) is "SterileTile"
+    And the terrain at (142, 152) is "SterileTile"
+    And the terrain at (141, 151) is "SterileTile"

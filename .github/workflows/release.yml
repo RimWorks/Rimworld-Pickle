@@ -44,9 +44,13 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
-      id-token: write
       # stage-game-refs pulls the images from ghcr
       packages: read
+    outputs:
+      published: ${{ steps.after.outputs.published }}
+      version: ${{ steps.after.outputs.version }}
+      tag: ${{ steps.after.outputs.tag }}
+      previous-tag: ${{ steps.before.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -66,12 +70,6 @@ jobs:
       - name: Install release dependencies
         run: npm ci --ignore-scripts
 
-      - name: Get a NuGet API key by trusted publishing
-        uses: NuGet/login@v1
-        id: nuget-login
-        with:
-          user: aequasi
-
       - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v4
         id: refs-15
         with:
@@ -90,10 +88,6 @@ jobs:
           image: ${{ fromJSON(needs.ci.outputs.image-refs)['1.7'] }}
           dest: ${{ runner.temp }}/game-1.7
 
-      - uses: RimWorks/mod-ci/.github/actions/steam-login@v4
-        with:
-          steam-config-vdf-b64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
-
       - name: Record the tag before releasing
         id: before
         run: echo "tag=$(git describe --tags --abbrev=0 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
@@ -101,20 +95,88 @@ jobs:
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
-          WORKSHOP_ID: ${{ vars.WORKSHOP_ID }}
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          SPLIT_PUBLISH: '1'
           # release.config.mjs builds one leg per version and reads these by name
           GAME_MANAGED_1_5: ${{ steps.refs-15.outputs.managed-dir }}
           GAME_MANAGED_1_6: ${{ steps.refs-16.outputs.managed-dir }}
           GAME_MANAGED_1_7: ${{ steps.refs-17.outputs.managed-dir }}
         run: ./node_modules/.bin/semantic-release
 
-      - uses: RimWorks/mod-ci/.github/actions/discord-release@v4
+      - name: Read the tag it just cut
+        id: after
+        run: |
+          tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          if [ "$tag" = "${{ steps.before.outputs.tag }}" ] || [ -z "$tag" ]; then
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "tag=$tag" >> "$GITHUB_OUTPUT"
+            echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload the packed nupkgs
+        if: steps.after.outputs.published == 'true'
+        uses: actions/upload-artifact@v7
         with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          mod-name: Pickle
-          role-ids: ${{ vars.DISCORD_ROLE_IDS }}
-          workshop-id: '3791648678'
-          embed-color: 3498DB
-          previous-tag: ${{ steps.before.outputs.tag }}
+          name: release-nupkgs
+          path: artifacts/*.nupkg
+          if-no-files-found: error
+
+      - name: Upload the release zips
+        if: steps.after.outputs.published == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-zips
+          path: dist/Pickle-*.zip
+          if-no-files-found: error
+
+  nuget:
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Download the packed nupkgs
+        uses: actions/download-artifact@v8
+        with:
+          name: release-nupkgs
+          path: nupkgs
+
+      - name: NuGet login (OIDC trusted publishing)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push
+        env:
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+        run: |
+          dotnet nuget push "nupkgs/*.nupkg" \
+            --api-key "$NUGET_API_KEY" \
+            --source https://api.nuget.org/v3/index.json \
+            --timeout 1200 \
+            --skip-duplicate
+
+  publish:
+    needs: [release, nuget]
+    if: needs.release.outputs.published == 'true'
+    uses: RimWorks/mod-ci/.github/workflows/publish.yml@v4
+    permissions:
+      contents: read
+    secrets: inherit
+    with:
+      version: ${{ needs.release.outputs.version }}
+      zip-artifact: release-zips
+      discord-mod-name: Pickle
+      discord-workshop-id: '3791648678'
+      discord-embed-color: 3498DB
+      tag: ${{ needs.release.outputs.tag }}
+      previous-tag: ${{ needs.release.outputs.previous-tag }}

@@ -498,6 +498,8 @@ same colonist makes the same choices every run.
 | `cell ({int}, {int}) is empty` | Checks a cell holds no things |
 | `I spawn a {string} at ({int}, {int})` | Spawns a thing at a cell |
 | `I destroy the {string} at ({int}, {int})` | Destroys the first matching thing at a cell |
+| `I set the terrain from ({int}, {int}) to ({int}, {int}) to {string}` | Paints a floor over a rectangle, no build job |
+| `the terrain at ({int}, {int}) is {string}` | Checks the floor a pawn walks on in that cell |
 | `the stockpile holds {int} {string}` | Counts a thing def in the first stockpile zone |
 
 A cell outside the map fails with the map size, so a wrong coordinate does not read as a
@@ -516,6 +518,8 @@ missing object.
 | `I zoom out` | One step further |
 | `I zoom all the way in` | Closest view |
 | `I zoom all the way out` | Widest view |
+| `I zoom the camera to {float} cells` | Exact zoom, in half-visible-height cells, past the player's own limit |
+| `the camera is zoomed to {float} cells` | Checks the exact zoom |
 | `the camera is looking at ({int}, {int})` | Checks the camera cell |
 | `the camera can see {string}` | Checks the pawn is inside the view |
 
