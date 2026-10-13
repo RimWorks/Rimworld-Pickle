@@ -117,6 +117,49 @@ public class MapSteps {
     GenSpawn.Spawn(thing, cell, map);
   }
 
+  /// <summary>Paints terrain over a rectangle the way the dev-mode terrain tool does, with no
+  /// construction job, no cost and no affordance check.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="x1">One corner's x coordinate.</param>
+  /// <param name="z1">One corner's z coordinate.</param>
+  /// <param name="x2">The opposite corner's x coordinate.</param>
+  /// <param name="z2">The opposite corner's z coordinate.</param>
+  /// <param name="defName">The terrain def to paint.</param>
+  [When("I set the terrain from \\({int}, {int}\\) to \\({int}, {int}\\) to {string}")]
+  public void SetTerrainInRect(PickleContext ctx, int x1, int z1, int x2, int z2, string defName) {
+    TerrainDef def = DefLookup.Require<TerrainDef>(defName);
+    Map map = MapLookup.RequireMap(ctx);
+    CellRect rect = CellRect.FromLimits(
+        Math.Min(x1, x2), Math.Min(z1, z2), Math.Max(x1, x2), Math.Max(z1, z2));
+
+    foreach (IntVec3 cell in rect) {
+      MapLookup.RequireInBounds(ctx, map, cell);
+    }
+
+    foreach (IntVec3 cell in rect) {
+      map.terrainGrid.SetTerrain(cell, def);
+    }
+  }
+
+  /// <summary>Checks the cell's top terrain, which is the floor a pawn walks on rather than the
+  /// natural ground under it.</summary>
+  /// <param name="ctx">The running step's context.</param>
+  /// <param name="x">The cell's x coordinate.</param>
+  /// <param name="z">The cell's z coordinate.</param>
+  /// <param name="defName">The terrain def the cell should carry.</param>
+  [Then("the terrain at \\({int}, {int}\\) is {string}")]
+  public void AssertTerrainAt(PickleContext ctx, int x, int z, string defName) {
+    TerrainDef def = DefLookup.Require<TerrainDef>(defName);
+    Map map = MapLookup.RequireMap(ctx);
+    IntVec3 cell = new IntVec3(x, 0, z);
+    MapLookup.RequireInBounds(ctx, map, cell);
+
+    TerrainDef at = map.terrainGrid.TerrainAt(cell);
+    ctx.Assert(
+        at == def,
+        $"terrain at ({x}, {z}) should be {defName}; it is {at?.defName ?? "(none)"}");
+  }
+
   /// <summary>Destroys the thing of the def in that cell, failing when the cell holds none.</summary>
   /// <param name="ctx">The running step's context.</param>
   /// <param name="defName">The thing def to destroy.</param>
