@@ -374,20 +374,19 @@ public class UiSteps {
   /// </remarks>
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   /// <param name="modName">The mod's name or packageId, as every other mod step takes it.</param>
+  /// <returns>A task that completes once the warning arrives, faulted when it never does.</returns>
   [Then("a warning from mod {string} was logged")]
-  public void AssertWarningFromMod(PickleContext ctx, string modName) {
+  public async Task AssertWarningFromMod(PickleContext ctx, string modName) {
     ModContentPack? mod = ModLookup.Find(modName);
     ctx.Require(
         mod != null,
         $"mod '{modName}' is not loaded. loaded mods: {ModLookup.DescribeLoadOrder()}; " +
         $"warnings seen from: {DescribeObservedMods()}");
 
-    List<string> matches = [.. LogWatch.WarningsSinceArmed
-        .Where(w => string.Equals(w.Mod, mod!.Name, StringComparison.OrdinalIgnoreCase))
-        .Select(w => w.Message)];
-    ctx.Assert(
-        matches.Count > 0,
-        $"expected a warning from mod '{mod!.Name}'; warnings seen from: {DescribeObservedMods()}");
+    await ctx.AssertEventually(
+        () => LogWatch.WarningsSinceArmed
+            .Any(w => string.Equals(w.Mod, mod!.Name, StringComparison.OrdinalIgnoreCase)),
+        () => $"expected a warning from mod '{mod!.Name}'; warnings seen from: {DescribeObservedMods()}");
   }
 
   /// <summary>Asserts no warning attributed to a mod was logged.</summary>
