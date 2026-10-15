@@ -18,6 +18,7 @@ export default releaseConfig({
     mods: [
         {
             name: 'Pickle',
+            title: 'Pickle: RimWorld mod testing framework',
             workshopId: WORKSHOP_ID,
             previewfile: new URL('./About/Preview.png', import.meta.url).pathname,
         },
