@@ -4,5 +4,6 @@
     <Project Path="Pickle/Pickle.csproj" />
     <Project Path="Pickle.Vanilla/Pickle.Vanilla.csproj" />
     <Project Path="Pickle.Tests/Pickle.Tests.csproj" />
+    <Project Path="Pickle.Game.Tests/Pickle.Game.Tests.csproj" />
   </Folder>
 </Solution>

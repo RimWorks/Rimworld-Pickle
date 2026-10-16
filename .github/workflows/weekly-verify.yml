@@ -109,7 +109,7 @@ jobs:
       - name: dotnet test
         run: |
           set -o pipefail
-          dotnet test Pickle.slnx -c Release --nologo --no-build \
+          dotnet test Pickle.slnx -c Release --nologo --no-build --filter "Category!=Game" \
             --logger "console;verbosity=normal" | tee test-output.txt
           passed=$(grep -oE 'Passed:[[:space:]]+[0-9]+' test-output.txt | grep -oE '[0-9]+' | tail -1)
           echo "TESTS_PASSED=${passed:-unknown}" >> "$GITHUB_ENV"

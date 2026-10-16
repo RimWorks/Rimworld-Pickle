@@ -67,6 +67,29 @@ npm --prefix Dashboard run build                          # tsc -b typechecks th
 - Do not claim that an interrupted or timed-out run passed. A report read mid-run carries
   `exitReason: in-progress` and its counts are wrong.
 
+### Scenarios through `dotnet test`
+
+`Pickle.Game.Tests` turns every scenario in `Pickle/Features` into one xunit row, so Rider and
+Visual Studio list them in the test explorer and run one at a time. Each row posts its scenario
+to a live game over `POST /gherkin` and fails on the first failed step.
+
+```bash
+dotnet test Source/Pickle.Game.Tests/Pickle.Game.Tests.csproj   # needs a game
+dotnet test Pickle.slnx --filter "Category!=Game"               # what CI runs
+```
+
+Rows carry `[Trait("Category", "Game")]`, and both CI test steps filter them out. The fixture
+finds a game in one of three ways, in order:
+
+| Setting | Does |
+| --- | --- |
+| nothing | probes ports 27750-27759 for a game reporting `"controllable":true` |
+| `PICKLE_TEST_GAMECRATE=<profile>` | `gamecrate run <profile> --detach --network host --build` |
+| `PICKLE_TEST_GAME=<path>` | launches that executable with `-pickle-http-port` and `-pickle-no-browser` |
+
+`PICKLE_TEST_PORT` pins one port instead of the range. With no game up and neither variable
+set, the fixture throws instead of skipping.
+
 
 ## Architecture
 
