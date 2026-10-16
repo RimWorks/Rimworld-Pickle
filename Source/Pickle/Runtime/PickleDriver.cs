@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using RimWorks.Pickle.Core.Run;
 using RimWorks.Pickle.Input;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -12,8 +13,8 @@ using Log = RimWorks.RimLogging.Log;
 namespace RimWorks.Pickle.Runtime;
 
 /// <summary>
-/// Runs the async step pump. Update resolves waits and invokes continuations directly,
-/// so await always resumes inline on the main thread, which step code needs.
+/// Runs the async step pump. Update resolves waits and drains the main thread queue, and
+/// Awake installs the context that puts every other await continuation in that queue.
 /// </summary>
 public class PickleDriver : MonoBehaviour {
   private static PickleDriver? instance;
@@ -235,6 +236,16 @@ public class PickleDriver : MonoBehaviour {
 
   private void Awake() {
     mainThreadId = Thread.CurrentThread.ManagedThreadId;
+
+    SynchronizationContext? existing = SynchronizationContext.Current;
+    if (existing != null && existing.GetType() != typeof(SynchronizationContext)) {
+      return;
+    }
+
+    SynchronizationContext.SetSynchronizationContext(
+        new MainThreadSyncContext(
+            mainThreadQueue.Enqueue,
+            () => Thread.CurrentThread.ManagedThreadId == mainThreadId));
   }
 
   private void Update() {
