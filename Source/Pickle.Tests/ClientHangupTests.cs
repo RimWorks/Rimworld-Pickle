@@ -9,7 +9,7 @@ namespace RimWorks.Pickle.Tests;
 public class ClientHangupTests {
   [Fact]
   public void AWriteToADisposedSocketIsAHangup() {
-    var dropped = new HttpListenerException(
+    HttpListenerException dropped = new HttpListenerException(
       1229, "Unable to write data to the transport connection: Cannot access a disposed object.");
 
     Assert.True(ClientHangup.Caused(dropped));
@@ -17,7 +17,7 @@ public class ClientHangupTests {
 
   [Fact]
   public void AWrappedHangupStillCounts() {
-    var wrapped = new InvalidOperationException("writing the dashboard", new IOException("broken pipe"));
+    InvalidOperationException wrapped = new InvalidOperationException("writing the dashboard", new IOException("broken pipe"));
 
     Assert.True(ClientHangup.Caused(wrapped));
   }
