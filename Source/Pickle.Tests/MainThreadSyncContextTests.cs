@@ -9,13 +9,13 @@ namespace RimWorks.Pickle.Tests;
 
 public class MainThreadSyncContextTests {
   private readonly ConcurrentQueue<Action> queue = new();
-  private readonly int mainThreadId = Thread.CurrentThread.ManagedThreadId;
+  private readonly int mainThreadId = Environment.CurrentManagedThreadId;
   private readonly MainThreadSyncContext context;
 
   public MainThreadSyncContextTests() {
     context = new MainThreadSyncContext(
         queue.Enqueue,
-        () => Thread.CurrentThread.ManagedThreadId == mainThreadId);
+        () => Environment.CurrentManagedThreadId == mainThreadId);
   }
 
   [Fact]
@@ -42,7 +42,7 @@ public class MainThreadSyncContextTests {
   [Fact]
   public void Send_FromAnotherThread_RunsOnTheMainThreadAndBlocks() {
     int ranOn = 0;
-    Task sender = Task.Run(() => context.Send(_ => ranOn = Thread.CurrentThread.ManagedThreadId, null));
+    Task sender = Task.Run(() => context.Send(_ => ranOn = Environment.CurrentManagedThreadId, null));
 
     PumpUntil(() => sender.IsCompleted);
 
@@ -57,7 +57,7 @@ public class MainThreadSyncContextTests {
 
     try {
       int resumedOn = 0;
-      Task scenario = RunScenario(() => resumedOn = Thread.CurrentThread.ManagedThreadId);
+      Task scenario = RunScenario(() => resumedOn = Environment.CurrentManagedThreadId);
 
       PumpUntil(() => scenario.IsCompleted);
 

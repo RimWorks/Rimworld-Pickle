@@ -1,21 +1,24 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Gherkin;
 using Gherkin.Ast;
 using RimWorks.Pickle.Core;
 using RimWorks.Pickle.Core.Model;
+using Xunit;
 
 namespace RimWorks.Pickle.Game.Tests;
 
 public static class ScenarioRows {
-  public static IEnumerable<object[]> All() {
+  public static TheoryData<string, int, string> All() {
+    TheoryData<string, int, string> rows = new TheoryData<string, int, string>();
     foreach (string path in Directory.GetFiles(FeaturesDir(), "*.feature", SearchOption.AllDirectories)) {
       FeaturePlan plan = Read(path);
       for (int i = 0; i < plan.Scenarios.Count; i++) {
-        yield return [Path.GetFileName(path), i, plan.Scenarios[i].Name];
+        rows.Add(Path.GetFileName(path), i, plan.Scenarios[i].Name);
       }
     }
+
+    return rows;
   }
 
   public static FeaturePlan Read(string path) {

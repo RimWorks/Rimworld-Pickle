@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace RimWorks.Pickle.Core.Run;
@@ -47,13 +48,16 @@ public sealed class MainThreadSyncContext : SynchronizationContext {
     }
 
     using ManualResetEventSlim done = new ManualResetEventSlim(false);
-    Exception? fault = null;
+
+    // a field, not a captured local: sonar's symbolic execution does not follow a write
+    // made inside the lambda and reads the null check below as dead
+    StrongBox<Exception?> fault = new StrongBox<Exception?>(null);
 
     postToMainThread(() => {
       try {
         d(state);
       } catch (Exception ex) {
-        fault = ex;
+        fault.Value = ex;
       } finally {
         done.Set();
       }
@@ -61,8 +65,8 @@ public sealed class MainThreadSyncContext : SynchronizationContext {
 
     done.Wait();
 
-    if (fault != null) {
-      throw new InvalidOperationException("a Send callback threw on the main thread", fault);
+    if (fault.Value != null) {
+      throw new InvalidOperationException("a Send callback threw on the main thread", fault.Value);
     }
   }
 
