@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using RimWorks.Pickle.Core.Run;
+using RimWorks.Pickle.Core.Web;
 using RimWorks.Pickle.Evidence;
 using RimWorks.Pickle.Run;
 using UnityEngine;
@@ -207,6 +208,8 @@ public static class PickleHttpServer {
   private static void Respond(HttpListenerContext context) {
     try {
       Route(context);
+    } catch (Exception ex) when (ClientHangup.Caused(ex)) {
+      Log.DebugTo(PickleLog.Channel, $"dashboard client went away mid-response: {ex.Message}");
     } catch (Exception ex) {
       Log.ErrorTo(PickleLog.Channel, ex, "dashboard request failed");
       TryWriteError(context, ex);

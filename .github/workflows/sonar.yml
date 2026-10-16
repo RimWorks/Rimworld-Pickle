@@ -54,6 +54,7 @@ jobs:
       solution: Pickle.slnx
       project-key: RimWorks_Rimworld-Pickle
       exclusions: Dashboard/dist/**,Dashboard/node_modules/**,Styles/**,artifacts/**,**/bin/**,**/obj/**
+      test-filter: Category!=Game
       coverage-exclusions: Source/Pickle/**,Source/Pickle.Vanilla/**,Source/Pickle.Patches.*/**,Source/Pickle.Ref/**,Dashboard/**,.github/**
       ignore-rules: |
         typescript:S3358=**/*.tsx

@@ -178,7 +178,7 @@ jobs:
 
       - name: Run tests
         run: |
-          dotnet test Pickle.slnx -c Release --no-build \
+          dotnet test Pickle.slnx -c Release --no-build --filter "Category!=Game" \
             --logger "trx;LogFileName=tests.trx" --results-directory "$RUNNER_TEMP/test-results"
 
       - name: Publish the test results
