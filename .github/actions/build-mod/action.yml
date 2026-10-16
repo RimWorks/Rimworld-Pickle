@@ -23,7 +23,7 @@ runs:
       with:
         dotnet-version: 10.0.x
 
-    - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v4
+    - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v5
       id: refs
       with:
         image: ${{ inputs.game-image }}

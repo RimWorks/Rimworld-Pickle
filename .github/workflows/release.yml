@@ -70,19 +70,19 @@ jobs:
       - name: Install release dependencies
         run: npm ci --ignore-scripts
 
-      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v4
+      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v5
         id: refs-15
         with:
           image: ${{ fromJSON(needs.ci.outputs.image-refs)['1.5'] }}
           dest: ${{ runner.temp }}/game-1.5
 
-      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v4
+      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v5
         id: refs-16
         with:
           image: ${{ fromJSON(needs.ci.outputs.image-refs)['1.6'] }}
           dest: ${{ runner.temp }}/game-1.6
 
-      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v4
+      - uses: RimWorks/mod-ci/.github/actions/stage-game-refs@v5
         id: refs-17
         with:
           image: ${{ fromJSON(needs.ci.outputs.image-refs)['1.7'] }}
@@ -168,7 +168,7 @@ jobs:
   publish:
     needs: [release, nuget]
     if: needs.release.outputs.published == 'true'
-    uses: RimWorks/mod-ci/.github/workflows/publish.yml@v4
+    uses: RimWorks/mod-ci/.github/workflows/publish.yml@v5
     permissions:
       contents: read
     secrets: inherit

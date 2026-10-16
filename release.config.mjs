@@ -15,7 +15,14 @@ export default releaseConfig({
     versions,
     // the dashboard bundles are embedded resources, so they exist before the compile
     beforeBuild: ['npm --prefix Dashboard ci', 'npm --prefix Dashboard run build'],
-    mods: [{ name: 'Pickle', title: 'Pickle: RimWorld mod testing framework', workshopId: WORKSHOP_ID }],
+    mods: [
+        {
+            name: 'Pickle',
+            title: 'Pickle: RimWorld mod testing framework',
+            workshopId: WORKSHOP_ID,
+            previewfile: new URL('./About/Preview.png', import.meta.url).pathname,
+        },
+    ],
     pack: 'Source/Pickle.Ref/Pickle.Ref.csproj',
     packArgs: `-p:GameVersion=${newest} -p:GameManagedDir=${refsDirFor(newest)}`,
     nupkgGlob: 'artifacts/RimWorks.Pickle.Ref.${nextRelease.version}.nupkg',
