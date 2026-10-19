@@ -11,8 +11,8 @@
     "lint:fix": "oxlint --fix"
   },
   "dependencies": {
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@rikalabs/oxlint-standards": "^0.8.1",
@@ -20,9 +20,9 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
-    "daisyui": "^5.7.47",
-    "oxlint": "^1.87.0",
-    "oxlint-tsgolint": "^7.0.2003",
+    "daisyui": "^5.7.50",
+    "oxlint": "^1.88.0",
+    "oxlint-tsgolint": "^7.0.2004",
     "tailwindcss": "^4.1.14",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
