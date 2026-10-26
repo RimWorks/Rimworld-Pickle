@@ -14,7 +14,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="RimWorks.RimLogging" Version="3.*" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="RimWorks.RimLogging" Version="4.*" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="Gherkin" Version="42.0.*" />
     <PackageReference Include="Cucumber.CucumberExpressions" Version="20.1.*" />
     <!-- net10 carries HttpClient in the shared framework; net472 needs the facade named. -->
