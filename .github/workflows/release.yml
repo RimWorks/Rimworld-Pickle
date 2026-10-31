@@ -23,6 +23,7 @@ jobs:
     secrets:
       STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
       STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
+      DEPOTDOWNLOADER_ACCOUNT_B64: ${{ secrets.DEPOTDOWNLOADER_ACCOUNT_B64 }}
       DOCBIN_TOKEN: ${{ secrets.DOCBIN_TOKEN }}
 
   sonar:
@@ -35,6 +36,7 @@ jobs:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
       STEAM_CONFIG_VDF_B64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
+      DEPOTDOWNLOADER_ACCOUNT_B64: ${{ secrets.DEPOTDOWNLOADER_ACCOUNT_B64 }}
 
   release:
     name: semantic-release
