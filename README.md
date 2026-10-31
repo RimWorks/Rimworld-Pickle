@@ -82,13 +82,13 @@ public class DraftingSteps {
 
 | Guide | Covers |
 | --- | --- |
-| [Getting started](Docs/getting-started.md) | Adding a suite to your mod |
-| [Built-in steps](Docs/steps.md) | Every step Pickle ships |
-| [Authoring](Docs/authoring.md) | Writing your own steps, tags, fixtures, and waits |
-| [Running tests](Docs/running.md) | The runner, the browser dashboard, and seeds |
-| [Autorun and CI](Docs/autorun.md) | Command-line flags and pipelines |
-| [Reports](Docs/reports.md) | What each run writes, and what a failure captures |
-| [Releasing](Docs/releasing.md) | How a release is cut and published |
+| [Getting started](Docs/getting-started.md) | Adding a suite to your mod. |
+| [Built-in steps](Docs/steps.md) | Every step Pickle ships. |
+| [Authoring](Docs/authoring.md) | Writing your own steps, tags, fixtures, and waits. |
+| [Running tests](Docs/running.md) | The runner, the browser dashboard, and seeds. |
+| [Autorun and CI](Docs/autorun.md) | Command-line flags and pipelines. |
+| [Reports](Docs/reports.md) | What each run writes, and what a failure captures. |
+| [Releasing](Docs/releasing.md) | How a release is cut and published. |
 
 ## Contributing
 
@@ -104,8 +104,8 @@ builds without them, and the dashboard serves a placeholder.
 
 | Tool | What it does |
 | --- | --- |
-| [Quickstarts](https://github.com/RimWorks/Rimworld-Quickstarts) | Boot straight into a configured colony from the dev quicktest menu, and run it as a CI smoke test |
-| [RimLogging](https://github.com/RimWorks/rimworld-logging-framework) | Structured logging, an in-game log viewer, and one-click bug report sharing |
+| [Quickstarts](https://github.com/RimWorks/Rimworld-Quickstarts) | Boot into a colony from the quicktest menu. |
+| [RimLogging](https://github.com/RimWorks/rimworld-logging-framework) | Structured logging and an in-game log viewer. |
 
 ## License
 
