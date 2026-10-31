@@ -86,6 +86,17 @@ jobs:
       - run: npm test
         working-directory: Dashboard
 
+  workflow-versions:
+    name: workflow versions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: node scripts/verify-workflow-versions.mjs
+
   prose:
     uses: RimWorks/mod-ci/.github/workflows/prose.yml@v5
     with:
@@ -297,8 +308,8 @@ jobs:
 
   gate:
     name: ci gate
-    needs: [dashboard, dashboard-tests, prose, links, package-deps, game-image,
-            build-15, build-17, build, suite, suite-17, suite-checks]
+    needs: [dashboard, dashboard-tests, workflow-versions, prose, links, package-deps,
+            game-image, build-15, build-17, build, suite, suite-17, suite-checks]
     # always(), or a gate its own condition skipped reports as a passing required check
     if: always()
     runs-on: ubuntu-latest

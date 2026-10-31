@@ -103,7 +103,7 @@ jobs:
       # the republish uploads the working tree, so every version the mod claims needs a folder
       - name: dotnet build
         run: |
-          npx --no-install build-mod Pickle.slnx --nologo --no-restore
+          npx --no-install build-mod Pickle.slnx --nologo
           npx --no-install verify-ship-list .
 
       - name: dotnet test
@@ -117,7 +117,7 @@ jobs:
       - uses: RimWorks/mod-ci/.github/actions/steam-republish@v5
         with:
           solution: Pickle.slnx
-          workshop-id: ${{ vars.WORKSHOP_ID }}
+          workshop-id: '3791648678'
           steam-username: ${{ secrets.STEAM_USERNAME }}
           steam-config-vdf-b64: ${{ secrets.STEAM_CONFIG_VDF_B64 }}
           verified-rimworld: ${{ env.RIMWORLD_REF }}
