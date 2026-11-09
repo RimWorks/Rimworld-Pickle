@@ -21,9 +21,9 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "daisyui": "^5.7.50",
-    "oxlint": "^1.88.0",
+    "oxlint": "^1.91.0",
     "oxlint-tsgolint": "^7.0.2004",
-    "tailwindcss": "^4.1.14",
+    "tailwindcss": "^4.3.4",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vite-plugin-singlefile": "^2.3.4"
