@@ -41,7 +41,7 @@ jobs:
   release:
     name: semantic-release
     needs: [ci, sonar]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
       issues: write
@@ -135,7 +135,7 @@ jobs:
   nuget:
     needs: release
     if: needs.release.outputs.published == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       id-token: write
