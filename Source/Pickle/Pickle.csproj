@@ -30,4 +30,11 @@
     <EmbeddedResource Include="..\..\Dashboard\dist\index.html" LogicalName="Pickle.Dashboard.html" Condition="Exists('..\..\Dashboard\dist\index.html')" />
     <EmbeddedResource Include="..\..\Dashboard\dist\report.html" LogicalName="Pickle.ReportTemplate.html" Condition="Exists('..\..\Dashboard\dist\report.html')" />
   </ItemGroup>
+  <Target Name="ShipNetStandardFacade" AfterTargets="Build" Condition="'$(GameVersion)' == '1.5'">
+    <PropertyGroup>
+      <NetStandardFacade>$(MSBuildExtensionsPath)/Microsoft/Microsoft.NET.Build.Extensions/net461/lib/netstandard.dll</NetStandardFacade>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(NetStandardFacade)')" Text="No netstandard 2.0 facade at $(NetStandardFacade). RimWorld 1.5 ships none, so Gherkin and Cucumber cannot load without it." />
+    <Copy SourceFiles="$(NetStandardFacade)" DestinationFiles="$(OutDir)00netstandard.dll" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
