@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -71,15 +71,21 @@ Feature: Gherkin Endpoint Smoke
   }
 
   private static void Collect(List<string> lines) {
-    using HttpClient client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
-    using StringContent body = new StringContent(Source, Encoding.UTF8, "text/plain");
-    using HttpResponseMessage response = client
-        .PostAsync($"http://127.0.0.1:{PickleHttpServer.Port}/gherkin", body)
-        .GetAwaiter()
-        .GetResult();
-    response.EnsureSuccessStatusCode();
+#pragma warning disable SYSLIB0014
+    HttpWebRequest request = WebRequest.CreateHttp($"http://127.0.0.1:{PickleHttpServer.Port}/gherkin");
+#pragma warning restore SYSLIB0014
+    request.Method = "POST";
+    request.ContentType = "text/plain; charset=utf-8";
+    request.Timeout = 60_000;
+    request.ReadWriteTimeout = 60_000;
 
-    using Stream received = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult();
+    byte[] bytes = Encoding.UTF8.GetBytes(Source);
+    using (Stream sent = request.GetRequestStream()) {
+      sent.Write(bytes, 0, bytes.Length);
+    }
+
+    using HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+    using Stream received = response.GetResponseStream();
     using StreamReader reader = new StreamReader(received, Encoding.UTF8);
 
     while (reader.ReadLine() is string line) {
