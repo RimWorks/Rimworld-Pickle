@@ -99,7 +99,7 @@ public class UiSteps {
     GenUI.ClearLabelWidthCache();
     await ctx.WaitFrames(2);
 
-    foreach (Window window in Find.WindowStack.Windows.ToList()) {
+    foreach (Window window in OpenWindows().ToList()) {
       window.Notify_ResolutionChanged();
     }
 
@@ -221,7 +221,7 @@ public class UiSteps {
   /// <param name="ctx">The scenario's context, for assertions, requirements, and waits.</param>
   [When("I close all dialogs")]
   public void CloseAllDialogs(PickleContext ctx) {
-    List<Window> toClose = [.. Find.WindowStack.Windows.Where(w => w is not RunnerWindow)];
+    List<Window> toClose = [.. OpenWindows().Where(w => w is not RunnerWindow)];
 
     foreach (Window window in toClose) {
       Find.WindowStack.TryRemove(window, doCloseSound: false);
@@ -238,7 +238,7 @@ public class UiSteps {
   public async Task ScreenIsClear(PickleContext ctx) {
     WindowSuppression.Begin();
 
-    foreach (Window window in Find.WindowStack.Windows.Where(w => !WindowSuppression.IsOwn(w)).ToList()) {
+    foreach (Window window in OpenWindows().Where(w => !WindowSuppression.IsOwn(w)).ToList()) {
       Find.WindowStack.TryRemove(window, doCloseSound: false);
     }
 
@@ -455,8 +455,10 @@ public class UiSteps {
     return string.Join(", ", described);
   }
 
+  private static IEnumerable<Window> OpenWindows() => Find.WindowStack?.Windows ?? [];
+
   private static bool IsWindowOpen(string windowName) {
-    foreach (Window window in Find.WindowStack.Windows) {
+    foreach (Window window in OpenWindows()) {
       if (string.Equals(window.GetType().Name, windowName, StringComparison.OrdinalIgnoreCase)) {
         return true;
       }
@@ -466,7 +468,7 @@ public class UiSteps {
   }
 
   private static string DescribeOpenWindows() {
-    List<string> names = [.. Find.WindowStack.Windows
+    List<string> names = [.. OpenWindows()
         .Select(w => w.GetType().Name)
         .OrderBy(n => n)];
 
