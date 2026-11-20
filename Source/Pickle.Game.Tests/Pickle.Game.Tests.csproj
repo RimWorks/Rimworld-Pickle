@@ -10,7 +10,7 @@
     <PackageReference Include="xunit" Version="2.9.*" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.*" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.*" />
-    <PackageReference Include="Gherkin" Version="42.0.*" />
+    <PackageReference Include="Gherkin" Version="43.0.*" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Pickle.Core\Pickle.Core.csproj" />
