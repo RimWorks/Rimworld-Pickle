@@ -38,7 +38,7 @@
   </Target>
 
   <ItemGroup>
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.35.*" PrivateAssets="all" />
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.36.*" PrivateAssets="all" />
   </ItemGroup>
 
   <Import Project="StyleCop.props" />
