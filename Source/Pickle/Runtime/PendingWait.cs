@@ -29,7 +29,7 @@ internal sealed class PendingWait {
 
   public Func<bool>? Condition { get; set; }
 
-  public float DeadlineRealtime { get; set; }
+  public double DeadlineRealtime { get; set; }
 
   public float TimeoutSeconds { get; set; }
 
