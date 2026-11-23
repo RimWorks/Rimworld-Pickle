@@ -44,6 +44,6 @@ public static class HostRegistry {
     }
 
     throw new InvalidOperationException(
-        $"The host does not provide the capability {typeof(T).Name}, so this step cannot run here.");
+        $"The host does not provide the capability {typeof(T).Name}.");
   }
 }
