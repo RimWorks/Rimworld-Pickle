@@ -204,7 +204,7 @@ public class RunSession {
 
       // @requires:<mod> keeps a dlc scenario out of a run that has no dlc, reported as
       // skipped rather than failed.
-      string? missingMod = RunOutcomes.MissingRequirement(scenario.Tags, ModLookup.IsLoaded);
+      string? missingMod = RunOutcomes.MissingRequirement(scenario.Tags, wanted => HostRegistry.TryGet(out IModList? _) && ModLookup.IsLoaded(wanted));
       if (missingMod != null) {
         Log.InfoTo(PickleLog.Channel, "skipping '{Scenario}', '{MissingMod}' is not loaded", [scenario.Name, missingMod]);
       }

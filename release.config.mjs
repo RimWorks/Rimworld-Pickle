@@ -24,7 +24,7 @@ export default releaseConfig({
         },
     ],
     pack: 'Source/Pickle.Ref/Pickle.Ref.csproj',
-    packArgs: `-p:GameVersion=${newest} -p:GameManagedDir=${refsDirFor(newest)}`,
+    packArgs: `-p:GameVersion=${newest} -p:RequireBothRefPairs=true -p:GameManagedDir=${refsDirFor(newest)}`,
     nupkgGlob: 'artifacts/RimWorks.Pickle.Ref.${nextRelease.version}.nupkg',
     assets: [
         { path: 'dist/Pickle-*.zip', label: 'Pickle mod' },

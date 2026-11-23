@@ -41,16 +41,18 @@
     <Copy SourceFiles="@(RefPair)" DestinationFolder="$(RefStash)$(GameTfm)" />
   </Target>
 
-  <Target Name="RequireRefPairs" BeforeTargets="_GetPackageFiles">
+  <Target Name="RequireRefPairs" BeforeTargets="_GetPackageFiles" Condition="'$(RequireBothRefPairs)' == 'true'">
     <Error Condition="!Exists('%(RefPacked.Identity)')" Text="no %(RefPacked.Identity). build -c $(Configuration) with -p:GameVersion=1.6 and with -p:GameVersion=1.7 before the pack." />
+  </Target>
+
+  <Target Name="PackRefPairs" BeforeTargets="_GetPackageFiles">
+    <ItemGroup>
+      <None Include="@(RefPacked)" Pack="true" Visible="false" Condition="Exists('%(RefPacked.Identity)')" />
+    </ItemGroup>
   </Target>
 
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
-
-    <!-- ref/, not lib/: assets under ref are compile-only, so a consumer never
-         copies this stub next to the real Pickle.dll the mod loads. -->
-    <None Include="@(RefPacked)" Pack="true" Visible="false" />
     <None Include="_._" Pack="true" PackagePath="lib/net472/;lib/net10.0/" Visible="false" Condition="Exists('_._')" />
   </ItemGroup>
 </Project>
