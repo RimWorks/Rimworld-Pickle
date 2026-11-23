@@ -132,9 +132,7 @@ public static class SuiteRunner {
 
     lock (HostStepAssemblies) {
       foreach (Assembly hostAssembly in HostStepAssemblies) {
-        if (!assemblies.Contains(hostAssembly)) {
-          assemblies.Add(hostAssembly);
-        }
+        AddOnce(assemblies, hostAssembly);
       }
     }
 
@@ -153,10 +151,7 @@ public static class SuiteRunner {
     foreach (DiscoveredSuite suite in discoveredSuites) {
       foreach (string stepsDll in suite.StepsDlls) {
         try {
-          Assembly loaded = Assembly.LoadFrom(stepsDll);
-          if (!assemblies.Contains(loaded)) {
-            assemblies.Add(loaded);
-          }
+          AddOnce(assemblies, Assembly.LoadFrom(stepsDll));
         } catch (Exception ex) {
           Log.WarnTo(PickleLog.Channel, ex, $"failed to load steps dll {Path.GetFileName(stepsDll)}");
         }
@@ -164,6 +159,12 @@ public static class SuiteRunner {
     }
 
     return assemblies;
+  }
+
+  private static void AddOnce(List<Assembly> assemblies, Assembly assembly) {
+    if (!assemblies.Contains(assembly)) {
+      assemblies.Add(assembly);
+    }
   }
 
   /// <summary>Publishes a dashboard snapshot, and never lets its failure end the run.</summary>

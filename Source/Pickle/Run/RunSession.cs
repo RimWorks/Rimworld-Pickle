@@ -324,6 +324,16 @@ public class RunSession {
     }
   }
 
+  private static void ResetHostAfterScenario() {
+    if (HostRegistry.TryGet(out IGameInput? pendingInput)) {
+      pendingInput!.CancelPending();
+    }
+
+    if (HostRegistry.TryGet(out IWindowGuard? windowGuard)) {
+      windowGuard!.EndSuppression();
+    }
+  }
+
   private static Task SaveAndReloadStep(PickleContext ctx) {
     return HostRegistry.Get<ISaveGames>().SaveAndReload(RoundTripSaveName, keepSave: false, ctx.WaitScope);
   }
@@ -511,14 +521,7 @@ public class RunSession {
     } finally {
       film?.Finish();
       PickleRunMode.Current = modeBeforeScenario;
-      if (HostRegistry.TryGet(out IGameInput? pendingInput)) {
-        pendingInput!.CancelPending();
-      }
-
-      if (HostRegistry.TryGet(out IWindowGuard? windowGuard)) {
-        windowGuard!.EndSuppression();
-      }
-
+      ResetHostAfterScenario();
       LogWatch.Disarm();
       Watchdog.EndScenario();
     }
