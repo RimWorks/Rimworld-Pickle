@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 using RimWorks.Pickle.Core;
-using Verse;
+using RimWorks.Pickle.Hosting;
 
 namespace RimWorks.Pickle.Web;
 
@@ -50,6 +50,7 @@ public static class DashboardStrings {
   /// <summary>Writes the active language as a JSON object of key to text.</summary>
   /// <returns>The translated strings as a JSON object.</returns>
   public static string BuildJson() {
+    ITranslator translator = HostRegistry.Get<ITranslator>();
     StringBuilder json = new StringBuilder();
     json.Append('{');
 
@@ -60,27 +61,10 @@ public static class DashboardStrings {
       }
 
       first = false;
-      json.Append(Json.Quote(key)).Append(':').Append(Json.Quote(Translate(key)));
+      json.Append(Json.Quote(key)).Append(':').Append(Json.Quote(translator.Translate(key)));
     }
 
     json.Append('}');
     return json.ToString();
-  }
-
-  // A key with no entry translates to the key itself, which would read as
-  // "Pickle_RunAll" on a button. Fall back to nothing and let the browser decide.
-  //
-  // There may also be no language at all. SelectLanguage does not finish inside the call: the
-  // game reloads the language data and only then points activeLanguage at it, and every frame in
-  // between has none. CanTranslate dereferences it, so a snapshot published in that window throws
-  // NullReferenceException - out of PublishSnapshot, out of the runner, and the whole run dies
-  // with exitReason "infrastructure-error" while the game is left unable to quit. A scenario that
-  // switches language is enough to hit it. A dashboard label is never worth a run.
-  private static string Translate(string key) {
-    if (LanguageDatabase.activeLanguage == null || !key.CanTranslate()) {
-      return string.Empty;
-    }
-
-    return key.Translate().ToString();
   }
 }

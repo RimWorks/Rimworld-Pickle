@@ -20,6 +20,8 @@ public class PickleMod : Mod {
     HostRegistry.Register<IGameState>(new GameState());
     HostRegistry.Register<ISaveGames>(new SaveGames());
     HostRegistry.Register<IGameApp>(new GameApp());
+    HostRegistry.Register<IModList>(new ModList());
+    HostRegistry.Register<ITranslator>(new Translations());
 
     // Before anything else logs: LogWatch is fed from this sink now, so an error raised
     // during startup is only recorded once the sink is registered.
