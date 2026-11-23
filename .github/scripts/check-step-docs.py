@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 DOCS = ROOT / "Docs" / "steps.md"
 
-# Pickle.Vanilla ships the built-in steps. The step classes under Source/Pickle/Runtime are
+# Pickle.Vanilla ships the built-in steps. The step classes under Source/Pickle.Host.RimWorld/Runtime are
 # fixtures for the runner's own smoke tests and are deliberately undocumented.
 STEP_DIR = ROOT / "Source" / "Pickle.Vanilla"
 ENGINE_FILE = ROOT / "Source" / "Pickle" / "Run" / "RunSession.cs"

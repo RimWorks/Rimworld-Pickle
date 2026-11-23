@@ -403,10 +403,10 @@ dotnet_diagnostic.SA1310.severity = none # field must not contain underscore —
 # Pickle reaches into RimWorld's private internals on purpose: there is no public API for
 # reading the patch tree, the letter stack, the debug action list, or Unity's input queue.
 # S3011 (accessibility bypass) is the whole job in the files below.
-[Source/Pickle/Patching/PatchAttribution.cs]
+[Source/Pickle.Host.RimWorld/Patching/PatchAttribution.cs]
 dotnet_diagnostic.S3011.severity = none # reads Harmony's and Concord's private patch registries
 
-[Source/Pickle/Input/EventSynth.cs]
+[Source/Pickle.Host.RimWorld/Input/EventSynth.cs]
 dotnet_diagnostic.S3011.severity = none # pushes synthetic events into Unity's private input queue
 
 [Source/Pickle.Vanilla/NotificationSteps.cs]
@@ -426,13 +426,13 @@ dotnet_diagnostic.S3885.severity = none # loads a mod's step dll from a game-sup
 [Source/Pickle/Run/RunController.cs]
 dotnet_diagnostic.IDE0032.severity = none # VisibleScenarios is a non-null cache its own invalidation sets back to null, which an auto property cannot express
 
-[Source/Pickle/Patching/MissingBackendNotice.cs]
+[Source/Pickle.Host.RimWorld/Patching/MissingBackendNotice.cs]
 dotnet_diagnostic.S1075.severity = none # the Workshop links are the message, not configuration
 
 [Source/Pickle/Web/PickleHttpServer.cs]
 dotnet_diagnostic.S5332.severity = none # loopback dashboard for a local game process, no cert to serve
 
-[Source/Pickle/Runtime/EvidenceSteps.cs]
+[Source/Pickle.Host.RimWorld/Runtime/EvidenceSteps.cs]
 dotnet_diagnostic.S3400.severity = none # a [PickleStateDump] hook must be a method, reflection finds it
 
 [Source/Pickle/PickleContext.cs]
@@ -446,13 +446,13 @@ dotnet_diagnostic.CA2249.severity = none # Contains with a StringComparison is n
 
 # Chained ternaries in the false branch are the house way to pick one of three UI states.
 # S3358 reads an else-if chain as nesting; none of these nest in the true branch.
-[Source/Pickle/UI/RunnerToolbar.cs]
+[Source/Pickle.Host.RimWorld/UI/RunnerToolbar.cs]
 dotnet_diagnostic.S3358.severity = none # else-if ternary chain picking a label or colour from run state
 
-[Source/Pickle/UI/RunnerDetailView.cs]
+[Source/Pickle.Host.RimWorld/UI/RunnerDetailView.cs]
 dotnet_diagnostic.S3358.severity = none # same chain, picking the step line for a live or finished scenario
 
-[Source/Pickle/UI/MainMenuRunnerButton.cs]
+[Source/Pickle.Host.RimWorld/UI/MainMenuRunnerButton.cs]
 dotnet_diagnostic.S3011.severity = none # reads the private main menu option list to insert the runner button
 
 # Every throw here sits inside the lambda handed to Post(), so Sonar checks the paramName

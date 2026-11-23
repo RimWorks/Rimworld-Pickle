@@ -52,7 +52,8 @@ public static class FixtureCommands {
   /// <param name="name">The fixture name the action targets.</param>
   /// <param name="newName">The new name for a <c>"rename"</c> action.</param>
   /// <param name="overwrite">Whether a <c>"save"</c> action may replace an existing fixture.</param>
-  internal static async Task Execute(string action, string? suitePath, string? name, string? newName, bool overwrite) {
+  /// <returns>A task that completes once the action has run.</returns>
+  public static async Task Execute(string action, string? suitePath, string? name, string? newName, bool overwrite) {
     if (IsBusy || AutorunState.IsAutorunning || RunController.Instance.IsRunning) {
       throw new InvalidOperationException("Wait for the current run or fixture operation to finish.");
     }

@@ -118,7 +118,7 @@ public class PickleContext {
 
   /// <summary>Waits for a tagged rect to appear and clicks it. Throws if the tag never resolves, or
   /// if nothing at that rect is clickable.</summary>
-  /// <param name="tag">The tag a mod's <c>OnGUI</c> recorded with <see cref="PickleUI.Tag"/>.</param>
+  /// <param name="tag">The tag a mod's <c>OnGUI</c> recorded with <c>PickleUI.Tag</c>.</param>
   /// <returns>A task that completes once the click has been taken by a widget.</returns>
   public async Task Click(string tag) {
     await HostRegistry.Get<IGameInput>().Click(tag, WaitScope);
@@ -126,7 +126,7 @@ public class PickleContext {
 
   /// <summary>Waits for a tagged rect to appear and holds the pointer over it, without clicking.
   /// Throws if the tag never resolves.</summary>
-  /// <param name="tag">The tag a mod's <c>OnGUI</c> recorded with <see cref="PickleUI.Tag"/>.</param>
+  /// <param name="tag">The tag a mod's <c>OnGUI</c> recorded with <c>PickleUI.Tag</c>.</param>
   /// <returns>A task that completes once the rect reports the pointer as over it.</returns>
   public async Task Hover(string tag) {
     await HostRegistry.Get<IGameInput>().Hover(tag, WaitScope);
