@@ -17,7 +17,6 @@ using RimWorks.Pickle.Core.Run;
 using RimWorks.Pickle.Core.Steps;
 using RimWorks.Pickle.Evidence;
 using RimWorks.Pickle.Hosting;
-using RimWorks.Pickle.Input;
 using RimWorks.Pickle.Runtime;
 using Log = RimWorks.RimLogging.Log;
 
@@ -74,7 +73,7 @@ public class RunSession {
 
     // Only the dev smokes armed this before, so every click step in a real run saw an
     // empty store and failed with "no tags recorded this frame".
-    TagStore.SessionActive = true;
+    HostRegistry.Get<IGameInput>().StartTagRecording();
 
     RegisterBuiltInEngineSteps();
   }
@@ -510,8 +509,8 @@ public class RunSession {
     } finally {
       film?.Finish();
       PickleRunMode.Current = modeBeforeScenario;
-      InteractionRequest.Clear();
-      WindowSuppression.End();
+      HostRegistry.Get<IGameInput>().CancelPending();
+      HostRegistry.Get<IWindowGuard>().EndSuppression();
       LogWatch.Disarm();
       Watchdog.EndScenario();
     }

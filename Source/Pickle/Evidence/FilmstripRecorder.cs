@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using RimWorks.Pickle.Hosting;
 using RimWorks.Pickle.Runtime;
-using Verse;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Evidence;
@@ -84,7 +83,7 @@ public sealed class FilmstripRecorder {
     }
 
     PickleDriver.Instance.RemoveFrameHook(OnFrame);
-    FrameCapture.Release();
+    HostRegistry.Get<IScreenCapture>().ReleaseFrames();
     clock.Stop();
 
     if (frameIndex == 0) {
@@ -107,7 +106,7 @@ public sealed class FilmstripRecorder {
   private void OnFrame() {
     // A fixture load is seconds of loading screen and then a fade in from black. The film
     // is of the scenario, so the clock does not start until the map is actually visible.
-    if (HostRegistry.Get<IGameState>().IsBusy || ScreenFader.IsFading()) {
+    if (HostRegistry.Get<IGameState>().IsBusy || HostRegistry.Get<IScreenCapture>().IsFading) {
       clock.Restart();
       nextCaptureAt = 0.0;
       return;

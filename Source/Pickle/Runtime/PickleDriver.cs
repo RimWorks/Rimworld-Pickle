@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Threading;
 using RimWorks.Pickle.Core.Run;
 using RimWorks.Pickle.Hosting;
-using RimWorks.Pickle.RimWorldHost;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
@@ -160,7 +159,7 @@ public class PickleDriver {
       pendingWaits.Add(wait);
     }
 
-    FramePump.Instance.CaptureScreenshot(filePath, () => {
+    HostRegistry.Get<IScreenCapture>().CaptureScreenshot(filePath, () => {
       lock (waitsGate) {
         if (pendingWaits.Remove(wait)) {
           Resolve(wait, null);
@@ -177,7 +176,7 @@ public class PickleDriver {
   // so registering waits here would leave entries for FaultAllPending to trip over
 #pragma warning disable S2325
   public void CaptureFrameDetached(string filePath, int maxWidth) {
-    FramePump.Instance.CaptureFrame(filePath, maxWidth);
+    HostRegistry.Get<IScreenCapture>().CaptureFrame(filePath, maxWidth);
   }
 #pragma warning restore S2325
 
