@@ -8,9 +8,8 @@ using System.Threading.Tasks;
 using RimWorks.Pickle.Core.Reports;
 using RimWorks.Pickle.Core.Run;
 using RimWorks.Pickle.Evidence;
+using RimWorks.Pickle.Hosting;
 using RimWorks.Pickle.Runtime;
-using UnityEngine;
-using Verse;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Autorun;
@@ -19,34 +18,31 @@ namespace RimWorks.Pickle.Autorun;
 /// Entry point for -pickle-run. Waits for the main menu, runs the suite, then exits
 /// with a code CI can read. Reports are rewritten whole after every scenario.
 /// </summary>
-[StaticConstructorOnStartup]
 public static class AutorunBootstrap {
   private const double InProgressWriteSeconds = 5;
 
-  private const int QuitGraceMs = 15000;
-
-  // Nothing here may escape: anything thrown out of a static constructor becomes a
-  // TypeInitializationException that kills the type, so the run silently never starts.
-  static AutorunBootstrap() {
+  /// <summary>Prepares a <c>-pickle-run</c> on the main thread once the game has loaded its content.
+  /// The host runs the returned task in the background, and it quits the game when the run ends.</summary>
+  /// <returns>The run to start, or <c>null</c> when no run was requested or it failed to start.</returns>
+  public static Func<Task>? Start() {
     try {
       PickleArgs args = PickleArgs.Parse();
       if (!args.RunRequested) {
-        return;
+        return null;
       }
 
-      // Resolved here because a static constructor is guaranteed main thread.
-      // RunAutorun starts on a background thread, where consoleLogPath is unsafe.
       string reportDir = ReportDirectoryResolver.Resolve(args.ReportDir);
       Directory.CreateDirectory(reportDir);
       ScreenshotCapture.SetReportRoot(reportDir);
       FilmstripRecorder.MaxSeconds = args.MaxFilmSeconds;
 
-      Watchdog.Start(args.ScenarioTimeoutSeconds, args.RunTimeoutMinutes, reportDir, Application.consoleLogPath);
+      Watchdog.Start(args.ScenarioTimeoutSeconds, args.RunTimeoutMinutes, reportDir, HostRegistry.Get<IGameApp>().ConsoleLogPath);
 
       PickleDriver.EnsureExists();
-      LongEventHandler.QueueLongEvent(() => _ = RunAutorun(args, reportDir), "LoadingLongEvent", doAsynchronously: true, exceptionHandler: null);
+      return () => RunAutorun(args, reportDir);
     } catch (Exception ex) {
       Log.ErrorTo(PickleLog.Channel, ex, "autorun failed to start");
+      return null;
     }
   }
 
@@ -96,7 +92,8 @@ public static class AutorunBootstrap {
       PickleRunMode.Current = args.Mode;
 
       PickleDriver driver = PickleDriver.Instance;
-      await driver.WaitUntil(() => Current.ProgramState == ProgramState.Entry, 180f);
+      IGameState state = HostRegistry.Get<IGameState>();
+      await driver.WaitUntil(() => state.IsMainMenuUp, 180f);
 
       // Every write rewrites all of accumulated, so writing per scenario is O(n^2) over a
       // suite. The in-progress report only has to be fresh enough for someone watching, so
@@ -147,7 +144,7 @@ public static class AutorunBootstrap {
     }
 
     Log.InfoTo(PickleLog.Channel, "autorun exit code = {ExitCode}", [exitCode]);
-    Quit(exitCode);
+    HostRegistry.Get<IGameApp>().Quit(exitCode);
   }
 
   private static void EncodeFilms() {
@@ -173,18 +170,5 @@ public static class AutorunBootstrap {
     }
 
     Log.InfoTo(PickleLog.Channel, "encoded {Count} film(s)", [films.Count]);
-  }
-
-  // Environment.Exit does not end the process under Unity's Mono, so a passing run
-  // hung until the harness timeout. Unity's own quit ends it and carries the code.
-  private static void Quit(int exitCode) {
-    System.Threading.Thread killer = new System.Threading.Thread(() => {
-      System.Threading.Thread.Sleep(QuitGraceMs);
-      Console.Error.WriteLine("pickle: Application.Quit did not end the process, force-killing");
-      System.Diagnostics.Process.GetCurrentProcess().Kill();
-    }) { IsBackground = true };
-
-    killer.Start();
-    Application.Quit(exitCode);
   }
 }

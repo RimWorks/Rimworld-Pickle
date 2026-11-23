@@ -5,12 +5,12 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using RimWorks.Pickle.Autorun;
 using RimWorks.Pickle.Core.Run;
 using RimWorks.Pickle.Core.Web;
 using RimWorks.Pickle.Evidence;
+using RimWorks.Pickle.Hosting;
 using RimWorks.Pickle.Run;
-using UnityEngine;
-using Verse;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Web;
@@ -94,11 +94,11 @@ public static class PickleHttpServer {
   /// <summary>Starts the dashboard unless <c>-pickle-no-http</c> was passed, then opens it. A port
   /// named with <c>-pickle-http-port</c> is used as given; otherwise a taken default moves on.</summary>
   public static void StartUnlessDisabled() {
-    if (GenCommandLine.CommandLineArgPassed("-pickle-no-http")) {
+    if (CommandLineFlags.Passed("-pickle-no-http")) {
       return;
     }
 
-    bool valued = GenCommandLine.TryGetCommandLineArg("-pickle-http-port", out string portValue);
+    bool valued = CommandLineFlags.TryGet("-pickle-http-port", out string portValue);
     if (valued) {
       Start(int.TryParse(portValue, out int parsed) ? parsed : DefaultPort);
     } else {
@@ -175,17 +175,17 @@ public static class PickleHttpServer {
     }
   }
 
-  // Application.OpenURL picks the platform's own handler. Not on an autorun: that is CI or a
-  // container, where there is no browser and nobody to look at it.
+  // Not on an autorun: that is CI or a container, where there is no browser and nobody to
+  // look at it.
   private static void OpenInBrowser(int port) {
     if (!running
-        || GenCommandLine.CommandLineArgPassed("-pickle-no-browser")
-        || GenCommandLine.CommandLineArgPassed("-pickle-run")) {
+        || CommandLineFlags.Passed("-pickle-no-browser")
+        || CommandLineFlags.Passed("-pickle-run")) {
       return;
     }
 
     try {
-      Application.OpenURL($"http://localhost:{port}/");
+      HostRegistry.Get<IGameApp>().OpenUrl($"http://localhost:{port}/");
     } catch (Exception ex) {
       Log.WarnTo(PickleLog.Channel, ex, "could not open the dashboard in a browser");
     }

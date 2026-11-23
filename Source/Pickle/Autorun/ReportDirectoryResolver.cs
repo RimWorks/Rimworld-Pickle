@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using Verse;
+using RimWorks.Pickle.Hosting;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Autorun;
@@ -35,7 +35,7 @@ public static class ReportDirectoryResolver {
     }
 
     try {
-      return Path.Combine(GenFilePaths.SaveDataFolderPath, "PickleReports");
+      return Path.Combine(HostRegistry.Get<IGameState>().SaveDataFolder, "PickleReports");
     } catch (Exception) {
       return Path.Combine(Directory.GetCurrentDirectory(), "pickle-reports");
     }

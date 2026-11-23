@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Verse;
+using RimWorks.Pickle.Autorun;
+using RimWorks.Pickle.Hosting;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Fixtures;
@@ -34,7 +35,7 @@ public static class FixtureDirectoryResolver {
   // Per mod root, not once for the install: local Mods, the Workshop content directory and a
   // container bind mount are three different filesystems with three different answers.
   private static string? Compute(string modRoot) {
-    if (GenCommandLine.TryGetCommandLineArg(ArgName, out string explicitDir) && !explicitDir.NullOrEmpty()) {
+    if (CommandLineFlags.TryGet(ArgName, out string explicitDir) && !string.IsNullOrEmpty(explicitDir)) {
       return explicitDir;
     }
 
@@ -44,7 +45,7 @@ public static class FixtureDirectoryResolver {
 
     string fallback;
     try {
-      fallback = Path.Combine(GenFilePaths.SaveDataFolderPath, "PickleFixtures");
+      fallback = Path.Combine(HostRegistry.Get<IGameState>().SaveDataFolder, "PickleFixtures");
     } catch (Exception) {
       fallback = Path.Combine(Directory.GetCurrentDirectory(), "pickle-fixtures");
     }

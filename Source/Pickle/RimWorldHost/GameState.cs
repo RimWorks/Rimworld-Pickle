@@ -11,4 +11,6 @@ internal sealed class GameState : IGameState {
   public bool IsBusy => LongEventHandler.AnyEventNowOrWaiting;
 
   public string SavesFolder => GenFilePaths.SavedGamesFolderPath;
+
+  public string SaveDataFolder => GenFilePaths.SaveDataFolderPath;
 }

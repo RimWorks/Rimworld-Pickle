@@ -13,4 +13,8 @@ public interface IGameState {
 
   /// <summary>The folder the game keeps its saves in.</summary>
   string SavesFolder { get; }
+
+#pragma warning disable SA1600, CS1591
+  string SaveDataFolder { get; }
+#pragma warning restore SA1600, CS1591
 }
