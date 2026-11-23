@@ -45,13 +45,14 @@ Feature files alone need no build. To write your own step definitions, reference
 package from a steps project:
 
 ```xml
-<PackageReference Include="RimWorks.Pickle.Ref" Version="1.*"
+<PackageReference Include="RimWorks.Pickle.Ref" Version="7.*"
                   ExcludeAssets="runtime" PrivateAssets="all" />
 ```
 
-The package holds a compile-time reference assembly only. `ExcludeAssets="runtime"`
-keeps it out of your output, because the Pickle mod supplies the real `RimWorks.Pickle.dll` at
-run time. See the [authoring guide](Docs/authoring.md).
+The package holds compile-time reference assemblies only: `RimWorks.Pickle.dll` and
+`RimWorks.Pickle.Host.RimWorld.dll`. `ExcludeAssets="runtime"` keeps them out of your output,
+because the Pickle mod supplies the real assemblies at run time. See the
+[authoring guide](Docs/authoring.md).
 
 ## Example
 

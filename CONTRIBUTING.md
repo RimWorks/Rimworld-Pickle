@@ -25,8 +25,8 @@ steps and `Docs/steps.md` for the published step catalogue.
 
 ## Project structure
 
-- `Source/` - seven C# projects. `Pickle.Core` holds everything that does not need RimWorld,
-  which is the only reason any of it is unit testable
+- `Source/` - nine C# projects. `Pickle.Core` and `Pickle` have no game reference, and
+  `Pickle.Host.RimWorld` holds the code that needs RimWorld
 - `Source/Pickle.Tests/` - xunit suite over `Pickle.Core`
 - `Dashboard/` - React and Vite report UI, bundled and embedded into the mod as a resource
 - `Docs/` - contributor documentation, including the step catalogue
@@ -95,21 +95,28 @@ set, the fixture throws instead of skipping.
 
 | Project | Targets | Holds |
 | --- | --- | --- |
-| `Pickle.Core` | `net472;net10.0` | Gherkin parsing, step table, run model, report writers. **No RimWorld reference**, which is the only reason any of it is unit testable |
-| `Pickle` | `net472`, or `net10.0` for 1.7 | The mod assembly: driver, runner, UI, autorun, evidence, web dashboard host |
+| `Pickle.Core` | `net472;net10.0` | Gherkin parsing, step table, run model, report writers. **No game reference**, and the only project the xunit suite covers |
+| `Pickle` | `net472`, or `net10.0` for 1.7 | The runner with no game reference: driver, run session and controller, step API, the host contract in `Hosting/`, autorun, evidence, web dashboard host |
+| `Pickle.Host.RimWorld` | `net472`, or `net10.0` for 1.7 | The RimWorld host: `PickleMod`, the contract classes in `RimWorldHost/`, `PickleUI`, input, fixtures, runner UI, patch hooks |
 | `Pickle.Vanilla` | `net472`, or `net10.0` for 1.7 | The built-in step definitions |
 | `Pickle.Patches.Harmony` | `net472`, or `net10.0` for 1.7 | Pickle's hooks as Harmony patches |
 | `Pickle.Patches.Concord` | `net472`, or `net10.0` for 1.7 | The same hooks as Concord injections |
-| `Pickle.Ref` | `net472`, or `net10.0` for 1.7 | Compile-time reference assembly published to NuGet for mod authors |
+| `Pickle.Ref` | `net472`, or `net10.0` for 1.7 | The NuGet package for mod authors, with the reference assemblies of `Pickle` and `Pickle.Host.RimWorld` |
 | `Pickle.Tests` | `net10.0` | xunit over `Pickle.Core` |
+| `Pickle.Game.Tests` | `net10.0` | xunit rows that post each scenario to a live game |
 
-Keep logic that does not need RimWorld in `Pickle.Core`. Once a type references `Verse` or
-`RimWorld` it leaves the reach of the test suite.
+Code that needs a game type goes in `Pickle.Host.RimWorld`. Code that does not need one goes in `Pickle`,
+or in `Pickle.Core` when the xunit suite has to cover it. Once a type references `Verse`,
+`RimWorld` or `UnityEngine`, only a run in the game can prove it.
+
+`Pickle` reaches the game through the interfaces in `Hosting/`. `Pickle.Host.RimWorld` registers
+its classes for them with `HostRegistry.Register` at boot. When `Pickle` needs something new from
+the game, add a member to a contract interface and implement it in `RimWorldHost/`.
 
 ## Patch backends
 
 Pickle supports two patching libraries and prefers Concord when both are loaded.
-`Pickle/Patching/PickleHooks.cs` holds every hook body with no patching library in its
+`Pickle.Host.RimWorld/Patching/PickleHooks.cs` holds every hook body with no patching library in its
 signatures. Each backend is a thin translation that registers itself in a static
 constructor, and `PatchBackends` picks the highest priority one.
 

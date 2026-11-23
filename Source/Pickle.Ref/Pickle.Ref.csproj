@@ -4,7 +4,7 @@
     <PackageId>RimWorks.Pickle.Ref</PackageId>
     <Version>0.1.0</Version>
     <Authors>RimWorks</Authors>
-    <Description>Compile-time reference assembly for Pickle, the in-game BDD test runner for RimWorld. Reference this to build a steps dll; the Pickle mod supplies the real assembly at runtime.</Description>
+    <Description>Compile-time reference assemblies for Pickle, the in-game BDD test runner for RimWorld. Reference this to build a steps dll; the Pickle mod supplies the real assemblies at runtime.</Description>
     <PackageTags>rimworld;testing;bdd;gherkin;cucumber;integration-testing;modding</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/RimWorks/Rimworld-Pickle</PackageProjectUrl>
@@ -23,14 +23,34 @@
   <!-- Build Pickle first so its ref assembly exists, but do not reference it. -->
   <ItemGroup>
     <ProjectReference Include="..\Pickle\Pickle.csproj" ReferenceOutputAssembly="false" Private="false" />
+    <ProjectReference Include="..\Pickle.Host.RimWorld\Pickle.Host.RimWorld.csproj" ReferenceOutputAssembly="false" Private="false" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <RefStash>$(MSBuildProjectDirectory)\obj\$(Configuration)\refpack\</RefStash>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <RefPair Include="..\Pickle\obj\$(Configuration)\ref\RimWorks.Pickle.dll" />
+    <RefPair Include="..\Pickle.Host.RimWorld\obj\$(Configuration)\ref\RimWorks.Pickle.Host.RimWorld.dll" />
+    <RefPacked Include="$(RefStash)net472\RimWorks.Pickle.dll;$(RefStash)net472\RimWorks.Pickle.Host.RimWorld.dll" PackagePath="ref/net472/" />
+    <RefPacked Include="$(RefStash)net10.0\RimWorks.Pickle.dll;$(RefStash)net10.0\RimWorks.Pickle.Host.RimWorld.dll" PackagePath="ref/net10.0/" />
+  </ItemGroup>
+
+  <Target Name="StashRefPair" AfterTargets="Build" Condition="'$(GameVersion)' == '1.6' Or '$(GameVersion)' == '1.7'">
+    <Copy SourceFiles="@(RefPair)" DestinationFolder="$(RefStash)$(GameTfm)" />
+  </Target>
+
+  <Target Name="RequireRefPairs" BeforeTargets="_GetPackageFiles">
+    <Error Condition="!Exists('%(RefPacked.Identity)')" Text="no %(RefPacked.Identity). build -c $(Configuration) with -p:GameVersion=1.6 and with -p:GameVersion=1.7 before the pack." />
+  </Target>
 
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
 
     <!-- ref/, not lib/: assets under ref are compile-only, so a consumer never
          copies this stub next to the real Pickle.dll the mod loads. -->
-    <None Include="..\Pickle\obj\$(Configuration)\ref\RimWorks.Pickle.dll" Pack="true" PackagePath="ref/$(GameTfm)/" Visible="false" />
-    <None Include="_._" Pack="true" PackagePath="lib/$(GameTfm)/" Visible="false" Condition="Exists('_._')" />
+    <None Include="@(RefPacked)" Pack="true" Visible="false" />
+    <None Include="_._" Pack="true" PackagePath="lib/net472/;lib/net10.0/" Visible="false" Condition="Exists('_._')" />
   </ItemGroup>
 </Project>
