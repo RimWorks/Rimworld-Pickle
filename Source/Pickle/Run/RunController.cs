@@ -393,12 +393,13 @@ public class RunController {
 
   private static async Task ReturnToMainMenu(RunSession session) {
     if (BreakOnFailureState.Enabled || session.CancelRequested
-        || !HostRegistry.Get<IGameState>().IsInPlay) {
+        || !HostRegistry.TryGet(out IGameState? state) || !state!.IsInPlay
+        || !HostRegistry.TryGet(out ISaveGames? saves)) {
       return;
     }
 
     try {
-      await HostRegistry.Get<ISaveGames>().ReturnToMainMenu();
+      await saves!.ReturnToMainMenu();
     } catch (TimeoutException) {
       Log.WarnTo(PickleLog.Channel, "the main menu never came up, so the runner window stayed closed");
     }

@@ -36,7 +36,8 @@ public static class AutorunBootstrap {
       ScreenshotCapture.SetReportRoot(reportDir);
       FilmstripRecorder.MaxSeconds = args.MaxFilmSeconds;
 
-      Watchdog.Start(args.ScenarioTimeoutSeconds, args.RunTimeoutMinutes, reportDir, HostRegistry.Get<IGameApp>().ConsoleLogPath);
+      string? consoleLogPath = HostRegistry.TryGet(out IGameApp? app) ? app!.ConsoleLogPath : null;
+      Watchdog.Start(args.ScenarioTimeoutSeconds, args.RunTimeoutMinutes, reportDir, consoleLogPath);
 
       PickleDriver.EnsureExists();
       return () => RunAutorun(args, reportDir);
@@ -92,8 +93,9 @@ public static class AutorunBootstrap {
       PickleRunMode.Current = args.Mode;
 
       PickleDriver driver = PickleDriver.Instance;
-      IGameState state = HostRegistry.Get<IGameState>();
-      await driver.WaitUntil(() => state.IsMainMenuUp, 180f);
+      if (HostRegistry.TryGet(out IGameState? state)) {
+        await driver.WaitUntil(() => state!.IsMainMenuUp, 180f);
+      }
 
       // Every write rewrites all of accumulated, so writing per scenario is O(n^2) over a
       // suite. The in-progress report only has to be fresh enough for someone watching, so
@@ -144,7 +146,11 @@ public static class AutorunBootstrap {
     }
 
     Log.InfoTo(PickleLog.Channel, "autorun exit code = {ExitCode}", [exitCode]);
-    HostRegistry.Get<IGameApp>().Quit(exitCode);
+    if (HostRegistry.TryGet(out IGameApp? gameApp)) {
+      gameApp!.Quit(exitCode);
+    } else {
+      Environment.Exit(exitCode);
+    }
   }
 
   private static void EncodeFilms() {

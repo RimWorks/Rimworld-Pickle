@@ -120,7 +120,8 @@ public static class FixtureCommands {
           + ",\"directory\":" + Json.Quote(suite.WritableFixturesDir) + ",\"fixtures\":" + Json.Array(fixtures) + "}");
     }
 
-    return "{\"canSave\":" + (HostRegistry.Get<IGameState>().IsInPlay ? "true" : "false")
+    bool canSave = HostRegistry.TryGet(out IGameState? state) && HostRegistry.TryGet<ISaveGames>(out _) && state!.IsInPlay;
+    return "{\"canSave\":" + (canSave ? "true" : "false")
         + ",\"busy\":" + (IsBusy || AutorunState.IsAutorunning || RunController.Instance.IsRunning ? "true" : "false")
         + ",\"suites\":" + Json.Array(groups) + "}";
   }

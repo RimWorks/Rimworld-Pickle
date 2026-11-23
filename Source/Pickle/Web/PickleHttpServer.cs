@@ -180,12 +180,13 @@ public static class PickleHttpServer {
   private static void OpenInBrowser(int port) {
     if (!running
         || CommandLineFlags.Passed("-pickle-no-browser")
-        || CommandLineFlags.Passed("-pickle-run")) {
+        || CommandLineFlags.Passed("-pickle-run")
+        || !HostRegistry.TryGet(out IGameApp? app)) {
       return;
     }
 
     try {
-      HostRegistry.Get<IGameApp>().OpenUrl($"http://localhost:{port}/");
+      app!.OpenUrl($"http://localhost:{port}/");
     } catch (Exception ex) {
       Log.WarnTo(PickleLog.Channel, ex, "could not open the dashboard in a browser");
     }

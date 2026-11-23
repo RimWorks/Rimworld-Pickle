@@ -33,6 +33,7 @@ public sealed class FilmstripRecorder {
   private readonly string featureName;
   private readonly string scenarioName;
 
+  private IScreenCapture? screenCapture;
   private double nextCaptureAt;
   private int frameIndex;
   private bool capped;
@@ -60,7 +61,7 @@ public sealed class FilmstripRecorder {
   public void Start() {
     // Zero turns filming off. Software rendering makes frame readback expensive, and a
     // headless run usually wants the report without the video.
-    if (MaxSeconds <= 0) {
+    if (MaxSeconds <= 0 || !HostRegistry.TryGet(out screenCapture)) {
       return;
     }
 
@@ -78,12 +79,12 @@ public sealed class FilmstripRecorder {
 
   /// <summary>Stops capturing and records the scenario's rate for the encoder to use later.</summary>
   public void Finish() {
-    if (MaxSeconds <= 0) {
+    if (MaxSeconds <= 0 || screenCapture == null) {
       return;
     }
 
     PickleDriver.Instance.RemoveFrameHook(OnFrame);
-    HostRegistry.Get<IScreenCapture>().ReleaseFrames();
+    screenCapture.ReleaseFrames();
     clock.Stop();
 
     if (frameIndex == 0) {
@@ -106,7 +107,8 @@ public sealed class FilmstripRecorder {
   private void OnFrame() {
     // A fixture load is seconds of loading screen and then a fade in from black. The film
     // is of the scenario, so the clock does not start until the map is actually visible.
-    if (HostRegistry.Get<IGameState>().IsBusy || HostRegistry.Get<IScreenCapture>().IsFading) {
+    bool busy = HostRegistry.TryGet(out IGameState? state) && state!.IsBusy;
+    if (busy || screenCapture!.IsFading) {
       clock.Restart();
       nextCaptureAt = 0.0;
       return;

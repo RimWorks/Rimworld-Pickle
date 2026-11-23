@@ -73,7 +73,9 @@ public class RunSession {
 
     // Only the dev smokes armed this before, so every click step in a real run saw an
     // empty store and failed with "no tags recorded this frame".
-    HostRegistry.Get<IGameInput>().StartTagRecording();
+    if (HostRegistry.TryGet(out IGameInput? input)) {
+      input!.StartTagRecording();
+    }
 
     RegisterBuiltInEngineSteps();
   }
@@ -509,8 +511,14 @@ public class RunSession {
     } finally {
       film?.Finish();
       PickleRunMode.Current = modeBeforeScenario;
-      HostRegistry.Get<IGameInput>().CancelPending();
-      HostRegistry.Get<IWindowGuard>().EndSuppression();
+      if (HostRegistry.TryGet(out IGameInput? pendingInput)) {
+        pendingInput!.CancelPending();
+      }
+
+      if (HostRegistry.TryGet(out IWindowGuard? windowGuard)) {
+        windowGuard!.EndSuppression();
+      }
+
       LogWatch.Disarm();
       Watchdog.EndScenario();
     }
@@ -799,8 +807,10 @@ public class RunSession {
     List<(string Source, string Content)> stateDumps = [];
 
     try {
-      screenshotPath = ScreenshotCapture.BuildScreenshotPath(featureName, scenarioName, stepIndex);
-      await ScreenshotCapture.CaptureToFile(screenshotPath);
+      if (HostRegistry.TryGet<IScreenCapture>(out _)) {
+        screenshotPath = ScreenshotCapture.BuildScreenshotPath(featureName, scenarioName, stepIndex);
+        await ScreenshotCapture.CaptureToFile(screenshotPath);
+      }
 
       List<KeyValuePair<Type, object>> instances = [.. scenarioInstanceCache];
       stateDumps = StateDumpCollector.Collect(instances);

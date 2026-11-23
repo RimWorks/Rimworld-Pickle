@@ -50,7 +50,7 @@ public static class DashboardStrings {
   /// <summary>Writes the active language as a JSON object of key to text.</summary>
   /// <returns>The translated strings as a JSON object.</returns>
   public static string BuildJson() {
-    ITranslator translator = HostRegistry.Get<ITranslator>();
+    HostRegistry.TryGet(out ITranslator? translator);
     StringBuilder json = new StringBuilder();
     json.Append('{');
 
@@ -61,7 +61,7 @@ public static class DashboardStrings {
       }
 
       first = false;
-      json.Append(Json.Quote(key)).Append(':').Append(Json.Quote(translator.Translate(key)));
+      json.Append(Json.Quote(key)).Append(':').Append(Json.Quote(translator?.Translate(key) ?? string.Empty));
     }
 
     json.Append('}');

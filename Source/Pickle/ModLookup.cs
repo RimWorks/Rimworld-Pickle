@@ -20,7 +20,11 @@ public static class ModLookup {
   /// <returns>The zero-based index into <see cref="IModList.RunningMods"/>, or
   /// <c>null</c> when no mod matches.</returns>
   public static int? IndexOf(string wanted) {
-    IReadOnlyList<RunningMod> mods = HostRegistry.Get<IModList>().RunningMods;
+    if (!HostRegistry.TryGet(out IModList? modList)) {
+      return null;
+    }
+
+    IReadOnlyList<RunningMod> mods = modList!.RunningMods;
     for (int i = 0; i < mods.Count; i++) {
       RunningMod mod = mods[i];
       if (string.Equals(mod.Name, wanted, StringComparison.OrdinalIgnoreCase)
@@ -36,7 +40,11 @@ public static class ModLookup {
   /// <summary>Every loaded mod's name and packageId, in load order, for a miss message.</summary>
   /// <returns>The loaded mods, comma separated.</returns>
   public static string DescribeLoadOrder() {
+    if (!HostRegistry.TryGet(out IModList? modList)) {
+      return string.Empty;
+    }
+
     return string.Join(
-        ", ", HostRegistry.Get<IModList>().RunningMods.Select(m => $"{m.Name} ({m.PackageIdPlayerFacing})"));
+        ", ", modList!.RunningMods.Select(m => $"{m.Name} ({m.PackageIdPlayerFacing})"));
   }
 }
