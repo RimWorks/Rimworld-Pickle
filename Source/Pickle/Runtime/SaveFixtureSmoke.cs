@@ -23,7 +23,8 @@ public static class SaveFixtureSmoke {
   }
 
   private static async Task RunAsync(PickleDriver driver) {
-    string fixturePath = Path.Combine("/game/Mods/Pickle/Pickle/Fixtures", "test-colony.rws");
+    string modRoot = LoadedModManager.GetMod<PickleMod>().Content.RootDir;
+    string fixturePath = Path.Combine(SuiteLayout.FromModRoot(modRoot).FixturesDir, "test-colony.rws");
     if (!File.Exists(fixturePath)) {
       throw new InvalidOperationException($"dogfood fixture missing at {fixturePath}");
     }
