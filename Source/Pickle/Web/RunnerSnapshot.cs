@@ -12,7 +12,6 @@ using RimWorks.Pickle.Core.Steps;
 using RimWorks.Pickle.Evidence;
 using RimWorks.Pickle.Run;
 using RimWorks.Pickle.Runtime;
-using RimWorks.Pickle.UI;
 
 namespace RimWorks.Pickle.Web;
 
@@ -30,7 +29,7 @@ public static class RunnerSnapshot {
   /// <param name="session">The session driving the current run, or <c>null</c> when idle.</param>
   /// <param name="isRunning">Whether a run is currently in progress.</param>
   /// <param name="isSelected">Reports whether a scenario is selected, or <c>null</c> when the snapshot has no controls to reflect.</param>
-  /// <param name="runner">The runner window's current filters and selection, or <c>null</c> outside the runner window.</param>
+  /// <param name="runner">The run controller's current filters and selection, or <c>null</c> for a run without one.</param>
   /// <returns>The snapshot as a JSON string.</returns>
   public static string Build(
       List<(DiscoveredSuite Suite, FeaturePlan Plan)> parsedFeatures,
@@ -38,7 +37,7 @@ public static class RunnerSnapshot {
       RunSession? session,
       bool isRunning,
       Func<string, int, bool>? isSelected = null,
-      RunnerWindow? runner = null) {
+      RunController? runner = null) {
     StringBuilder json = new StringBuilder();
     json.Append('{');
 
@@ -88,7 +87,7 @@ public static class RunnerSnapshot {
     IReadOnlyDictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> results = sources.Results;
     Func<string, int, bool>? isSelected = sources.IsSelected;
     RunSession? session = sources.Session;
-    RunnerWindow? runner = sources.Runner;
+    RunController? runner = sources.Runner;
     List<string> scenarios = new List<string>();
     for (int i = 0; i < plan.Scenarios.Count; i++) {
       ScenarioPlan scenario = plan.Scenarios[i];
@@ -238,7 +237,7 @@ public static class RunnerSnapshot {
         IReadOnlyDictionary<(string SourcePath, int ScenarioIndex), ScenarioResult> results,
         Func<string, int, bool>? isSelected,
         RunSession? session,
-        RunnerWindow? runner) {
+        RunController? runner) {
       Results = results;
       IsSelected = isSelected;
       Session = session;
@@ -251,6 +250,6 @@ public static class RunnerSnapshot {
 
     public RunSession? Session { get; }
 
-    public RunnerWindow? Runner { get; }
+    public RunController? Runner { get; }
   }
 }

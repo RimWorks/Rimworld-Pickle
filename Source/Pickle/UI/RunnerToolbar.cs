@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using RimWorks.Pickle.Evidence;
+using RimWorks.Pickle.Run;
 using RimWorks.Pickle.Runtime;
 using RimWorks.Pickle.Web;
 using RimWorld;
@@ -41,20 +42,20 @@ public static class RunnerToolbar {
   /// <param name="rect">The area to draw the row in.</param>
   /// <param name="window">The runner window supplying and receiving the control state.</param>
   public static void Draw(Rect rect, RunnerWindow window) {
-    bool idle = !window.IsRunning && !FixtureCommands.IsBusy;
+    bool idle = !window.Controller.IsRunning && !FixtureCommands.IsBusy;
     float y = rect.y + 9f;
     Label(new Rect(rect.x + Padding, y, 42f, ButtonHeight), "Scope", RunnerStatusColors.Muted, GameFont.Tiny);
     Rect scope = new Rect(rect.x + 50f, y, 142f, ButtonHeight);
-    string scopeLabel = window.RunScope == "selected" ? $"{window.SelectedScenarioCount} selected"
-        : window.RunScope == "failed" ? $"{window.FailedResultsCount} failed" : $"All {window.TotalScenarioCount}";
+    string scopeLabel = window.Controller.RunScope == "selected" ? $"{window.Controller.SelectedScenarioCount} selected"
+        : window.Controller.RunScope == "failed" ? $"{window.Controller.FailedResultsCount} failed" : $"All {window.Controller.TotalScenarioCount}";
     GUI.enabled = idle;
     if (Widgets.ButtonText(scope, scopeLabel)) {
       List<FloatMenuOption> options = [];
       foreach ((string key, string label) in new[] {
-          ("all", $"All {window.TotalScenarioCount}"), ("selected", $"{window.SelectedScenarioCount} selected"), ("failed", $"{window.FailedResultsCount} failed") }) {
+          ("all", $"All {window.Controller.TotalScenarioCount}"), ("selected", $"{window.Controller.SelectedScenarioCount} selected"), ("failed", $"{window.Controller.FailedResultsCount} failed") }) {
         options.Add(new FloatMenuOption(label, () => {
-          window.RunScope = key;
-          window.PublishSnapshot();
+          window.Controller.RunScope = key;
+          window.Controller.PublishSnapshot();
         }));
       }
 
@@ -71,8 +72,8 @@ public static class RunnerToolbar {
 
     float bulkY = rect.width < 760f ? y + 34f : y;
     float bulkX = rect.xMax - 258f;
-    Label(new Rect(bulkX, bulkY, 100f, ButtonHeight), $"{window.SelectedScenarioCount} selected", RunnerStatusColors.Muted, GameFont.Tiny);
-    if (Widgets.ButtonText(new Rect(bulkX + 106f, bulkY, 70f, ButtonHeight), $"All {window.TotalScenarioCount}")) {
+    Label(new Rect(bulkX, bulkY, 100f, ButtonHeight), $"{window.Controller.SelectedScenarioCount} selected", RunnerStatusColors.Muted, GameFont.Tiny);
+    if (Widgets.ButtonText(new Rect(bulkX + 106f, bulkY, 70f, ButtonHeight), $"All {window.Controller.TotalScenarioCount}")) {
       _ = RunnerCommands.SelectAll(true);
     }
 
@@ -100,7 +101,7 @@ public static class RunnerToolbar {
   /// <param name="window">The runner window supplying progress and status.</param>
   public static void DrawProgress(Rect rect, RunnerWindow window) {
     Widgets.DrawBoxSolid(rect, Widgets.SeparatorLineColor);
-    float fraction = window.RunScenarioCount == 0 ? 0f : (float)window.CompletedScenarioCount / window.RunScenarioCount;
+    float fraction = window.Controller.RunScenarioCount == 0 ? 0f : (float)window.Controller.CompletedScenarioCount / window.Controller.RunScenarioCount;
     Widgets.DrawBoxSolid(new Rect(rect.x, rect.y, rect.width * Mathf.Clamp01(fraction), rect.height), StatusColor(window));
   }
 
@@ -109,7 +110,7 @@ public static class RunnerToolbar {
   /// <param name="window">The runner window supplying the last run's timestamp.</param>
   public static void DrawReports(Rect rect, RunnerWindow window) {
     Label(new Rect(rect.x, rect.y, rect.width, 30f), "Last run report", Color.white, GameFont.Medium);
-    Label(new Rect(rect.x, rect.y + 38f, rect.width, 24f), window.LastRunAt?.ToString("g") ?? "No completed run yet.", RunnerStatusColors.Muted, GameFont.Small);
+    Label(new Rect(rect.x, rect.y + 38f, rect.width, 24f), window.Controller.LastRunAt?.ToString("g") ?? "No completed run yet.", RunnerStatusColors.Muted, GameFont.Small);
     string report = Path.Combine(ScreenshotCapture.ReportRoot(), "report.html");
     GUI.enabled = File.Exists(report);
     if (Widgets.ButtonText(new Rect(rect.x, rect.y + 76f, 140f, 30f), "Pickle_OpenReport".Translate())) {
@@ -154,8 +155,8 @@ public static class RunnerToolbar {
     RunnerStatusColors.DrawDot(new Vector2(summaryX + 4f, summaryY + 16f), color, 7f);
     float statusWidth = Mathf.Max(100f, summaryWidth - 320f);
     Label(new Rect(summaryX + 16f, summaryY, statusWidth - 16f, 18f), StateLabel(window), color, GameFont.Tiny);
-    string detail = window.IsRunning ? window.ActiveSession?.CurrentStepDisplay ?? string.Empty
-        : $"{window.ParsedFeaturesCount} features" + (window.LastRunAt.HasValue ? $" · last run {window.LastRunAt:HH:mm:ss}" : string.Empty);
+    string detail = window.Controller.IsRunning ? window.Controller.ActiveSession?.CurrentStepDisplay ?? string.Empty
+        : $"{window.Controller.ParsedFeaturesCount} features" + (window.Controller.LastRunAt.HasValue ? $" · last run {window.Controller.LastRunAt:HH:mm:ss}" : string.Empty);
     Label(new Rect(summaryX + 16f, summaryY + 18f, statusWidth - 16f, 18f), detail, RunnerStatusColors.Muted, GameFont.Tiny);
     Label(new Rect(summaryX + statusWidth, summaryY + 8f, summaryWidth - statusWidth, 22f),
         Counts(window), Color.white, GameFont.Tiny, TextAnchor.MiddleRight);
@@ -164,40 +165,40 @@ public static class RunnerToolbar {
   // Rich text rather than four rects: the colours have to survive Truncate collapsing the
   // line when the header is narrow.
   private static string Counts(RunnerWindow window) {
-    int passed = window.PassedResultsCount;
-    int failed = window.FailedResultsCount;
-    int skipped = window.SkippedResultsCount;
-    int notRun = Mathf.Max(0, window.TotalScenarioCount - passed - failed - skipped);
+    int passed = window.Controller.PassedResultsCount;
+    int failed = window.Controller.FailedResultsCount;
+    int skipped = window.Controller.SkippedResultsCount;
+    int notRun = Mathf.Max(0, window.Controller.TotalScenarioCount - passed - failed - skipped);
     string pass = ColorUtility.ToHtmlStringRGB(RunnerStatusColors.Passed);
     string fail = ColorUtility.ToHtmlStringRGB(RunnerStatusColors.FailedText);
     return $"<color=#{pass}>{passed} passed</color> · <color=#{fail}>{failed} failed</color> · {skipped} skipped · {notRun} not run";
   }
 
   private static string StateLabel(RunnerWindow window) {
-    bool paused = window.ActiveSession?.IsPaused == true;
-    if (!paused && window.ActiveSession?.PauseRequested == true) {
+    bool paused = window.Controller.ActiveSession?.IsPaused == true;
+    if (!paused && window.Controller.ActiveSession?.PauseRequested == true) {
       return "Pausing after current step";
     }
 
-    return paused ? "Paused" : window.IsRunning ? "Running" : window.FailedResultsCount > 0 ? "Failed" : "Idle";
+    return paused ? "Paused" : window.Controller.IsRunning ? "Running" : window.Controller.FailedResultsCount > 0 ? "Failed" : "Idle";
   }
 
   private static void FollowToggle(Rect rect, RunnerWindow window) {
-    GUI.enabled = window.IsRunning;
-    bool follow = window.FollowRun;
+    GUI.enabled = window.Controller.IsRunning;
+    bool follow = window.Controller.FollowRun;
     Widgets.CheckboxLabeled(rect, "Follow run", ref follow);
-    if (follow != window.FollowRun) {
-      window.FollowRun = follow;
-      window.PublishSnapshot();
+    if (follow != window.Controller.FollowRun) {
+      window.Controller.FollowRun = follow;
+      window.Controller.PublishSnapshot();
     }
   }
 
   private static void RunButton(Rect rect, RunnerWindow window) {
-    bool paused = window.ActiveSession?.IsPaused == true;
-    bool stopping = window.ActiveSession?.CancelRequested == true;
-    bool idle = !window.IsRunning && !FixtureCommands.IsBusy;
-    int count = window.RunScope == "selected" ? window.SelectedScenarioCount
-        : window.RunScope == "failed" ? window.FailedResultsCount : window.TotalScenarioCount;
+    bool paused = window.Controller.ActiveSession?.IsPaused == true;
+    bool stopping = window.Controller.ActiveSession?.CancelRequested == true;
+    bool idle = !window.Controller.IsRunning && !FixtureCommands.IsBusy;
+    int count = window.Controller.RunScope == "selected" ? window.Controller.SelectedScenarioCount
+        : window.Controller.RunScope == "failed" ? window.Controller.FailedResultsCount : window.Controller.TotalScenarioCount;
 
     GUI.enabled = !stopping && (paused || (idle && count > 0));
     if (!IconButton(rect, paused ? "continue" : "run", paused ? "Continue run" : $"Run {count} scenarios", RunnerStatusColors.Accent)) {
@@ -205,34 +206,34 @@ public static class RunnerToolbar {
     }
 
     if (paused) {
-      window.ContinueRun();
+      window.Controller.ContinueRun();
     } else {
-      _ = RunnerCommands.Run(window.RunScope);
+      _ = RunnerCommands.Run(window.Controller.RunScope);
     }
   }
 
   private static void PauseButton(Rect rect, RunnerWindow window) {
-    bool paused = window.ActiveSession?.IsPaused == true;
-    bool stopping = window.ActiveSession?.CancelRequested == true;
-    GUI.enabled = window.IsRunning && !paused && !stopping && window.ActiveSession?.PauseRequested == false;
+    bool paused = window.Controller.ActiveSession?.IsPaused == true;
+    bool stopping = window.Controller.ActiveSession?.CancelRequested == true;
+    GUI.enabled = window.Controller.IsRunning && !paused && !stopping && window.Controller.ActiveSession?.PauseRequested == false;
     if (IconButton(rect, "pause", "Pause after current step", Color.white)) {
-      window.ActiveSession?.RequestPause();
+      window.Controller.ActiveSession?.RequestPause();
     }
   }
 
   private static void AbortButton(Rect rect, RunnerWindow window) {
-    bool stopping = window.ActiveSession?.CancelRequested == true;
-    GUI.enabled = window.IsRunning && !stopping;
+    bool stopping = window.Controller.ActiveSession?.CancelRequested == true;
+    GUI.enabled = window.Controller.IsRunning && !stopping;
     if (IconButton(rect, "abort", stopping ? "Aborting run" : "Abort run", RunnerStatusColors.FailedText)) {
-      window.ActiveSession?.RequestCancel();
-      window.PublishSnapshot();
+      window.Controller.ActiveSession?.RequestCancel();
+      window.Controller.PublishSnapshot();
     }
   }
 
   private static Color StatusColor(RunnerWindow window) {
-    return window.ActiveSession?.IsPaused == true ? RunnerStatusColors.Paused
-        : window.IsRunning ? RunnerStatusColors.Accent
-        : window.FailedResultsCount > 0 ? RunnerStatusColors.FailedText : RunnerStatusColors.Passed;
+    return window.Controller.ActiveSession?.IsPaused == true ? RunnerStatusColors.Paused
+        : window.Controller.IsRunning ? RunnerStatusColors.Accent
+        : window.Controller.FailedResultsCount > 0 ? RunnerStatusColors.FailedText : RunnerStatusColors.Passed;
   }
 
   private static void Label(Rect rect, string label, Color color, GameFont font) {
@@ -263,15 +264,15 @@ public static class RunnerToolbar {
     WindowSuppression.AddOwn(new FloatMenu([
         new FloatMenuOption($"Pause on failure: {(BreakOnFailureState.Enabled ? "On" : "Off")}", () => {
           BreakOnFailureState.Enabled = !BreakOnFailureState.Enabled;
-          window.PublishSnapshot();
+          window.Controller.PublishSnapshot();
         }),
         new FloatMenuOption($"Include @wip: {(IncludeWipState.Enabled ? "On" : "Off")}", () => {
           IncludeWipState.Enabled = !IncludeWipState.Enabled;
-          window.PublishSnapshot();
+          window.Controller.PublishSnapshot();
         }),
         new FloatMenuOption($"Show run pill: {(RunPillState.Enabled ? "On" : "Off")}", () => {
           RunPillState.Enabled = !RunPillState.Enabled;
-          window.PublishSnapshot();
+          window.Controller.PublishSnapshot();
         }),
     ]));
   }
@@ -309,7 +310,7 @@ public static class RunnerToolbar {
 
     if (Widgets.ButtonInvisible(rect)) {
       PickleRunMode.Current = mode;
-      RunnerWindow.Instance.PublishSnapshot();
+      RunController.Instance.PublishSnapshot();
     }
   }
 

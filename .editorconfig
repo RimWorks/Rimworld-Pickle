@@ -423,8 +423,7 @@ dotnet_diagnostic.S3011.severity = none # writes the private desiredAltitude, th
 [Source/Pickle/Runtime/SuiteRunner.cs]
 dotnet_diagnostic.S3885.severity = none # loads a mod's step dll from a game-supplied path
 
-[Source/Pickle/UI/RunnerWindow.cs]
-dotnet_diagnostic.S3885.severity = none # same, from the runner window's rescan
+[Source/Pickle/Run/RunController.cs]
 dotnet_diagnostic.IDE0032.severity = none # VisibleScenarios is a non-null cache its own invalidation sets back to null, which an auto property cannot express
 
 [Source/Pickle/Patching/MissingBackendNotice.cs]

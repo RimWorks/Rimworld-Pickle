@@ -31,9 +31,9 @@ public class RunnerTagMenu : PickleWindow {
     Text.Font = GameFont.Tiny;
     Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, 48f), "Click for one tag. Shift-click to add or remove tags. Matches scenarios carrying every selected tag, and replaces scenario selection.");
     Text.Font = GameFont.Small;
-    GUI.enabled = !owner.IsRunning && !Web.FixtureCommands.IsBusy;
+    GUI.enabled = !owner.Controller.IsRunning && !Web.FixtureCommands.IsBusy;
     Widgets.CheckboxLabeled(new Rect(inRect.x, inRect.y + 52f, inRect.width, 28f), "Select multiple tags", ref multiple);
-    List<string> tags = [.. owner.AllTags];
+    List<string> tags = [.. owner.Controller.AllTags];
     Rect list = new Rect(inRect.x, inRect.y + 88f, inRect.width, inRect.height - 126f);
     Rect content = new Rect(0f, 0f, list.width - 18f, tags.Count * 34f);
     Widgets.BeginScrollView(list, ref scroll, content);
@@ -41,10 +41,10 @@ public class RunnerTagMenu : PickleWindow {
     foreach (string tag in tags) {
       Rect row = new Rect(0f, y, content.width, 30f);
       bool additive = multiple || Event.current.shift;
-      GUI.color = owner.ActiveTagFilters.Contains(tag) ? RunnerStatusColors.Accent : Color.white;
+      GUI.color = owner.Controller.ActiveTagFilters.Contains(tag) ? RunnerStatusColors.Accent : Color.white;
       TooltipHandler.TipRegion(row, tag);
       if (Widgets.ButtonText(row, tag.Truncate(row.width - 16f))) {
-        owner.SetFilter(tag: tag, additive: additive);
+        owner.Controller.SetFilter(tag: tag, additive: additive);
         if (!additive) {
           Close();
         }
@@ -55,9 +55,9 @@ public class RunnerTagMenu : PickleWindow {
     }
 
     Widgets.EndScrollView();
-    GUI.enabled = GUI.enabled && owner.ActiveTagFilters.Count > 0;
+    GUI.enabled = GUI.enabled && owner.Controller.ActiveTagFilters.Count > 0;
     if (Widgets.ButtonText(new Rect(inRect.x, inRect.yMax - 30f, inRect.width, 30f), "Clear tag filters")) {
-      owner.SetFilter(clearTags: true);
+      owner.Controller.SetFilter(clearTags: true);
     }
 
     GUI.enabled = true;

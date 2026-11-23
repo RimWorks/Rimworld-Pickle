@@ -18,7 +18,7 @@ public static class DashboardSeed {
     PickleDriver.EnsureExists();
 
     if (!GenCommandLine.CommandLineArgPassed("-pickle-run")) {
-      RunnerWindow.Instance.PublishSnapshot();
+      RunnerWindow.Instance.Controller.PublishSnapshot();
     }
   }
 }

@@ -13,7 +13,6 @@ using RimWorks.Pickle.Core.Run;
 using RimWorks.Pickle.Core.Steps;
 using RimWorks.Pickle.Run;
 using RimWorks.Pickle.Web;
-using Verse;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
@@ -111,7 +110,7 @@ public static class SuiteRunner {
     return (StepScanner.PopulateStepTable(assemblies), StepScanner.GetPickleStepsTypes(assemblies), suites);
   }
 
-  private static List<Assembly> BuildAssemblyList(List<DiscoveredSuite> discoveredSuites) {
+  internal static List<Assembly> BuildAssemblyList(List<DiscoveredSuite> discoveredSuites) {
     List<Assembly> assemblies = new()
     {
             typeof(SuiteRunner).Assembly,
@@ -133,7 +132,9 @@ public static class SuiteRunner {
       foreach (string stepsDll in suite.StepsDlls) {
         try {
           Assembly loaded = Assembly.LoadFrom(stepsDll);
-          assemblies.Add(loaded);
+          if (!assemblies.Contains(loaded)) {
+            assemblies.Add(loaded);
+          }
         } catch (Exception ex) {
           Log.WarnTo(PickleLog.Channel, ex, $"failed to load steps dll {Path.GetFileName(stepsDll)}");
         }

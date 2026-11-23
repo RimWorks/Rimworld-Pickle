@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 namespace RimWorks.Pickle.Hosting;
 
 /// <summary>
-/// The host's save loading. Each member starts the work and completes once the game has
-/// settled, so the next step finds a live world.
+/// The host's saves and game sessions. Each member that returns a task completes once the
+/// game has settled, so the next step finds the world it asked for.
 /// </summary>
 public interface ISaveGames {
   /// <summary>Loads the save at a file path.</summary>
@@ -26,4 +26,12 @@ public interface ISaveGames {
   /// <param name="scope">The step's wait scope, so the waits are torn down with the step.</param>
   /// <returns>A task that completes once the world is built and the game has settled.</returns>
   Task StartQuickstart(string name, object? scope);
+
+#pragma warning disable SA1600, CS1591
+  bool SaveGame(string path, bool overwrite);
+#pragma warning restore SA1600, CS1591
+
+#pragma warning disable SA1600, CS1591
+  Task ReturnToMainMenu();
+#pragma warning restore SA1600, CS1591
 }
