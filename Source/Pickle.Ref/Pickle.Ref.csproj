@@ -20,7 +20,6 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <!-- Build Pickle first so its ref assembly exists, but do not reference it. -->
   <ItemGroup>
     <ProjectReference Include="..\Pickle\Pickle.csproj" ReferenceOutputAssembly="false" Private="false" />
     <ProjectReference Include="..\Pickle.Host.RimWorld\Pickle.Host.RimWorld.csproj" ReferenceOutputAssembly="false" Private="false" />

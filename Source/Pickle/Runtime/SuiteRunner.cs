@@ -21,9 +21,6 @@ namespace RimWorks.Pickle.Runtime;
 public static class SuiteRunner {
   private static readonly List<Assembly> HostStepAssemblies = [];
 
-  // A game runs one suite at a time - the runner assumes it everywhere else too - so the
-  // "logged once" flag is per class rather than threaded through every call. Run() clears it.
-
   /// <summary>Adds a host assembly to the ones scanned for step classes. A host calls this at boot
   /// for each of its assemblies that holds step classes.</summary>
   /// <param name="assembly">The host assembly to scan.</param>
