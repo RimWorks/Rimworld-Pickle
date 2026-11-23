@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using RimWorks.Pickle.Hosting;
 using RimWorks.Pickle.Runtime;
 using Verse;
 using Log = RimWorks.RimLogging.Log;
@@ -106,7 +107,7 @@ public sealed class FilmstripRecorder {
   private void OnFrame() {
     // A fixture load is seconds of loading screen and then a fade in from black. The film
     // is of the scenario, so the clock does not start until the map is actually visible.
-    if (LongEventHandler.AnyEventNowOrWaiting || ScreenFader.IsFading()) {
+    if (HostRegistry.Get<IGameState>().IsBusy || ScreenFader.IsFading()) {
       clock.Restart();
       nextCaptureAt = 0.0;
       return;

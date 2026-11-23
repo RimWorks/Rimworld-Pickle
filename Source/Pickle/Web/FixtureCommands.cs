@@ -7,10 +7,9 @@ using System.Threading.Tasks;
 using RimWorks.Pickle.Autorun;
 using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Core.Fixtures;
-using RimWorks.Pickle.Fixtures;
+using RimWorks.Pickle.Hosting;
 using RimWorks.Pickle.Runtime;
 using RimWorks.Pickle.UI;
-using Verse;
 
 namespace RimWorks.Pickle.Web;
 
@@ -80,7 +79,7 @@ public static class FixtureCommands {
           ?? throw new FileNotFoundException("The fixture no longer exists. Refresh the list.");
       switch (action) {
         case "load":
-          await FixtureLoader.LoadFixture(entry.FullPath, PickleDriver.Instance);
+          await HostRegistry.Get<ISaveGames>().LoadSave(entry.FullPath, null);
           break;
         case "rename":
           string renamed = FixtureCatalog.PathForName(Path.GetDirectoryName(entry.FullPath)!, newName ?? string.Empty);
@@ -120,7 +119,7 @@ public static class FixtureCommands {
           + ",\"directory\":" + Json.Quote(suite.WritableFixturesDir) + ",\"fixtures\":" + Json.Array(fixtures) + "}");
     }
 
-    return "{\"canSave\":" + (Current.Game != null && Current.ProgramState == ProgramState.Playing ? "true" : "false")
+    return "{\"canSave\":" + (HostRegistry.Get<IGameState>().IsInPlay ? "true" : "false")
         + ",\"busy\":" + (IsBusy || AutorunState.IsAutorunning || RunnerWindow.Instance.IsRunning ? "true" : "false")
         + ",\"suites\":" + Json.Array(groups) + "}";
   }

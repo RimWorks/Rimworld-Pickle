@@ -17,6 +17,8 @@ public class PickleMod : Mod {
   /// <param name="content">The mod content pack RimWorld constructs this from.</param>
   public PickleMod(ModContentPack content) : base(content) {
     HostRegistry.Register<IGameClock>(new GameClock());
+    HostRegistry.Register<IGameState>(new GameState());
+    HostRegistry.Register<ISaveGames>(new SaveGames());
 
     // Before anything else logs: LogWatch is fed from this sink now, so an error raised
     // during startup is only recorded once the sink is registered.
