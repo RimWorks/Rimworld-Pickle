@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using RimWorks.Pickle.Core.Discovery;
+using RimWorks.Pickle.Hosting;
 using RimWorks.Pickle.Patching;
+using RimWorks.Pickle.RimWorldHost;
+using RimWorks.Pickle.Runtime;
 using RimWorks.Pickle.Web;
 using RimWorks.RimLogging;
 using Verse;
@@ -14,6 +17,17 @@ public class PickleMod : Mod {
   /// <summary>Initializes a new instance.</summary>
   /// <param name="content">The mod content pack RimWorld constructs this from.</param>
   public PickleMod(ModContentPack content) : base(content) {
+    HostRegistry.Register<IGameClock>(new GameClock());
+    HostRegistry.Register<IGameState>(new GameState());
+    HostRegistry.Register<ISaveGames>(new SaveGames());
+    HostRegistry.Register<IGameApp>(new GameApp());
+    HostRegistry.Register<IModList>(new ModList());
+    HostRegistry.Register<ITranslator>(new Translations());
+    HostRegistry.Register<IGameInput>(new GameInput());
+    HostRegistry.Register<IScreenCapture>(new Screenshots());
+    HostRegistry.Register<IWindowGuard>(new WindowGuard());
+    SuiteRunner.RegisterStepAssembly(typeof(PickleMod).Assembly);
+
     // Before anything else logs: LogWatch is fed from this sink now, so an error raised
     // during startup is only recorded once the sink is registered.
     Logging.RegisterSink(new PickleLogSink());

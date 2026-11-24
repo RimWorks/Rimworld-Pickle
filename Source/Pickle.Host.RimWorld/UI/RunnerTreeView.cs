@@ -57,9 +57,9 @@ public static class RunnerTreeView {
   public static void Draw(Rect outRect, RunnerWindow window) {
     if (Event.current.type == EventType.Layout) {
       RebuildRows(window);
-      if (window.FollowRun && window.Selected != lastFollowed) {
+      if (window.Controller.FollowRun && window.Controller.Selected != lastFollowed) {
         int selectedRow = Rows.FindIndex(row => row.Kind == RowKind.Scenario
-            && window.Selected == (row.Plan?.SourcePath ?? string.Empty, row.Index));
+            && window.Controller.Selected == (row.Plan?.SourcePath ?? string.Empty, row.Index));
         if (selectedRow >= 0) {
           float top = RowTops[selectedRow];
           float bottom = top + Rows[selectedRow].Height;
@@ -67,7 +67,7 @@ public static class RunnerTreeView {
           window.TreeScroll = new Vector2(0f, Mathf.Max(0f, scrollY));
         }
 
-        lastFollowed = window.Selected;
+        lastFollowed = window.Controller.Selected;
       }
     }
 
@@ -124,7 +124,7 @@ public static class RunnerTreeView {
     float y = 0f;
 
     Dictionary<FeaturePlan, int> startIndices = ComputeStartIndices(window);
-    foreach (IGrouping<string, (DiscoveredSuite Suite, FeaturePlan Plan)> group in window.ParsedFeatures.GroupBy(f => f.Suite.ModName)) {
+    foreach (IGrouping<string, (DiscoveredSuite Suite, FeaturePlan Plan)> group in window.Controller.ParsedFeatures.GroupBy(f => f.Suite.ModName)) {
       y = AddModRows(window, group, startIndices, y);
     }
 
@@ -154,7 +154,7 @@ public static class RunnerTreeView {
         },
         y);
 
-    if (window.CollapsedMods.Contains(group.Key)) {
+    if (window.Controller.CollapsedMods.Contains(group.Key)) {
       return y;
     }
 
@@ -183,7 +183,7 @@ public static class RunnerTreeView {
         },
         y);
 
-    if (window.CollapsedFeatures.Contains(plan.SourcePath ?? string.Empty)) {
+    if (window.Controller.CollapsedFeatures.Contains(plan.SourcePath ?? string.Empty)) {
       return y;
     }
 
@@ -221,7 +221,7 @@ public static class RunnerTreeView {
   private static Dictionary<FeaturePlan, int> ComputeStartIndices(RunnerWindow window) {
     Dictionary<FeaturePlan, int> map = [];
     int running = 0;
-    foreach ((DiscoveredSuite Suite, FeaturePlan Plan) entry in window.ParsedFeatures) {
+    foreach ((DiscoveredSuite Suite, FeaturePlan Plan) entry in window.Controller.ParsedFeatures) {
       map[entry.Plan] = running;
       running += entry.Plan.Scenarios.Count;
     }
@@ -234,7 +234,7 @@ public static class RunnerTreeView {
   }
 
   private static bool IsScenarioVisible(RunnerWindow window, DiscoveredSuite suite, FeaturePlan plan, ScenarioPlan scenario) {
-    return window.IsScenarioVisible(suite, plan, scenario);
+    return window.Controller.IsScenarioVisible(suite, plan, scenario);
   }
 
   private static void DrawModRow(
@@ -245,7 +245,7 @@ public static class RunnerTreeView {
       List<(string SourcePath, int Index)> keys) {
     Widgets.DrawHighlightIfMouseover(rect);
 
-    bool toggled = DrawArrow(rect, ModArrowX, window.CollapsedMods.Contains(modName));
+    bool toggled = DrawArrow(rect, ModArrowX, window.Controller.CollapsedMods.Contains(modName));
 
     MultiCheckboxState state = ComputeCheckState(window, keys);
     Rect checkRect = new Rect(rect.x + ModIndent, rect.y + ((rect.height - ModCheckboxSize) / 2f), ModCheckboxSize, ModCheckboxSize);
@@ -269,7 +269,7 @@ public static class RunnerTreeView {
 
     // Last, so the checkbox and the arrow have already claimed their own clicks.
     if (toggled || ClickedIdFree(rect)) {
-      Toggle(window.CollapsedMods, modName);
+      Toggle(window.Controller.CollapsedMods, modName);
     }
   }
 
@@ -278,7 +278,7 @@ public static class RunnerTreeView {
     Widgets.DrawHighlightIfMouseover(rect);
 
     string featureKey = plan.SourcePath ?? string.Empty;
-    bool toggled = DrawArrow(rect, FeatureArrowX, window.CollapsedFeatures.Contains(featureKey));
+    bool toggled = DrawArrow(rect, FeatureArrowX, window.Controller.CollapsedFeatures.Contains(featureKey));
 
     MultiCheckboxState state = ComputeCheckState(window, keys);
     Rect checkRect = new Rect(rect.x + FeatureIndent, rect.y + ((rect.height - FeatureCheckboxSize) / 2f), FeatureCheckboxSize, FeatureCheckboxSize);
@@ -291,7 +291,7 @@ public static class RunnerTreeView {
     int failed = 0;
     int ran = 0;
     for (int i = 0; i < total; i++) {
-      if (window.TryGetResult(plan.SourcePath ?? string.Empty, startIndex + i, out ScenarioResult result)) {
+      if (window.Controller.TryGetResult(plan.SourcePath ?? string.Empty, startIndex + i, out ScenarioResult result)) {
         ran++;
         if (result.Outcome == ScenarioOutcome.Failed) {
           failed++;
@@ -320,14 +320,14 @@ public static class RunnerTreeView {
     Text.Font = GameFont.Small;
 
     if (toggled || ClickedIdFree(rect)) {
-      Toggle(window.CollapsedFeatures, featureKey);
+      Toggle(window.Controller.CollapsedFeatures, featureKey);
     }
   }
 
   private static void DrawScenarioRow(Rect rect, RunnerWindow window, FeaturePlan plan, ScenarioPlan scenario, int scenarioIndex) {
     string sourcePath = plan.SourcePath ?? string.Empty;
-    bool hasResult = window.TryGetResult(sourcePath, scenarioIndex, out ScenarioResult result);
-    bool isSelected = window.Selected == (sourcePath, scenarioIndex);
+    bool hasResult = window.Controller.TryGetResult(sourcePath, scenarioIndex, out ScenarioResult result);
+    bool isSelected = window.Controller.Selected == (sourcePath, scenarioIndex);
 
     if (isSelected) {
       Widgets.DrawHighlightSelected(rect);
@@ -336,17 +336,17 @@ public static class RunnerTreeView {
     }
 
     Color dotColor = hasResult ? RunnerStatusColors.ForOutcome(result.Outcome) : RunnerStatusColors.Pending;
-    if (ReferenceEquals(window.ActiveSession?.CurrentScenario, scenario)) {
-      dotColor = window.ActiveSession?.IsPaused == true ? RunnerStatusColors.Paused : RunnerStatusColors.Keyword;
+    if (ReferenceEquals(window.Controller.ActiveSession?.CurrentScenario, scenario)) {
+      dotColor = window.Controller.ActiveSession?.IsPaused == true ? RunnerStatusColors.Paused : RunnerStatusColors.Keyword;
     }
 
     Rect checkRect = new Rect(rect.x + ScenarioIndent, rect.y + ((rect.height - ScenarioCheckboxSize) / 2f), ScenarioCheckboxSize, ScenarioCheckboxSize);
-    bool selected = window.IsScenarioSelected(sourcePath, scenarioIndex);
+    bool selected = window.Controller.IsScenarioSelected(sourcePath, scenarioIndex);
     Widgets.CheckboxDraw(checkRect.x, checkRect.y, selected, disabled: false, ScenarioCheckboxSize);
     MouseoverSounds.DoRegion(checkRect);
     if (ClickedIdFree(checkRect)) {
-      window.SetScenarioSelected(sourcePath, scenarioIndex, !selected);
-      window.PublishSnapshot();
+      window.Controller.SetScenarioSelected(sourcePath, scenarioIndex, !selected);
+      window.Controller.PublishSnapshot();
       PlayCheckboxSound(!selected);
     }
 
@@ -372,8 +372,8 @@ public static class RunnerTreeView {
 
     MouseoverSounds.DoRegion(rect);
     if (ClickedIdFree(rect)) {
-      window.Selected = (sourcePath, scenarioIndex);
-      window.FollowRun = false;
+      window.Controller.Selected = (sourcePath, scenarioIndex);
+      window.Controller.FollowRun = false;
       window.DetailScroll = Vector2.zero;
     }
   }
@@ -432,10 +432,10 @@ public static class RunnerTreeView {
   private static void SetSelected(
       RunnerWindow window, List<(string SourcePath, int Index)> keys, bool selected) {
     foreach ((string sourcePath, int index) in keys) {
-      window.SetScenarioSelected(sourcePath, index, selected);
+      window.Controller.SetScenarioSelected(sourcePath, index, selected);
     }
 
-    window.PublishSnapshot();
+    window.Controller.PublishSnapshot();
   }
 
   private static MultiCheckboxState ComputeCheckState(
@@ -443,7 +443,7 @@ public static class RunnerTreeView {
     bool anySelected = false;
     bool anyUnselected = false;
     foreach ((string sourcePath, int index) in keys) {
-      if (window.IsScenarioSelected(sourcePath, index)) {
+      if (window.Controller.IsScenarioSelected(sourcePath, index)) {
         anySelected = true;
       } else {
         anyUnselected = true;

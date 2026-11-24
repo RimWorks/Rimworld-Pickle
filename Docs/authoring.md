@@ -6,6 +6,22 @@ For what already exists, see [built-in steps](steps.md).
 Pickle reads standard [Gherkin](https://cucumber.io/docs/gherkin/reference/). Any
 feature file a Cucumber user recognises works here.
 
+## Assemblies
+
+The types you write against live in two assemblies. A steps project gets both through the one
+`RimWorks.Pickle.Ref` package reference, as [getting started](getting-started.md) shows.
+
+| Assembly | Types you use |
+| --- | --- |
+| `RimWorks.Pickle` | `PickleContext`, the step attributes, `PickleWait`, `PickleDriver`, `ModLookup` |
+| `RimWorks.Pickle.Host.RimWorld` | `PickleUI`, `FixtureLoader`, `ModPackLookup` |
+
+`RimWorks.Pickle.dll` has no reference to a game assembly. `RimWorks.Pickle.Host.RimWorld.dll`
+holds each type that needs RimWorld or Unity. For example, `PickleUI.Tag` takes a Unity `Rect`.
+
+A namespace can span both assemblies. `PickleContext` and `PickleUI` are both in
+`RimWorks.Pickle`, so `using RimWorks.Pickle;` reaches both.
+
 ## Steps
 
 A step class carries `[PickleSteps]`. Each step method carries `[Given]`, `[When]`, or

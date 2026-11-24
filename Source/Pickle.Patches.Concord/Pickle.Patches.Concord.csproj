@@ -19,6 +19,7 @@
     <!-- Private=false everywhere: the core assemblies ship once, in the version
          Assemblies folder. A second copy here would load the same types twice. -->
     <ProjectReference Include="..\Pickle\Pickle.csproj" Private="false" />
+    <ProjectReference Include="..\Pickle.Host.RimWorld\Pickle.Host.RimWorld.csproj" Private="false" />
     <ProjectReference Include="..\Pickle.Core\Pickle.Core.csproj" Private="false" />
   </ItemGroup>
 </Project>

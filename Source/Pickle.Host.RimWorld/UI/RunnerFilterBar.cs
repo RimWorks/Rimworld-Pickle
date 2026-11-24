@@ -26,7 +26,7 @@ public static class RunnerFilterBar {
     float fieldsWidth = FieldsWidth(width);
     float x = 70f;
     float height = RowHeight;
-    foreach (string tag in window.ActiveTagFilters) {
+    foreach (string tag in window.Controller.ActiveTagFilters) {
       float chipWidth = ChipWidth(tag, fieldsWidth);
       if (x + chipWidth > fieldsWidth) {
         height += ChipRowStep;
@@ -36,7 +36,7 @@ public static class RunnerFilterBar {
       x += chipWidth + 6f;
     }
 
-    if (window.ActiveTagFilters.Count > 0) {
+    if (window.Controller.ActiveTagFilters.Count > 0) {
       height += ChipRowStep;
     }
 
@@ -50,25 +50,25 @@ public static class RunnerFilterBar {
     float fieldsWidth = FieldsWidth(rect.width);
     float searchWidth = Mathf.Max(100f, fieldsWidth - 300f);
     Rect searchRect = new Rect(rect.x + Padding, rect.y + 5f, searchWidth, 30f);
-    string search = Widgets.TextField(searchRect, window.SearchText);
-    if (search != window.SearchText) {
-      window.SetFilter(search: search);
+    string search = Widgets.TextField(searchRect, window.Controller.SearchText);
+    if (search != window.Controller.SearchText) {
+      window.Controller.SetFilter(search: search);
     }
 
     Rect modRect = new Rect(searchRect.xMax + 8f, searchRect.y, 138f, 30f);
-    string modLabel = window.ModFilterSelection ?? "All mods";
+    string modLabel = window.Controller.ModFilterSelection ?? "All mods";
     if (Widgets.ButtonText(modRect, modLabel.Truncate(modRect.width - 12f))) {
-      List<FloatMenuOption> options = [new FloatMenuOption("All mods", () => window.SetFilter(mod: string.Empty))];
-      foreach (string mod in window.AllModNames) {
-        options.Add(new FloatMenuOption(mod, () => window.SetFilter(mod: mod)));
+      List<FloatMenuOption> options = [new FloatMenuOption("All mods", () => window.Controller.SetFilter(mod: string.Empty))];
+      foreach (string mod in window.Controller.AllModNames) {
+        options.Add(new FloatMenuOption(mod, () => window.Controller.SetFilter(mod: mod)));
       }
 
       WindowSuppression.AddOwn(new FloatMenu(options));
     }
 
     Rect tagRect = new Rect(modRect.xMax + 8f, searchRect.y, 144f, 30f);
-    GUI.enabled = !window.IsRunning && !Web.FixtureCommands.IsBusy;
-    string tagLabel = window.ActiveTagFilters.Count == 0 ? "Select by tag" : $"{window.ActiveTagFilters.Count} tags · match all";
+    GUI.enabled = !window.Controller.IsRunning && !Web.FixtureCommands.IsBusy;
+    string tagLabel = window.Controller.ActiveTagFilters.Count == 0 ? "Select by tag" : $"{window.Controller.ActiveTagFilters.Count} tags · match all";
     if (Widgets.ButtonText(tagRect, tagLabel)) {
       Find.WindowStack.Add(new RunnerTagMenu(window, GUIUtility.GUIToScreenPoint(new Vector2(tagRect.x, tagRect.yMax))));
     }
@@ -76,11 +76,11 @@ public static class RunnerFilterBar {
     float x = rect.x + Padding + 70f;
     float y = rect.y + RowHeight;
     Text.Font = GameFont.Tiny;
-    if (window.ActiveTagFilters.Count > 0) {
+    if (window.Controller.ActiveTagFilters.Count > 0) {
       Widgets.Label(new Rect(rect.x + Padding, y + 5f, 65f, 24f), "Match all");
     }
 
-    foreach (string tag in new List<string>(window.ActiveTagFilters)) {
+    foreach (string tag in new List<string>(window.Controller.ActiveTagFilters)) {
       float chipWidth = ChipWidth(tag, fieldsWidth);
       if (x + chipWidth > rect.x + Padding + fieldsWidth) {
         x = rect.x + Padding;
@@ -90,7 +90,7 @@ public static class RunnerFilterBar {
       Rect chip = new Rect(x, y + 2f, chipWidth, ChipHeight);
       TooltipHandler.TipRegion(chip, $"Remove {tag} tag");
       if (Widgets.ButtonText(chip, (tag + ChipSuffix).Truncate(chipWidth))) {
-        window.SetFilter(tag: tag, additive: true);
+        window.Controller.SetFilter(tag: tag, additive: true);
       }
 
       x += chipWidth + 6f;

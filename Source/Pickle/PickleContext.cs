@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using RimWorks.Pickle.Input;
+using RimWorks.Pickle.Hosting;
 using RimWorks.Pickle.Runtime;
-using UnityEngine;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle;
@@ -119,45 +118,25 @@ public class PickleContext {
 
   /// <summary>Waits for a tagged rect to appear and clicks it. Throws if the tag never resolves, or
   /// if nothing at that rect is clickable.</summary>
-  /// <param name="tag">The tag a mod's <c>OnGUI</c> recorded with <see cref="PickleUI.Tag"/>.</param>
+  /// <param name="tag">The tag a mod's <c>OnGUI</c> recorded with <c>PickleUI.Tag</c>.</param>
   /// <returns>A task that completes once the click has been taken by a widget.</returns>
   public async Task Click(string tag) {
-    Rect rect = await ResolveTag(tag);
-
-    InteractionRequest.ArmClick(rect);
-    try {
-      await WaitUntil(() => InteractionRequest.ClickFired, 2f);
-    } catch (TimeoutException) {
-      InteractionRequest.Clear();
-      throw new InvalidOperationException(
-          $"tag '{tag}' resolved to {rect} but no button there took the click; "
-          + "the element has to route through Widgets.ButtonInvisible for a click step to reach it");
-    }
-
-    await WaitFrames(2);
+    await HostRegistry.Get<IGameInput>().Click(tag, WaitScope);
   }
 
   /// <summary>Waits for a tagged rect to appear and holds the pointer over it, without clicking.
   /// Throws if the tag never resolves.</summary>
-  /// <param name="tag">The tag a mod's <c>OnGUI</c> recorded with <see cref="PickleUI.Tag"/>.</param>
+  /// <param name="tag">The tag a mod's <c>OnGUI</c> recorded with <c>PickleUI.Tag</c>.</param>
   /// <returns>A task that completes once the rect reports the pointer as over it.</returns>
   public async Task Hover(string tag) {
-    Rect rect = await ResolveTag(tag);
-
-    InteractionRequest.SetHover(rect);
-    await WaitFrames(1);
+    await HostRegistry.Get<IGameInput>().Hover(tag, WaitScope);
   }
 
   /// <summary>Presses a key, delivering it into the game's own OnGUI pass.</summary>
   /// <param name="key">The key to press.</param>
   /// <returns>A task that completes two frames after the key is sent, so the game has processed it.</returns>
   public async Task PressKey(string key) {
-    EventSynth.RequestKeyEvent(EventSynth.Mechanism.UIRootReinvoke, KeyNames.Parse(key));
-    await WaitFrames(2);
-
-    if (EventSynth.TryTakeFailure(out Exception? failure)) {
-      throw new InvalidOperationException($"key '{key}' could not be delivered", failure);
-    }
+    await HostRegistry.Get<IGameInput>().PressKey(key, WaitScope);
   }
 
   /// <summary>Attaches a named blob of content to this scenario's report.</summary>
@@ -165,19 +144,5 @@ public class PickleContext {
   /// <param name="content">The attachment's content.</param>
   public void Attach(string name, string content) {
     attachments.Add((name, content));
-  }
-
-  private async Task<Rect> ResolveTag(string tag) {
-    try {
-      await WaitUntil(() => TagInteractor.TryResolve(tag, out _, out _), 5f);
-    } catch (TimeoutException) {
-      throw new InvalidOperationException(TagInteractor.DescribeMiss(tag));
-    }
-
-    if (!TagInteractor.TryResolve(tag, out Rect rect, out string? error)) {
-      throw new InvalidOperationException(error ?? "Failed to resolve tag");
-    }
-
-    return rect;
   }
 }

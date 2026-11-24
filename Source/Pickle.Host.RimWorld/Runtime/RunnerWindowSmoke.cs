@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using RimWorks.Pickle.Run;
 using RimWorks.Pickle.Runtime;
 using RimWorks.Pickle.UI;
 using Verse;
@@ -19,19 +20,20 @@ public static class RunnerWindowSmoke {
     try {
       PickleDriver driver = PickleDriver.Instance;
 
-      RunnerWindow window = new RunnerWindow();
+      RunnerWindow window = RunnerWindow.Instance;
       Find.WindowStack.Add(window);
 
       await driver.WaitFrames(2);
 
-      await window.RunAllAndWait();
+      RunController controller = window.Controller;
+      await controller.RunAllAndWait();
 
-      if (window.ParsedFeaturesCount < 1) {
+      if (controller.ParsedFeaturesCount < 1) {
         Log.ErrorTo(PickleLog.Channel, "runner window smoke failed: no features parsed");
         return;
       }
 
-      int failedCount = window.FailedResultsCount;
+      int failedCount = controller.FailedResultsCount;
       if (failedCount > 0) {
         Log.ErrorTo(PickleLog.Channel, "runner window smoke failed: {FailedCount} scenarios failed", [failedCount]);
         return;

@@ -7,7 +7,6 @@ using RimWorks.Pickle.Core.Run;
 using RimWorks.Pickle.Core.Steps;
 using RimWorks.Pickle.Evidence;
 using RimWorks.Pickle.Runtime;
-using RimWorks.Pickle.UI;
 using RimWorks.Pickle.Web;
 
 namespace RimWorks.Pickle.Run;
@@ -57,7 +56,7 @@ public static class StepConsole {
       throw new InvalidOperationException("An unattended run owns the game. The console is off during autorun.");
     }
 
-    if (RunnerWindow.Instance.IsRunning || FixtureCommands.IsBusy) {
+    if (RunController.Instance.IsRunning || FixtureCommands.IsBusy) {
       throw new InvalidOperationException("Wait for the current run or fixture operation to finish.");
     }
   }

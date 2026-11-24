@@ -2,14 +2,15 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using RimWorks.Pickle.Core.Discovery;
+using RimWorks.Pickle.Core.Fixtures;
 using RimWorks.Pickle.Fixtures;
-using RimWorks.Pickle.UI;
+using RimWorks.Pickle.Hosting;
 using Verse;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
-/// <summary>Loads a fixture, saves a new one from it through the UI dialog, then reloads that copy.</summary>
+/// <summary>Loads a fixture, saves a new one from it through the host, then reloads that copy.</summary>
 public static class SaveFixtureSmoke {
   /// <summary>Runs the smoke and logs whether it passed, swallowing any exception.</summary>
   /// <returns>A task that completes when the smoke finishes.</returns>
@@ -23,7 +24,8 @@ public static class SaveFixtureSmoke {
   }
 
   private static async Task RunAsync(PickleDriver driver) {
-    string fixturePath = Path.Combine("/game/Mods/Pickle/Pickle/Fixtures", "test-colony.rws");
+    string modRoot = LoadedModManager.GetMod<PickleMod>().Content.RootDir;
+    string fixturePath = Path.Combine(SuiteLayout.FromModRoot(modRoot).FixturesDir, "test-colony.rws");
     if (!File.Exists(fixturePath)) {
       throw new InvalidOperationException($"dogfood fixture missing at {fixturePath}");
     }
@@ -42,7 +44,7 @@ public static class SaveFixtureSmoke {
     DiscoveredSuite suite = SuiteProbe.Probe("SmokeTarget", layout)!;
 
     DateTime startedUtc = DateTime.UtcNow;
-    SaveFixtureDialog.Save(suite, "smoke-fixture");
+    HostRegistry.Get<ISaveGames>().SaveGame(FixtureCatalog.PathForName(suite.WritableFixturesDir, "smoke-fixture"), false);
 
     string written = Path.Combine(layout.FixturesDir, "smoke-fixture.rws");
     if (!File.Exists(written)) {

@@ -38,7 +38,7 @@ public static class Watchdog {
   /// <param name="runTimeoutMinutes">Minutes the whole run gets before it is killed.</param>
   /// <param name="reportDir">Where to write whatever results exist if the watchdog trips.</param>
   /// <param name="logPath">File to append the trip message to, since Verse.Log is off limits here.</param>
-  public static void Start(int scenarioTimeoutSeconds, int runTimeoutMinutes, string reportDir, string logPath) {
+  public static void Start(int scenarioTimeoutSeconds, int runTimeoutMinutes, string reportDir, string? logPath) {
     Watchdog.scenarioTimeoutSeconds = scenarioTimeoutSeconds;
     Watchdog.runTimeoutMinutes = runTimeoutMinutes;
     Watchdog.reportDir = reportDir;

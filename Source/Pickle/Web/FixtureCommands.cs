@@ -7,10 +7,9 @@ using System.Threading.Tasks;
 using RimWorks.Pickle.Autorun;
 using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Core.Fixtures;
-using RimWorks.Pickle.Fixtures;
+using RimWorks.Pickle.Hosting;
+using RimWorks.Pickle.Run;
 using RimWorks.Pickle.Runtime;
-using RimWorks.Pickle.UI;
-using Verse;
 
 namespace RimWorks.Pickle.Web;
 
@@ -53,8 +52,9 @@ public static class FixtureCommands {
   /// <param name="name">The fixture name the action targets.</param>
   /// <param name="newName">The new name for a <c>"rename"</c> action.</param>
   /// <param name="overwrite">Whether a <c>"save"</c> action may replace an existing fixture.</param>
-  internal static async Task Execute(string action, string? suitePath, string? name, string? newName, bool overwrite) {
-    if (IsBusy || AutorunState.IsAutorunning || RunnerWindow.Instance.IsRunning) {
+  /// <returns>A task that completes once the action has run.</returns>
+  public static async Task Execute(string action, string? suitePath, string? name, string? newName, bool overwrite) {
+    if (IsBusy || AutorunState.IsAutorunning || RunController.Instance.IsRunning) {
       throw new InvalidOperationException("Wait for the current run or fixture operation to finish.");
     }
 
@@ -68,7 +68,7 @@ public static class FixtureCommands {
           throw new IOException("This fixture already exists. Confirm overwrite before saving.");
         }
 
-        if (!SaveFixtureDialog.Save(suite, name!, overwrite)) {
+        if (!HostRegistry.Get<ISaveGames>().SaveGame(target, overwrite)) {
           throw new IOException("The fixture was not saved. Check the game log.");
         }
 
@@ -80,7 +80,7 @@ public static class FixtureCommands {
           ?? throw new FileNotFoundException("The fixture no longer exists. Refresh the list.");
       switch (action) {
         case "load":
-          await FixtureLoader.LoadFixture(entry.FullPath, PickleDriver.Instance);
+          await HostRegistry.Get<ISaveGames>().LoadSave(entry.FullPath, null);
           break;
         case "rename":
           string renamed = FixtureCatalog.PathForName(Path.GetDirectoryName(entry.FullPath)!, newName ?? string.Empty);
@@ -97,7 +97,7 @@ public static class FixtureCommands {
       }
     } finally {
       IsBusy = false;
-      RunnerWindow.Instance.PublishSnapshot();
+      RunController.Instance.PublishSnapshot();
     }
   }
 
@@ -120,8 +120,9 @@ public static class FixtureCommands {
           + ",\"directory\":" + Json.Quote(suite.WritableFixturesDir) + ",\"fixtures\":" + Json.Array(fixtures) + "}");
     }
 
-    return "{\"canSave\":" + (Current.Game != null && Current.ProgramState == ProgramState.Playing ? "true" : "false")
-        + ",\"busy\":" + (IsBusy || AutorunState.IsAutorunning || RunnerWindow.Instance.IsRunning ? "true" : "false")
+    bool canSave = HostRegistry.TryGet(out IGameState? state) && HostRegistry.TryGet<ISaveGames>(out _) && state!.IsInPlay;
+    return "{\"canSave\":" + (canSave ? "true" : "false")
+        + ",\"busy\":" + (IsBusy || AutorunState.IsAutorunning || RunController.Instance.IsRunning ? "true" : "false")
         + ",\"suites\":" + Json.Array(groups) + "}";
   }
 }

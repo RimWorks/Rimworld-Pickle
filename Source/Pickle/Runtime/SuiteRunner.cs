@@ -13,15 +13,28 @@ using RimWorks.Pickle.Core.Run;
 using RimWorks.Pickle.Core.Steps;
 using RimWorks.Pickle.Run;
 using RimWorks.Pickle.Web;
-using Verse;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
 /// <summary>Discovers every suite, runs their scenarios, and publishes progress to the dashboard.</summary>
 public static class SuiteRunner {
-  // A game runs one suite at a time - the runner assumes it everywhere else too - so the
-  // "logged once" flag is per class rather than threaded through every call. Run() clears it.
+  private static readonly List<Assembly> HostStepAssemblies = [];
+
+  /// <summary>Adds a host assembly to the ones scanned for step classes. A host calls this at boot
+  /// for each of its assemblies that holds step classes.</summary>
+  /// <param name="assembly">The host assembly to scan.</param>
+  public static void RegisterStepAssembly(Assembly assembly) {
+    if (assembly == null) {
+      throw new ArgumentNullException(nameof(assembly));
+    }
+
+    lock (HostStepAssemblies) {
+      if (!HostStepAssemblies.Contains(assembly)) {
+        HostStepAssemblies.Add(assembly);
+      }
+    }
+  }
 
   /// <summary>Builds the step environment, runs every matching scenario, and logs the outcome.</summary>
   /// <param name="filter">A tag or name filter applied before running, or <c>null</c> to run everything.</param>
@@ -111,11 +124,17 @@ public static class SuiteRunner {
     return (StepScanner.PopulateStepTable(assemblies), StepScanner.GetPickleStepsTypes(assemblies), suites);
   }
 
-  private static List<Assembly> BuildAssemblyList(List<DiscoveredSuite> discoveredSuites) {
+  internal static List<Assembly> BuildAssemblyList(List<DiscoveredSuite> discoveredSuites) {
     List<Assembly> assemblies = new()
     {
             typeof(SuiteRunner).Assembly,
     };
+
+    lock (HostStepAssemblies) {
+      foreach (Assembly hostAssembly in HostStepAssemblies) {
+        AddOnce(assemblies, hostAssembly);
+      }
+    }
 
     Type? vanillaType = Type.GetType("RimWorks.Pickle.Vanilla.UiSteps, RimWorks.Pickle.Vanilla");
     if (vanillaType != null) {
@@ -132,8 +151,7 @@ public static class SuiteRunner {
     foreach (DiscoveredSuite suite in discoveredSuites) {
       foreach (string stepsDll in suite.StepsDlls) {
         try {
-          Assembly loaded = Assembly.LoadFrom(stepsDll);
-          assemblies.Add(loaded);
+          AddOnce(assemblies, Assembly.LoadFrom(stepsDll));
         } catch (Exception ex) {
           Log.WarnTo(PickleLog.Channel, ex, $"failed to load steps dll {Path.GetFileName(stepsDll)}");
         }
@@ -141,6 +159,12 @@ public static class SuiteRunner {
     }
 
     return assemblies;
+  }
+
+  private static void AddOnce(List<Assembly> assemblies, Assembly assembly) {
+    if (!assemblies.Contains(assembly)) {
+      assemblies.Add(assembly);
+    }
   }
 
   /// <summary>Publishes a dashboard snapshot, and never lets its failure end the run.</summary>

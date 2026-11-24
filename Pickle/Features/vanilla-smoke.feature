@@ -10,6 +10,7 @@ Feature: vanilla smoke
     When I press key "Escape"
     Then window "MainTabWindow_Research" is closed
 
+  @timeout:30
   Scenario: a raid arrives and raises the alarm
     When incident "RaidEnemy" fires with 500 points
     And I wait 120 ticks

@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Fixtures;
-using Verse;
+using RimWorks.Pickle.Hosting;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle;
@@ -16,7 +16,12 @@ public static class SuiteScanner {
   public static List<DiscoveredSuite> DiscoverSuites() {
     List<DiscoveredSuite> suites = [];
 
-    foreach (ModContentPack mod in LoadedModManager.RunningModsListForReading) {
+    if (!HostRegistry.TryGet(out IModList? modList)) {
+      Log.WarnTo(PickleLog.Channel, "the host provides no list of running mods, so no suites were found");
+      return suites;
+    }
+
+    foreach (RunningMod mod in modList!.RunningMods) {
       // Resolve only for a mod that ships a suite: the probe writes to test writability, and
       // every other mod would get an empty Pickle/Fixtures/ it never asked for.
       if (!Directory.Exists(Path.Combine(mod.RootDir, "Pickle"))) {

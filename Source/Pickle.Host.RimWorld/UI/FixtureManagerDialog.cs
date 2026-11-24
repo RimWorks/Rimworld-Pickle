@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Core.Fixtures;
 using RimWorks.Pickle.Fixtures;
+using RimWorks.Pickle.Run;
 using RimWorks.Pickle.Runtime;
 using RimWorks.Pickle.Web;
 using RimWorld;
@@ -173,7 +174,7 @@ public class FixtureManagerDialog : PickleWindow {
   private void DrawHeader(Rect rect) {
     Rect saveRect = new Rect(rect.xMax - SaveButtonWidth, rect.y + 2f, SaveButtonWidth, 28f);
 
-    GUI.enabled = groups.Count > 0 && Current.Game != null && !RunnerWindow.Instance.IsRunning && !FixtureCommands.IsBusy;
+    GUI.enabled = groups.Count > 0 && Current.Game != null && !RunController.Instance.IsRunning && !FixtureCommands.IsBusy;
     if (Widgets.ButtonText(saveRect, "Pickle_SaveFixture".Translate())) {
       Find.WindowStack.Add(new SaveFixtureDialog([.. groups.Select(g => g.Suite)], Refresh));
     }
@@ -251,7 +252,7 @@ public class FixtureManagerDialog : PickleWindow {
 
   private void DrawActions(Rect rect, FixtureEntry entry) {
     float x = rect.xMax - ActionWidth;
-    GUI.enabled = !RunnerWindow.Instance.IsRunning && !FixtureCommands.IsBusy;
+    GUI.enabled = !RunController.Instance.IsRunning && !FixtureCommands.IsBusy;
     if (Widgets.ButtonText(new Rect(x, rect.y, ActionWidth, rect.height), "Pickle_Delete".Translate())) {
       ConfirmDelete(entry);
     }

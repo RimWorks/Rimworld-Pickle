@@ -1,33 +1,47 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics;
 using System.Threading;
 using RimWorks.Pickle.Core.Run;
-using RimWorks.Pickle.Input;
-using UnityEngine;
-using UnityEngine.Rendering;
-using Verse;
+using RimWorks.Pickle.Hosting;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Runtime;
 
 /// <summary>
-/// Runs the async step pump. Update resolves waits and drains the main thread queue, and
-/// Awake installs the context that puts every other await continuation in that queue.
+/// Runs the async step pump. Update resolves waits and drains the main thread queue, and the
+/// constructor installs the context that puts every other await continuation in that queue.
 /// </summary>
-public class PickleDriver : MonoBehaviour {
+public class PickleDriver {
   private static PickleDriver? instance;
 
   private readonly ConcurrentQueue<Action> mainThreadQueue = new();
+
+  private readonly Stopwatch realtime = Stopwatch.StartNew();
 
   // Guards pendingWaits: registration can come from a background thread while Update()
   // scans on the main thread. Continuations are always invoked outside this lock.
   private readonly object waitsGate = new object();
   private readonly List<PendingWait> pendingWaits = [];
+
+  private readonly int mainThreadId;
+
   private int frameCounter;
 
-  private int mainThreadId;
+  private PickleDriver() {
+    mainThreadId = Thread.CurrentThread.ManagedThreadId;
+
+    SynchronizationContext? existing = SynchronizationContext.Current;
+    if (existing != null && existing.GetType() != typeof(SynchronizationContext)) {
+      return;
+    }
+
+    SynchronizationContext.SetSynchronizationContext(
+        new MainThreadSyncContext(
+            mainThreadQueue.Enqueue,
+            () => Thread.CurrentThread.ManagedThreadId == mainThreadId));
+  }
 
   /// <summary>Whether a driver instance has already been created for this run.</summary>
   public static bool Exists => instance != null;
@@ -45,15 +59,9 @@ public class PickleDriver : MonoBehaviour {
   // a camera follow steers here, and both can be live at the same time.
   public Action? FrameHook { get; set; }
 
-  /// <summary>Creates the driver's <see cref="GameObject"/> if one does not already exist.</summary>
+  /// <summary>Creates the driver if one does not already exist. Call it on the main thread.</summary>
   public static void EnsureExists() {
-    if (instance != null) {
-      return;
-    }
-
-    GameObject gameObject = new GameObject("PickleDriver");
-    UnityEngine.Object.DontDestroyOnLoad(gameObject);
-    instance = gameObject.AddComponent<PickleDriver>();
+    instance ??= new PickleDriver();
   }
 
   /// <summary>Queues an action to run on the main thread during the next <c>Update</c>.</summary>
@@ -82,26 +90,22 @@ public class PickleDriver : MonoBehaviour {
   /// <param name="scope">An owner that can cancel this wait early through <see cref="FaultScope"/>.</param>
   /// <returns>A wait that completes once the ticks pass.</returns>
   public PickleWait WaitTicks(int n, object? scope = null) {
-    if (Current.Game == null) {
+    IGameClock clock = HostRegistry.Get<IGameClock>();
+    if (!clock.IsGameRunning) {
       return new PickleWait(new InvalidOperationException(
           "PickleDriver.WaitTicks: no game is running (Current.Game is null); this wait would never complete."));
     }
 
     // Watch mode waits on the game's own tick loop, and a save loads paused, so the wait
     // would sit there until the step timed out. ForcePaused is not ours to override.
-#if RW_1_5
-    // 1.5 has no TickManager.ForcePaused, so name the two forced pauses it does have
-    bool forcePaused = (Find.WindowStack?.WindowsForcePause ?? false) || LongEventHandler.ForcePause;
-#else
-    bool forcePaused = Find.TickManager.ForcePaused;
-#endif
+    bool forcePaused = clock.IsForcePaused;
     if (PickleRunMode.Current != PickleRunMode.Mode.Fast
-        && Find.TickManager.Paused && !forcePaused) {
-      Find.TickManager.CurTimeSpeed = TimeSpeed.Normal;
+        && clock.IsPaused && !forcePaused) {
+      clock.SetNormalSpeed();
     }
 
     PendingWait wait = new PendingWait(PendingWaitKind.Ticks) {
-      TargetTicksGame = Find.TickManager.TicksGame + n,
+      TargetTicksGame = clock.Ticks + n,
       Scope = scope,
     };
     lock (waitsGate) {
@@ -133,7 +137,7 @@ public class PickleDriver : MonoBehaviour {
   public PickleWait WaitUntil(Func<bool> cond, float timeoutSeconds, object? scope = null) {
     PendingWait wait = new PendingWait(PendingWaitKind.Until) {
       Condition = cond,
-      DeadlineRealtime = Time.realtimeSinceStartup + timeoutSeconds,
+      DeadlineRealtime = realtime.Elapsed.TotalSeconds + timeoutSeconds,
       TimeoutSeconds = timeoutSeconds,
       Scope = scope,
     };
@@ -155,7 +159,13 @@ public class PickleDriver : MonoBehaviour {
       pendingWaits.Add(wait);
     }
 
-    StartCoroutine(CaptureScreenshotCoroutine(filePath, wait));
+    HostRegistry.Get<IScreenCapture>().CaptureScreenshot(filePath, () => {
+      lock (waitsGate) {
+        if (pendingWaits.Remove(wait)) {
+          Resolve(wait, null);
+        }
+      }
+    });
     return new PickleWait(wait);
   }
 
@@ -164,9 +174,11 @@ public class PickleDriver : MonoBehaviour {
   /// <param name="maxWidth">The frame's maximum width; height scales to match the aspect ratio.</param>
   // no PendingWait: the filmstrip fires frames as steps finish and nothing awaits them,
   // so registering waits here would leave entries for FaultAllPending to trip over
+#pragma warning disable S2325
   public void CaptureFrameDetached(string filePath, int maxWidth) {
-    StartCoroutine(CaptureFrameCoroutine(filePath, maxWidth));
+    HostRegistry.Get<IScreenCapture>().CaptureFrame(filePath, maxWidth);
   }
+#pragma warning restore S2325
 
   /// <summary>Fails every pending wait registered with a given scope, freeing it early.</summary>
   /// <param name="scope">The scope object waits were registered with, compared by reference.</param>
@@ -204,51 +216,8 @@ public class PickleDriver : MonoBehaviour {
     }
   }
 
-  private static System.Collections.IEnumerator CaptureFrameCoroutine(string filePath, int maxWidth) {
-    yield return new WaitForEndOfFrame();
-
-    try {
-      FrameCapture.WriteScaledJpeg(filePath, maxWidth);
-    } catch (Exception ex) {
-      Log.WarnTo(PickleLog.Channel, ex, $"failed to capture frame to {filePath}");
-    }
-  }
-
-  private System.Collections.IEnumerator CaptureScreenshotCoroutine(string filePath, PendingWait? wait) {
-    yield return new WaitForEndOfFrame();
-
-    try {
-      FrameCapture.WritePng(filePath);
-    } catch (Exception ex) {
-      Log.WarnTo(PickleLog.Channel, ex, $"failed to capture screenshot to {filePath}");
-    }
-
-    if (wait == null) {
-      yield break;
-    }
-
-    lock (waitsGate) {
-      if (pendingWaits.Remove(wait)) {
-        Resolve(wait, null);
-      }
-    }
-  }
-
-  private void Awake() {
-    mainThreadId = Thread.CurrentThread.ManagedThreadId;
-
-    SynchronizationContext? existing = SynchronizationContext.Current;
-    if (existing != null && existing.GetType() != typeof(SynchronizationContext)) {
-      return;
-    }
-
-    SynchronizationContext.SetSynchronizationContext(
-        new MainThreadSyncContext(
-            mainThreadQueue.Enqueue,
-            () => Thread.CurrentThread.ManagedThreadId == mainThreadId));
-  }
-
-  private void Update() {
+  /// <summary>Runs one frame of the pump. The host calls it once per frame on the main thread.</summary>
+  public void Update() {
     while (mainThreadQueue.TryDequeue(out Action? action)) {
       try {
         action();
@@ -266,9 +235,6 @@ public class PickleDriver : MonoBehaviour {
     }
 
     ScanWaits();
-
-    // BeginFrame() after ScanWaits: steps during Update(N) see tags from OnGUI(N-1), then we clear for OnGUI(N).
-    TagStore.BeginFrame();
   }
 
   private void ScanWaits() {
@@ -319,12 +285,13 @@ public class PickleDriver : MonoBehaviour {
     fault = null;
     switch (wait.Kind) {
       case PendingWaitKind.Ticks:
-        if (Current.Game == null) {
+        IGameClock clock = HostRegistry.Get<IGameClock>();
+        if (!clock.IsGameRunning) {
           fault = new InvalidOperationException("PickleDriver.WaitTicks: the game ended while waiting for ticks.");
           return true;
         }
 
-        return Find.TickManager.TicksGame >= wait.TargetTicksGame;
+        return clock.Ticks >= wait.TargetTicksGame;
       case PendingWaitKind.Frames:
         return frameCounter >= wait.TargetFrame;
       case PendingWaitKind.Until:
@@ -337,7 +304,7 @@ public class PickleDriver : MonoBehaviour {
           return true;
         }
 
-        if (Time.realtimeSinceStartup <= wait.DeadlineRealtime) {
+        if (realtime.Elapsed.TotalSeconds <= wait.DeadlineRealtime) {
           return false;
         }
 

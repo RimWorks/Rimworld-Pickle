@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using RimWorks.Pickle.Autorun;
+using RimWorks.Pickle.Run;
 using RimWorks.Pickle.Runtime;
-using RimWorks.Pickle.UI;
 
 namespace RimWorks.Pickle.Web;
 
@@ -20,7 +20,7 @@ public static class RunnerCommands {
         return;
       }
 
-      RunnerWindow runner = RunnerWindow.Instance;
+      RunController runner = RunController.Instance;
       if (runner.IsRunning || FixtureCommands.IsBusy) {
         throw new InvalidOperationException("Wait for the current run or fixture operation to finish.");
       }
@@ -60,7 +60,7 @@ public static class RunnerCommands {
         throw new InvalidOperationException("An unattended run cannot pause for inspection.");
       }
 
-      RunnerWindow.Instance.ContinueRun();
+      RunController.Instance.ContinueRun();
     });
   }
 
@@ -72,7 +72,7 @@ public static class RunnerCommands {
         throw new InvalidOperationException("An unattended run cannot pause for inspection.");
       }
 
-      RunnerWindow.Instance.ActiveSession?.RequestPause();
+      RunController.Instance.ActiveSession?.RequestPause();
     });
   }
 
@@ -85,8 +85,8 @@ public static class RunnerCommands {
         throw new ArgumentException("Unknown run scope.", nameof(scope));
       }
 
-      if (!RunnerWindow.Instance.IsRunning && !AutorunState.IsAutorunning) {
-        RunnerWindow.Instance.RunScope = scope;
+      if (!RunController.Instance.IsRunning && !AutorunState.IsAutorunning) {
+        RunController.Instance.RunScope = scope;
         Publish();
       }
     });
@@ -102,7 +102,7 @@ public static class RunnerCommands {
   public static Task Filter(string? search, string? mod, string? tag, bool additive = false, bool clearTags = false) {
     return Post(() => {
       if (!AutorunState.IsAutorunning) {
-        RunnerWindow.Instance.SetFilter(search, mod, tag, additive, clearTags);
+        RunController.Instance.SetFilter(search, mod, tag, additive, clearTags);
       }
     });
   }
@@ -118,7 +118,7 @@ public static class RunnerCommands {
         return;
       }
 
-      RunnerWindow runner = RunnerWindow.Instance;
+      RunController runner = RunController.Instance;
       int start = 0;
       foreach ((_, Core.Model.FeaturePlan plan) in runner.ParsedFeatures) {
         if (path == plan.SourcePath && index >= start && index < start + plan.Scenarios.Count) {
@@ -145,7 +145,7 @@ public static class RunnerCommands {
         return;
       }
 
-      RunnerWindow runner = RunnerWindow.Instance;
+      RunController runner = RunController.Instance;
       int scenarioIndex = 0;
       foreach ((Core.Discovery.DiscoveredSuite suite, Core.Model.FeaturePlan plan) in runner.ParsedFeatures) {
         string sourcePath = plan.SourcePath ?? string.Empty;
@@ -235,7 +235,7 @@ public static class RunnerCommands {
     if (AutorunState.IsAutorunning) {
       PickleHttpServer.ActiveSession?.OnProgress?.Invoke();
     } else {
-      RunnerWindow.Instance.PublishSnapshot();
+      RunController.Instance.PublishSnapshot();
     }
   }
 

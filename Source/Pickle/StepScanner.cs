@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using RimWorks.Pickle.Core.Steps;
-using Verse;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle;

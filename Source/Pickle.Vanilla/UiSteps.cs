@@ -377,7 +377,7 @@ public class UiSteps {
   /// <returns>A task that completes once the warning arrives, faulted when it never does.</returns>
   [Then("a warning from mod {string} was logged")]
   public async Task AssertWarningFromMod(PickleContext ctx, string modName) {
-    ModContentPack? mod = ModLookup.Find(modName);
+    ModContentPack? mod = ModPackLookup.Find(modName);
     ctx.Require(
         mod != null,
         $"mod '{modName}' is not loaded. loaded mods: {ModLookup.DescribeLoadOrder()}; " +
@@ -394,7 +394,7 @@ public class UiSteps {
   /// <param name="modName">The mod's name or packageId, as every other mod step takes it.</param>
   [Then("no warnings from mod {string}")]
   public void AssertNoWarningsFromMod(PickleContext ctx, string modName) {
-    ModContentPack? mod = ModLookup.Find(modName);
+    ModContentPack? mod = ModPackLookup.Find(modName);
     ctx.Require(
         mod != null,
         $"mod '{modName}' is not loaded. loaded mods: {ModLookup.DescribeLoadOrder()}; " +

@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using RimWorks.Pickle.Core.Discovery;
 using RimWorks.Pickle.Core.Fixtures;
+using RimWorks.Pickle.Run;
 using RimWorks.Pickle.Runtime;
 using RimWorks.Pickle.Web;
 using RimWorld;
@@ -76,7 +77,7 @@ public class SaveFixtureDialog : PickleWindow {
       validName = false;
     }
 
-    bool canSave = Current.Game != null && validName && suites.Count > 0 && !RunnerWindow.Instance.IsRunning && !FixtureCommands.IsBusy;
+    bool canSave = Current.Game != null && validName && suites.Count > 0 && !RunController.Instance.IsRunning && !FixtureCommands.IsBusy;
     GUI.enabled = canSave;
     if (Widgets.ButtonText(new Rect(inRect.x, y, 120f, 30f), "Pickle_Save".Translate())) {
       DiscoveredSuite suite = suites[selectedSuite];
@@ -101,16 +102,12 @@ public class SaveFixtureDialog : PickleWindow {
   /// Saves the running game to a scratch file first, then copies it into the suite's
   /// fixtures directory, so a save that fails or is cancelled midway leaves no fixture behind.
   /// </summary>
-  /// <param name="suite">The mod whose fixtures directory the save goes into.</param>
-  /// <param name="name">The fixture's name.</param>
-  /// <param name="overwrite">Whether an existing fixture with this name may be replaced.</param>
   /// <returns><c>true</c> when the fixture was written.</returns>
-  internal static bool Save(DiscoveredSuite suite, string name, bool overwrite = false) {
+  internal static bool Save(string target, bool overwrite = false) {
     string scratchName = "pickle_fixture_" + Guid.NewGuid().ToString("N");
     string scratch = GenFilePaths.FilePathForSavedGame(scratchName);
 
     try {
-      string target = FixtureCatalog.PathForName(suite.WritableFixturesDir, name);
       if (Current.Game == null) {
         return false;
       }
@@ -124,7 +121,7 @@ public class SaveFixtureDialog : PickleWindow {
         return false;
       }
 
-      Directory.CreateDirectory(suite.WritableFixturesDir);
+      Directory.CreateDirectory(Path.GetDirectoryName(target)!);
       File.Copy(scratch, target, overwrite);
 
       Messages.Message("Pickle_SavedFixtureTo".Translate(target), MessageTypeDefOf.TaskCompletion, false);

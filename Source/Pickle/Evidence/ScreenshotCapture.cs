@@ -2,8 +2,6 @@ using System.IO;
 using RimWorks.Pickle.Autorun;
 using RimWorks.Pickle.Core.Reports;
 using RimWorks.Pickle.Runtime;
-using UnityEngine;
-using Verse;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Evidence;

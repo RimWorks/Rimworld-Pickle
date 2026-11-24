@@ -31,16 +31,16 @@ public static class RunnerDetailView {
   /// <param name="outRect">The area to draw into.</param>
   /// <param name="window">The runner window, read for the current selection, filters, and live session.</param>
   public static void Draw(Rect outRect, RunnerWindow window) {
-    if (!window.TryGetSelectedScenario(out DiscoveredSuite suite, out FeaturePlan plan, out ScenarioPlan scenario, out int index)) {
+    if (!window.Controller.TryGetSelectedScenario(out DiscoveredSuite suite, out FeaturePlan plan, out ScenarioPlan scenario, out int index)) {
       Text.Anchor = TextAnchor.MiddleCenter;
       Widgets.Label(outRect, "Pickle_SelectScenario".Translate());
       Text.Anchor = TextAnchor.UpperLeft;
       return;
     }
 
-    window.TryGetResult(plan.SourcePath ?? string.Empty, index, out ScenarioResult result);
-    bool live = ReferenceEquals(window.ActiveSession?.CurrentScenario, scenario);
-    IReadOnlyList<StepResult> steps = live ? window.ActiveSession!.CurrentStepResults : result?.Steps ?? [];
+    window.Controller.TryGetResult(plan.SourcePath ?? string.Empty, index, out ScenarioResult result);
+    bool live = ReferenceEquals(window.Controller.ActiveSession?.CurrentScenario, scenario);
+    IReadOnlyList<StepResult> steps = live ? window.Controller.ActiveSession!.CurrentStepResults : result?.Steps ?? [];
     if (live) {
       result = null!;
     }
@@ -99,7 +99,7 @@ public static class RunnerDetailView {
   private static void Header(float width, in Detail detail, ref float y, bool draw) {
     ScenarioPlan scenario = detail.Scenario;
     Label(scenario.Name, width, ref y, GameFont.Medium, Color.white, draw);
-    if (!detail.Window.IsScenarioVisible(detail.Suite, detail.Plan, scenario)) {
+    if (!detail.Window.Controller.IsScenarioVisible(detail.Suite, detail.Plan, scenario)) {
       Label("This scenario is hidden by the current filters.", width, ref y, GameFont.Small, RunnerStatusColors.Keyword, draw);
     }
 
@@ -115,7 +115,7 @@ public static class RunnerDetailView {
 
   private static string OutcomeText(in Detail detail) {
     if (detail.Live) {
-      return detail.Window.ActiveSession!.CurrentStepDisplay;
+      return detail.Window.Controller.ActiveSession!.CurrentStepDisplay;
     }
 
     return detail.Result == null ? "Pending" : $"{detail.Result.Outcome} in {detail.Result.DurationMs:0}ms";
@@ -132,7 +132,7 @@ public static class RunnerDetailView {
       }
 
       if (draw && Widgets.ButtonText(new Rect(tagX, y, tagWidth, 24f), tag)) {
-        detail.Window.SetFilter(tag: tag, additive: Event.current.shift);
+        detail.Window.Controller.SetFilter(tag: tag, additive: Event.current.shift);
       }
 
       tagX += tagWidth + 6f;

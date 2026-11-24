@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using RimWorks.Pickle.Run;
 using RimWorks.Pickle.Runtime;
-using Verse;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Autorun;
@@ -48,12 +47,12 @@ public sealed class PickleArgs {
   /// <summary>Reads the command line, then fills anything unset from <c>-pickle-config</c>.</summary>
   /// <returns>The resolved args for this run.</returns>
   public static PickleArgs Parse() {
-    bool runBare = GenCommandLine.CommandLineArgPassed("-pickle-run");
-    bool runValued = GenCommandLine.TryGetCommandLineArg("-pickle-run", out string runValue);
+    bool runBare = CommandLineFlags.Passed("-pickle-run");
+    bool runValued = CommandLineFlags.TryGet("-pickle-run", out string runValue);
 
     string? cliFilter = runValued ? runValue : null;
     string? cliReportDir = StringArg("-pickle-report-dir");
-    bool cliIncludeWip = GenCommandLine.CommandLineArgPassed("-pickle-include-wip");
+    bool cliIncludeWip = CommandLineFlags.Passed("-pickle-include-wip");
     int? cliSeed = IntArg("-pickle-seed");
     int? cliScenarioTimeout = IntArg("-pickle-scenario-timeout");
     string? cliSetName = NonEmptyArg("-pickle-set-name");
@@ -63,7 +62,7 @@ public sealed class PickleArgs {
     PickleRunMode.Mode cliMode = ModeArg();
 
     PickleArgsConfig? config = null;
-    if (GenCommandLine.TryGetCommandLineArg("-pickle-config", out string configPath)) {
+    if (CommandLineFlags.TryGet("-pickle-config", out string configPath)) {
       config = LoadConfig(configPath);
     }
 
@@ -83,19 +82,19 @@ public sealed class PickleArgs {
   }
 
   private static string? StringArg(string name) {
-    return GenCommandLine.TryGetCommandLineArg(name, out string value) ? value : null;
+    return CommandLineFlags.TryGet(name, out string value) ? value : null;
   }
 
   private static string? NonEmptyArg(string name) {
-    return GenCommandLine.TryGetCommandLineArg(name, out string value) && !value.NullOrEmpty() ? value : null;
+    return CommandLineFlags.TryGet(name, out string value) && !string.IsNullOrEmpty(value) ? value : null;
   }
 
   private static int? IntArg(string name) {
-    return GenCommandLine.TryGetCommandLineArg(name, out string value) && int.TryParse(value, out int parsed) ? parsed : null;
+    return CommandLineFlags.TryGet(name, out string value) && int.TryParse(value, out int parsed) ? parsed : null;
   }
 
   private static PickleRunMode.Mode ModeArg() {
-    if (!GenCommandLine.TryGetCommandLineArg("-pickle-mode", out string value)) {
+    if (!CommandLineFlags.TryGet("-pickle-mode", out string value)) {
       return PickleRunMode.Mode.Fast;
     }
 

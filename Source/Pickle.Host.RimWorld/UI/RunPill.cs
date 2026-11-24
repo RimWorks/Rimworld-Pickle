@@ -66,7 +66,7 @@ public class RunPill : PickleWindow {
 
   /// <inheritdoc/>
   public override void DoWindowContents(Rect inRect) {
-    RunSession? session = owner.ActiveSession;
+    RunSession? session = owner.Controller.ActiveSession;
     bool paused = session?.IsPaused ?? false;
 
     // CalcHeight measures in the current font, so each label sets its own before asking.

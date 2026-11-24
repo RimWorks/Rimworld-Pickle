@@ -8,12 +8,6 @@
     <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="$(GamecrateRefs)/*.dll"
-               Exclude="$(GamecrateRefs)/System.*.dll;$(GamecrateRefs)/System.dll;$(GamecrateRefs)/Microsoft.*.dll;$(GamecrateRefs)/mscorlib.dll;$(GamecrateRefs)/netstandard.dll;$(GamecrateRefs)/WindowsBase.dll">
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="RimWorks.RimLogging" Version="4.*" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="Gherkin" Version="43.0.*" />
     <PackageReference Include="Cucumber.CucumberExpressions" Version="20.1.*" />

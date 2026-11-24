@@ -16,10 +16,8 @@ using RimWorks.Pickle.Core.Model;
 using RimWorks.Pickle.Core.Run;
 using RimWorks.Pickle.Core.Steps;
 using RimWorks.Pickle.Evidence;
-using RimWorks.Pickle.Fixtures;
-using RimWorks.Pickle.Input;
+using RimWorks.Pickle.Hosting;
 using RimWorks.Pickle.Runtime;
-using Verse;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Run;
@@ -75,7 +73,9 @@ public class RunSession {
 
     // Only the dev smokes armed this before, so every click step in a real run saw an
     // empty store and failed with "no tags recorded this frame".
-    TagStore.SessionActive = true;
+    if (HostRegistry.TryGet(out IGameInput? input)) {
+      input!.StartTagRecording();
+    }
 
     RegisterBuiltInEngineSteps();
   }
@@ -204,7 +204,7 @@ public class RunSession {
 
       // @requires:<mod> keeps a dlc scenario out of a run that has no dlc, reported as
       // skipped rather than failed.
-      string? missingMod = RunOutcomes.MissingRequirement(scenario.Tags, ModLookup.IsLoaded);
+      string? missingMod = RunOutcomes.MissingRequirement(scenario.Tags, wanted => HostRegistry.TryGet(out IModList? _) && ModLookup.IsLoaded(wanted));
       if (missingMod != null) {
         Log.InfoTo(PickleLog.Channel, "skipping '{Scenario}', '{MissingMod}' is not loaded", [scenario.Name, missingMod]);
       }
@@ -322,6 +322,34 @@ public class RunSession {
     foreach (StepPlan remainingStep in scenario.Steps.Skip(stepResults.Count)) {
       stepResults.Add(new StepResult(remainingStep.Keyword, remainingStep.Text, StepStatus.Skipped, 0));
     }
+  }
+
+  private static void ResetHostAfterScenario() {
+    if (HostRegistry.TryGet(out IGameInput? pendingInput)) {
+      pendingInput!.CancelPending();
+    }
+
+    if (HostRegistry.TryGet(out IWindowGuard? windowGuard)) {
+      windowGuard!.EndSuppression();
+    }
+  }
+
+  private static Task SaveAndReloadStep(PickleContext ctx) {
+    return HostRegistry.Get<ISaveGames>().SaveAndReload(RoundTripSaveName, keepSave: false, ctx.WaitScope);
+  }
+
+  private static Task SaveAndReloadAsStep(PickleContext ctx, string saveName) {
+    return HostRegistry.Get<ISaveGames>().SaveAndReload(saveName, keepSave: true, ctx.WaitScope);
+  }
+
+  private static async Task RoundTripStep(PickleContext ctx) {
+    long mark = LogWatch.Mark;
+    await HostRegistry.Get<ISaveGames>().SaveAndReload(RoundTripSaveName, keepSave: false, ctx.WaitScope);
+
+    IReadOnlyList<string> errors = LogWatch.ErrorsSince(mark);
+    ctx.Assert(
+        errors.Count == 0,
+        $"the save did not round trip; {errors.Count} error(s) logged: {string.Join(" | ", errors)}");
   }
 
   // A retry that reuses the world the failure left behind is not a retry. Clearing both
@@ -493,8 +521,7 @@ public class RunSession {
     } finally {
       film?.Finish();
       PickleRunMode.Current = modeBeforeScenario;
-      InteractionRequest.Clear();
-      WindowSuppression.End();
+      ResetHostAfterScenario();
       LogWatch.Disarm();
       Watchdog.EndScenario();
     }
@@ -725,26 +752,6 @@ public class RunSession {
         FixtureStepTimeoutSeconds));
   }
 
-  private Task SaveAndReloadStep(PickleContext ctx) {
-    return FixtureLoader.SaveAndReload(RoundTripSaveName, driver, ctx.WaitScope, keepSave: false);
-  }
-
-  private Task SaveAndReloadAsStep(PickleContext ctx, string saveName) {
-    return FixtureLoader.SaveAndReload(saveName, driver, ctx.WaitScope, keepSave: true);
-  }
-
-  // LogWatch is not re-armed around the trip, unlike a fixture load. An exception thrown
-  // while the game writes or reads its own data is the bug this step exists to catch.
-  private async Task RoundTripStep(PickleContext ctx) {
-    long mark = LogWatch.Mark;
-    await FixtureLoader.SaveAndReload(RoundTripSaveName, driver, ctx.WaitScope, keepSave: false);
-
-    IReadOnlyList<string> errors = LogWatch.ErrorsSince(mark);
-    ctx.Assert(
-        errors.Count == 0,
-        $"the save did not round trip; {errors.Count} error(s) logged: {string.Join(" | ", errors)}");
-  }
-
   // The tag builds the world before any step runs, so the scenario reads as if the state
   // was already there. @same-world skips a rebuild the way a repeated fixture load does.
   private async Task LoadQuickstartIfTagged(PickleContext ctx, TagSet tags) {
@@ -753,7 +760,7 @@ public class RunSession {
       return;
     }
 
-    await FixtureLoader.LoadQuickstart(name, driver, ctx.WaitScope);
+    await HostRegistry.Get<ISaveGames>().StartQuickstart(name, ctx.WaitScope);
 
     currentLoadedQuickstart = name;
     currentLoadedFixture = null;
@@ -771,7 +778,7 @@ public class RunSession {
       throw new InvalidOperationException(resolution.Error.Message);
     }
 
-    await FixtureLoader.LoadFixture(resolution.Fixture!.FullPath, driver, ctx.WaitScope);
+    await HostRegistry.Get<ISaveGames>().LoadSave(resolution.Fixture!.FullPath, ctx.WaitScope);
 
     currentLoadedFixture = fixtureName;
     currentLoadedQuickstart = null;
@@ -779,7 +786,7 @@ public class RunSession {
   }
 
   private async Task LoadSaveFileStep(PickleContext ctx, string reference) {
-    string resolved = SaveFilePath.Resolve(reference, GenFilePaths.SavedGamesFolderPath);
+    string resolved = SaveFilePath.Resolve(reference, HostRegistry.Get<IGameState>().SavesFolder);
 
     if (resolved.Length == 0) {
       throw new InvalidOperationException("no save file was named");
@@ -790,7 +797,7 @@ public class RunSession {
           $"no save file at '{resolved}'. save one first with 'I save and reload as \"<name>\"'");
     }
 
-    await FixtureLoader.LoadFixture(resolved, driver, ctx.WaitScope);
+    await HostRegistry.Get<ISaveGames>().LoadSave(resolved, ctx.WaitScope);
 
     currentLoadedFixture = null;
     currentLoadedQuickstart = null;
@@ -803,8 +810,10 @@ public class RunSession {
     List<(string Source, string Content)> stateDumps = [];
 
     try {
-      screenshotPath = ScreenshotCapture.BuildScreenshotPath(featureName, scenarioName, stepIndex);
-      await ScreenshotCapture.CaptureToFile(screenshotPath);
+      if (HostRegistry.TryGet<IScreenCapture>(out _)) {
+        screenshotPath = ScreenshotCapture.BuildScreenshotPath(featureName, scenarioName, stepIndex);
+        await ScreenshotCapture.CaptureToFile(screenshotPath);
+      }
 
       List<KeyValuePair<Type, object>> instances = [.. scenarioInstanceCache];
       stateDumps = StateDumpCollector.Collect(instances);

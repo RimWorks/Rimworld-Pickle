@@ -36,16 +36,17 @@ project.
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="RimWorks.Pickle.Ref" Version="1.*"
+    <PackageReference Include="RimWorks.Pickle.Ref" Version="7.*"
                       ExcludeAssets="runtime" PrivateAssets="all" />
     <ProjectReference Include="../MyMod/MyMod.csproj" />
   </ItemGroup>
 </Project>
 ```
 
-Set `ExcludeAssets="runtime"`. The package ships a compile-time stub with the same
-assembly identity as the real `RimWorks.Pickle.dll`. The Pickle mod loads the real one at run
-time. A copy of the stub in your output would shadow it.
+Set `ExcludeAssets="runtime"`. The package ships two compile-time stubs, with the same
+assembly identities as the real `RimWorks.Pickle.dll` and `RimWorks.Pickle.Host.RimWorld.dll`.
+The Pickle mod loads the real ones at run time. A copy of a stub in your output would shadow
+the real assembly.
 
 `MyMod.dll` resolves the same way. RimWorld loads it before Pickle loads your steps
 assembly, so the reference binds by name.

@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using Verse;
 using Log = RimWorks.RimLogging.Log;
 
 namespace RimWorks.Pickle.Evidence;
