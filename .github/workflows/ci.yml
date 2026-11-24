@@ -308,6 +308,7 @@ jobs:
           path: reports/**/junit.xml
           reporter: java-junit
           fail-on-error: false
+          fail-on-empty: ${{ needs.suite.result != 'skipped' || needs.suite-17.result != 'skipped' }}
 
   gate:
     name: ci gate
