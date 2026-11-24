@@ -1,6 +1,6 @@
 name: game image
 
-# the image is rebuilt weekly so a suite run never waits on a steam download
+# the image is rebuilt daily so a suite run never waits on a steam download
 on:
   workflow_call:
     inputs:
@@ -37,7 +37,7 @@ on:
         type: boolean
         default: false
   schedule:
-    - cron: '0 6 * * 1'
+    - cron: '0 10 * * *'
 
 permissions:
   contents: read
