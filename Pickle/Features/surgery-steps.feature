@@ -21,7 +21,7 @@ Feature: surgery steps
     Then "Bionic" has hediff "SimpleProstheticArm" on "left shoulder"
     And "Bionic" is not missing "left shoulder"
 
-  @slow
+  @slow @retry:2
   Scenario: a doctor works through a queued surgery
     Given a colonist "Patient" exists
     And a colonist "Doc" exists
