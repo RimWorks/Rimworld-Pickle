@@ -121,14 +121,12 @@ public static class DevModeSteps {
       }
 
       foreach (MethodInfo method in methods) {
-        DebugActionAttribute? attribute;
+        DebugActionAttribute attribute;
         try {
           if (!method.TryGetAttribute(out attribute)) {
             continue;
           }
         } catch (Exception) {
-          // an attribute whose argument type lives in an assembly that failed to load (a missing
-          // dependency of a mod) throws here, as GetMethods does above: skip that method, not the scan
           continue;
         }
 

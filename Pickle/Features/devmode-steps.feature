@@ -20,3 +20,10 @@ Feature: dev mode steps
     Given dev mode is enabled
     When I trigger debug action "FinishAllResearch" in category "General"
     Then the engine is alive
+
+  Scenario: a debug action whose attribute cannot be read does not stop the others
+    Given dev mode is enabled
+    And a debug action whose attribute cannot be read
+    When I trigger debug action "FinishAllResearch" in category "General"
+    Then the unreadable debug action was scanned
+    And the engine is alive
