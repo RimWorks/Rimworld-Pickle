@@ -22,7 +22,7 @@ public class PickleDriver {
 
   // Guards pendingWaits: registration can come from a background thread while Update()
   // scans on the main thread. Continuations are always invoked outside this lock.
-  private readonly object waitsGate = new object();
+  private readonly Lock waitsGate = new();
   private readonly List<PendingWait> pendingWaits = [];
 
   private readonly int mainThreadId;

@@ -19,7 +19,7 @@ public static class GherkinCommands {
 
   private const int HistoryLimit = 20;
 
-  private static readonly object HistoryLock = new object();
+  private static readonly Lock HistoryLock = new();
   private static readonly List<Attempt> History = new List<Attempt>();
 
   private static int counter;
