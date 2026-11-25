@@ -101,16 +101,13 @@ internal static class FrameCapture {
 
   private static void Request(RenderTexture source, Texture2D scratch, string filePath) {
     AsyncGPUReadback.Request(source, 0, TextureFormat.RGB24, request => {
-      if (request.hasError) {
-        WarnReadbackOnce();
-        ReadSynchronously(source, scratch, filePath);
+      if (scratch == null) {
         return;
       }
 
-      // the film can end, or the frame size change, while a readback is in flight: the shared
-      // scratch texture is then destroyed and Unity throws a NullReferenceException from it.
-      // The frame is lost with the film that asked for it, so drop it quietly.
-      if (scratch == null) {
+      if (request.hasError) {
+        WarnReadbackOnce();
+        ReadSynchronously(source, scratch, filePath);
         return;
       }
 
