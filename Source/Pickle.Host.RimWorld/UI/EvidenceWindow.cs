@@ -110,7 +110,8 @@ public class EvidenceWindow : PickleWindow {
         }
 
         byte[] bytes = path.StartsWith("data:image/", StringComparison.Ordinal)
-            ? Convert.FromBase64String(path.Substring(path.IndexOf(',') + 1)) : File.ReadAllBytes(path);
+            ? Convert.FromBase64String(path.Substring(path.IndexOf(',') + 1))
+            : File.ReadAllBytes(path);
         image = new Texture2D(2, 2);
         if (!image.LoadImage(bytes)) {
           throw new IOException("Cannot decode this image.");

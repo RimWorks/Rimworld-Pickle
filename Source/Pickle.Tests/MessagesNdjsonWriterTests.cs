@@ -158,7 +158,7 @@ public class MessagesNdjsonWriterTests {
                 10) {
               FailureMessage = failureMessage,
             },
-        ];
+    ];
 
     string ndjson = MessagesNdjsonWriter.Write(results);
     string[] lines = SplitLines(ndjson);

@@ -22,7 +22,7 @@ internal static class ReportWriterTestData {
               FailedAttempts = [(1, "cart was empty"), (2, null)],
             },
 
-            new ScenarioResult(
+        new ScenarioResult(
                 "stubbornly broken",
                 "Checkout",
                 new TagSet(["@retry:1"]),
@@ -33,7 +33,7 @@ internal static class ReportWriterTestData {
               Attempts = 2,
               FailedAttempts = [(1, "still empty")],
             },
-        ];
+    ];
   }
 
   /// <summary>One scenario that drove ticks and one that never loaded a world.</summary>
@@ -50,14 +50,14 @@ internal static class ReportWriterTestData {
               TickCost = (1000, 3.25, 41.5),
             },
 
-            new ScenarioResult(
+        new ScenarioResult(
                 "reads a def at the main menu",
                 "Sim",
                 new TagSet([]),
                 ScenarioOutcome.Passed,
                 [new StepResult("Then", "def \"Human\" exists", StepStatus.Passed, 4)],
                 4),
-        ];
+    ];
   }
 
   public static List<ScenarioResult> BuildTwoFeatureRun() {
@@ -74,7 +74,7 @@ internal static class ReportWriterTestData {
                 ],
                 250),
 
-            new ScenarioResult(
+        new ScenarioResult(
                 "failed login",
                 "Login",
                 new TagSet([]),
@@ -90,7 +90,7 @@ internal static class ReportWriterTestData {
               StateDumps = [("PlayerState", "hp=10")],
             },
 
-            new ScenarioResult(
+        new ScenarioResult(
                 "guest checkout",
                 "Checkout",
                 new TagSet([]),
@@ -100,7 +100,7 @@ internal static class ReportWriterTestData {
                 ],
                 120),
 
-            new ScenarioResult(
+        new ScenarioResult(
                 "skipped scenario",
                 "Checkout",
                 new TagSet(["@wip"]),
@@ -110,6 +110,6 @@ internal static class ReportWriterTestData {
                     new StepResult("When", "I check out", StepStatus.Skipped, 0),
                 ],
                 0),
-        ];
+    ];
   }
 }

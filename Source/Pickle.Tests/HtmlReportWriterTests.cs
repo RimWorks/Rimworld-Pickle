@@ -118,7 +118,7 @@ public class HtmlReportWriterTests {
                 1) {
               FailureMessage = "</script><script>alert(1)</script>",
             },
-        ];
+    ];
 
     string html = HtmlReportWriter.Write(results, "failed", Template);
 
@@ -171,7 +171,7 @@ public class HtmlReportWriterTests {
                 1) {
               Attachments = [("film-frames", gone), ("film-frames", Path.Combine(dir.Path, "0000.jpg"))],
             },
-        ];
+    ];
 
     JsonElement attachments = Payload(results)
         .GetProperty("features")[0]
@@ -189,10 +189,12 @@ public class HtmlReportWriterTests {
     File.WriteAllBytes(Path.Combine(dir.Path, "0001.jpg"), [1]);
 
     List<(string Name, string Content)> expanded =
-        [.. EvidenceAttachments.Expand([
+    [
+        .. EvidenceAttachments.Expand([
             ("film-frames", Path.Combine(dir.Path, "0000.jpg")),
             ("film-frames", Path.Combine(dir.Path, "0001.jpg")),
-        ])];
+        ]),
+    ];
 
     Assert.Equal(Directory.GetFiles(dir.Path, "*.jpg").Length, expanded.Count);
     Assert.Equal(["0000.jpg", "0001.jpg"], expanded.Select(a => Path.GetFileName(a.Content)));
@@ -244,7 +246,7 @@ public class HtmlReportWriterTests {
                 1) {
               Attachments = [("film-frames", System.IO.Path.Combine(dir.Path, "0000.jpg"))],
             },
-        ];
+    ];
 
     return Payload(results, readBytes: readBytes)
         .GetProperty("features")[0]

@@ -46,8 +46,11 @@ public static class RunnerToolbar {
     float y = rect.y + 9f;
     Label(new Rect(rect.x + Padding, y, 42f, ButtonHeight), "Scope", RunnerStatusColors.Muted, GameFont.Tiny);
     Rect scope = new Rect(rect.x + 50f, y, 142f, ButtonHeight);
-    string scopeLabel = window.Controller.RunScope == "selected" ? $"{window.Controller.SelectedScenarioCount} selected"
-        : window.Controller.RunScope == "failed" ? $"{window.Controller.FailedResultsCount} failed" : $"All {window.Controller.TotalScenarioCount}";
+    string scopeLabel = window.Controller.RunScope == "selected"
+        ? $"{window.Controller.SelectedScenarioCount} selected"
+        : window.Controller.RunScope == "failed"
+            ? $"{window.Controller.FailedResultsCount} failed"
+            : $"All {window.Controller.TotalScenarioCount}";
     GUI.enabled = idle;
     if (Widgets.ButtonText(scope, scopeLabel)) {
       List<FloatMenuOption> options = [];
@@ -155,7 +158,8 @@ public static class RunnerToolbar {
     RunnerStatusColors.DrawDot(new Vector2(summaryX + 4f, summaryY + 16f), color, 7f);
     float statusWidth = Mathf.Max(100f, summaryWidth - 320f);
     Label(new Rect(summaryX + 16f, summaryY, statusWidth - 16f, 18f), StateLabel(window), color, GameFont.Tiny);
-    string detail = window.Controller.IsRunning ? window.Controller.ActiveSession?.CurrentStepDisplay ?? string.Empty
+    string detail = window.Controller.IsRunning
+        ? window.Controller.ActiveSession?.CurrentStepDisplay ?? string.Empty
         : $"{window.Controller.ParsedFeaturesCount} features" + (window.Controller.LastRunAt.HasValue ? $" · last run {window.Controller.LastRunAt:HH:mm:ss}" : string.Empty);
     Label(new Rect(summaryX + 16f, summaryY + 18f, statusWidth - 16f, 18f), detail, RunnerStatusColors.Muted, GameFont.Tiny);
     Label(new Rect(summaryX + statusWidth, summaryY + 8f, summaryWidth - statusWidth, 22f),
@@ -197,8 +201,11 @@ public static class RunnerToolbar {
     bool paused = window.Controller.ActiveSession?.IsPaused == true;
     bool stopping = window.Controller.ActiveSession?.CancelRequested == true;
     bool idle = !window.Controller.IsRunning && !FixtureCommands.IsBusy;
-    int count = window.Controller.RunScope == "selected" ? window.Controller.SelectedScenarioCount
-        : window.Controller.RunScope == "failed" ? window.Controller.FailedResultsCount : window.Controller.TotalScenarioCount;
+    int count = window.Controller.RunScope == "selected"
+        ? window.Controller.SelectedScenarioCount
+        : window.Controller.RunScope == "failed"
+            ? window.Controller.FailedResultsCount
+            : window.Controller.TotalScenarioCount;
 
     GUI.enabled = !stopping && (paused || (idle && count > 0));
     if (!IconButton(rect, paused ? "continue" : "run", paused ? "Continue run" : $"Run {count} scenarios", RunnerStatusColors.Accent)) {
@@ -231,9 +238,13 @@ public static class RunnerToolbar {
   }
 
   private static Color StatusColor(RunnerWindow window) {
-    return window.Controller.ActiveSession?.IsPaused == true ? RunnerStatusColors.Paused
-        : window.Controller.IsRunning ? RunnerStatusColors.Accent
-        : window.Controller.FailedResultsCount > 0 ? RunnerStatusColors.FailedText : RunnerStatusColors.Passed;
+    return window.Controller.ActiveSession?.IsPaused == true
+        ? RunnerStatusColors.Paused
+        : window.Controller.IsRunning
+            ? RunnerStatusColors.Accent
+            : window.Controller.FailedResultsCount > 0
+                ? RunnerStatusColors.FailedText
+                : RunnerStatusColors.Passed;
   }
 
   private static void Label(Rect rect, string label, Color color, GameFont font) {
