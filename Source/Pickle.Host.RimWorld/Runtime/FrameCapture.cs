@@ -101,6 +101,10 @@ internal static class FrameCapture {
 
   private static void Request(RenderTexture source, Texture2D scratch, string filePath) {
     AsyncGPUReadback.Request(source, 0, TextureFormat.RGB24, request => {
+      if (scratch == null) {
+        return;
+      }
+
       if (request.hasError) {
         WarnReadbackOnce();
         ReadSynchronously(source, scratch, filePath);
