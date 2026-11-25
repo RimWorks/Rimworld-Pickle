@@ -10,7 +10,7 @@
   <ItemGroup>
     <PackageReference Include="RimWorks.RimLogging" Version="4.*" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="Gherkin" Version="43.0.*" />
-    <PackageReference Include="Cucumber.CucumberExpressions" Version="20.1.*" />
+    <PackageReference Include="Cucumber.CucumberExpressions" Version="20.2.*" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Pickle.Core\Pickle.Core.csproj" />

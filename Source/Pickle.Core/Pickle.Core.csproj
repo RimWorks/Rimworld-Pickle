@@ -11,6 +11,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.*" PrivateAssets="all" />
     <PackageReference Include="Gherkin" Version="43.0.*" />
-    <PackageReference Include="Cucumber.CucumberExpressions" Version="20.1.*" />
+    <PackageReference Include="Cucumber.CucumberExpressions" Version="20.2.*" />
   </ItemGroup>
 </Project>
