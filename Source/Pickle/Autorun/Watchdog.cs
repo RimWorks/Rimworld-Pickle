@@ -12,7 +12,7 @@ namespace RimWorks.Pickle.Autorun;
 /// Update stops. Never calls Verse.Log, which needs that thread and shares its lock.
 /// </summary>
 public static class Watchdog {
-  private static readonly object StateLock = new();
+  private static readonly Lock StateLock = new();
 
   private static Timer? timer;
   private static string? logPath;

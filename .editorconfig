@@ -418,6 +418,9 @@ dotnet_diagnostic.S3011.severity = none # invokes private dev-mode debug actions
 [Source/Pickle.Vanilla/WorldCameraSteps.cs]
 dotnet_diagnostic.S3011.severity = none # writes the private desiredAltitude, the only real zoom knob
 
+[Source/Pickle.Host.RimWorld/Runtime/UnreadableDebugActionSteps.cs]
+dotnet_diagnostic.S3011.severity = none # clears DevModeSteps' private scan cache
+
 # LoadFrom is correct here: the game hands us a mod's own directory and the step assembly
 # is not on any probing path, so Load cannot find it.
 [Source/Pickle/Runtime/SuiteRunner.cs]

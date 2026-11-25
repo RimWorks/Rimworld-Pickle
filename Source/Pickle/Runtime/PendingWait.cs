@@ -11,7 +11,7 @@ internal enum PendingWaitKind {
 internal sealed class PendingWait {
   // Waits register from background threads but resolve on the main one. Without this
   // gate a continuation attached just after resolution would hang forever.
-  private readonly object gate = new object();
+  private readonly Lock gate = new();
 
   private Action? continuation;
 

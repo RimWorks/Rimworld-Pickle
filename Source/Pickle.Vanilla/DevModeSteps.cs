@@ -121,9 +121,16 @@ public static class DevModeSteps {
       }
 
       foreach (MethodInfo method in methods) {
-        if (method.TryGetAttribute(out DebugActionAttribute attribute)) {
-          yield return (attribute.name ?? method.Name, attribute.category ?? string.Empty, method);
+        DebugActionAttribute attribute;
+        try {
+          if (!method.TryGetAttribute(out attribute)) {
+            continue;
+          }
+        } catch (Exception) {
+          continue;
         }
+
+        yield return (attribute.name ?? method.Name, attribute.category ?? string.Empty, method);
       }
     }
   }

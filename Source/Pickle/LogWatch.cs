@@ -6,7 +6,7 @@ namespace RimWorks.Pickle;
 /// <summary>Watches for logged errors while a scenario runs, so the runner can fail one that
 /// caused no assert to fail but still logged an error.</summary>
 public static class LogWatch {
-  private static readonly object Gate = new object();
+  private static readonly Lock Gate = new();
   private static readonly CircularBuffer<string> ErrorBuffer = new CircularBuffer<string>(50);
 
   // Its own buffer, not a filter over ErrorBuffer: a warning must never be able to trip the
