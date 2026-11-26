@@ -13,14 +13,14 @@ public static class FixtureCatalog {
   /// <summary>Builds the path a fixture named <paramref name="name"/> would be saved or read at.</summary>
   /// <param name="directory">The fixture directory to build the path under.</param>
   /// <param name="name">The fixture name, with no path separators or extension.</param>
-  /// <returns>The path to the <c>.rws</c> file for this name.</returns>
+  /// <returns>The path to the file for this name, ending in <see cref="SaveFilePath.Extension"/>.</returns>
   public static string PathForName(string directory, string name) {
     if (string.IsNullOrWhiteSpace(name) || name != name.Trim() || name == "." || name == ".."
         || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || name.IndexOfAny(['/', '\\', ':']) >= 0) {
       throw new ArgumentException("Enter a fixture name without path separators.", nameof(name));
     }
 
-    return Path.Combine(directory, name + ".rws");
+    return Path.Combine(directory, name + SaveFilePath.Extension);
   }
 
   /// <summary>Lists every fixture in both directories, including a shadowed copy alongside its winner.</summary>
@@ -31,14 +31,14 @@ public static class FixtureCatalog {
   // the committed copy would otherwise keep shadowing the new file.
   public static List<FixtureEntry> Read(string committedDir, string writableDir) {
     Dictionary<string, string> committed = new(StringComparer.OrdinalIgnoreCase);
-    foreach (string path in FindRws(committedDir)) {
+    foreach (string path in FindSaves(committedDir)) {
       committed[Path.GetFileNameWithoutExtension(path)] = path;
     }
 
     List<FixtureEntry> entries = [];
 
     if (writableDir != committedDir) {
-      foreach (string path in FindRws(writableDir)) {
+      foreach (string path in FindSaves(writableDir)) {
         string name = Path.GetFileNameWithoutExtension(path);
         committed.TryGetValue(name, out string? hidden);
         entries.Add(Describe(path, isRecorded: true, shadowedPath: hidden, isShadowed: false));
@@ -69,11 +69,11 @@ public static class FixtureCatalog {
         info.Exists ? info.LastWriteTime : DateTime.MinValue);
   }
 
-  private static List<string> FindRws(string directory) {
+  private static List<string> FindSaves(string directory) {
     if (!Directory.Exists(directory)) {
       return [];
     }
 
-    return [.. Directory.GetFiles(directory, "*.rws", SearchOption.TopDirectoryOnly).OrderBy(f => f)];
+    return [.. Directory.GetFiles(directory, "*" + SaveFilePath.Extension, SearchOption.TopDirectoryOnly).OrderBy(f => f)];
   }
 }
