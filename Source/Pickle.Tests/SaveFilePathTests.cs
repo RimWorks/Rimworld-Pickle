@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using RimWorks.Pickle.Core.Fixtures;
 using Xunit;
@@ -42,5 +43,28 @@ public class SaveFilePathTests {
   [InlineData("   ")]
   public void Resolve_WithNoReference_IsEmpty(string? reference) {
     Assert.Equal(string.Empty, SaveFilePath.Resolve(reference, Saves));
+  }
+
+  [Theory]
+  [InlineData(null)]
+  [InlineData("")]
+  [InlineData("   ")]
+  [InlineData(".")]
+  [InlineData("rws")]
+  [InlineData(" .rws")]
+  [InlineData(".rws ")]
+  [InlineData(".a/b")]
+  [InlineData(".a\\b")]
+  [InlineData(".a:b")]
+  public void Extension_WithNoLeadingDotOrWithASeparator_IsRefusedAndStaysRws(string? value) {
+    Assert.Throws<ArgumentException>(() => { SaveFilePath.Extension = value!; });
+    Assert.Equal(".rws", SaveFilePath.Extension);
+  }
+
+  [Fact]
+  public void Extension_WithALeadingDotAndNoSeparator_IsTaken() {
+    SaveFilePath.Extension = ".rws";
+
+    Assert.Equal(".rws", SaveFilePath.Extension);
   }
 }

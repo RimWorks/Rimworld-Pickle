@@ -113,6 +113,9 @@ or in `Pickle.Core` when the xunit suite has to cover it. Once a type references
 its classes for them with `HostRegistry.Register` at boot. When `Pickle` needs something new from
 the game, add a member to a contract interface and implement it in `RimWorldHost/`.
 
+A host whose save files do not end in `.rws` sets `SaveFilePath.Extension` at boot, before it
+scans for suites.
+
 ## Patch backends
 
 Pickle supports two patching libraries and prefers Concord when both are loaded.
